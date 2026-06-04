@@ -106,6 +106,7 @@ export interface Paths {
   pathSeparator: string
   libraryDir: string
   tracksDir: string
+  librarySqlite: string
   libraryJson: string
   cacheDir: string
   cacheDb: string

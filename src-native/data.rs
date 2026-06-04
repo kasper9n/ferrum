@@ -1,4 +1,4 @@
-use crate::library::{Paths, load_library};
+use crate::library::{Paths, load_old_library_json, open_library};
 use crate::library_types::Library;
 use crate::tracks::Tag;
 use anyhow::Context;
@@ -6,6 +6,7 @@ use atomicwrites::{AllowOverwrite, AtomicFile};
 use dirs_next;
 use napi::Result;
 use serde::Serialize;
+use sqlx::SqliteConnection;
 use std::env;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -40,6 +41,7 @@ pub fn app_log_dir() -> Result<PathBuf> {
 pub struct Data {
 	pub paths: Paths,
 	pub library: Library,
+	pub library_sqlite: SqliteConnection,
 	/// Current tag being edited
 	pub current_tag: Option<Tag>,
 }
@@ -108,6 +110,7 @@ impl Data {
 			path_separator: std::path::MAIN_SEPARATOR_STR.into(),
 			library_dir: path_to_string(&library_dir),
 			tracks_dir: path_to_string(library_dir.join("Tracks")),
+			library_sqlite: path_to_string(library_dir.join("Library.sqlite")),
 			library_json: path_to_string(library_dir.join("Library.json")),
 			cache_dir: path_to_string(&cache_dir),
 			cache_db: path_to_string(cache_dir.join("Cache.redb")),
@@ -118,11 +121,13 @@ impl Data {
 			logs_dir: path_to_string(app_log_dir()?),
 		};
 
-		let loaded_library = load_library(&paths)?;
+		let library_sqlite = open_library(&paths)?;
+		let library_old = load_old_library_json(&paths.library_json).unwrap();
 
 		let data = Data {
 			paths,
-			library: loaded_library,
+			library: library_old.unwrap_or(Library::new()),
+			library_sqlite,
 			current_tag: None,
 		};
 		// if it fails, it was already set. the user might just have reloaded

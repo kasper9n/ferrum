@@ -4,13 +4,18 @@ use crate::library_types::{ItemId, Library, SpecialTrackListName, TrackList, Ver
 use anyhow::{Context, Result, bail};
 use linked_hash_map::LinkedHashMap;
 use serde_json::{Value, json};
+use sqlx::SqliteConnection;
+use sqlx::{ConnectOptions, sqlite::SqliteConnectOptions};
+use sqlx::{Sqlite, migrate::MigrateDatabase};
 use std::fs::File;
-#[cfg(feature = "napi-rs")]
-use std::fs::create_dir_all;
 use std::io::{ErrorKind, Read, Seek, SeekFrom};
 #[cfg(feature = "napi-rs")]
 use std::path::PathBuf;
+#[cfg(feature = "napi-rs")]
 use std::time::Instant;
+#[cfg(feature = "napi-rs")]
+use std::{fs::create_dir_all, path::Path};
+use tokio::runtime::Runtime;
 
 #[cfg(feature = "napi-rs")]
 #[derive(Clone)]
@@ -19,6 +24,7 @@ pub struct Paths {
 	pub path_separator: String,
 	pub library_dir: String,
 	pub tracks_dir: String,
+	pub library_sqlite: String,
 	pub library_json: String,
 	pub cache_dir: String,
 	pub cache_db: String,
@@ -43,27 +49,57 @@ impl Paths {
 }
 
 #[cfg(feature = "napi-rs")]
-pub fn load_library(paths: &Paths) -> Result<Library> {
+pub fn open_library(paths: &Paths) -> Result<SqliteConnection> {
+	let now = Instant::now();
+
 	paths
 		.ensure_dirs_exists()
 		.context("Error ensuring folder exists")?;
 	println!("Loading library at path: {}", paths.library_dir);
 
-	load_library_from_file(&paths.library_json)
+	let library_sqlite = &paths.library_sqlite;
+
+	let rt = Runtime::new().context("Error creating tokio runtime")?;
+
+	let exists = Path::new(&library_sqlite).exists();
+	if !exists {
+		migrate_to_sqlite(paths);
+	}
+	let connection = rt
+		.block_on(
+			SqliteConnectOptions::new()
+				.filename(&paths.library_sqlite)
+				.connect(),
+		)
+		.context("Error connecting to library database")?;
+
+	println!("Open library: {}ms", now.elapsed().as_millis());
+	Ok(connection)
 }
 
-pub fn load_library_from_file(library_json: &str) -> Result<Library> {
-	let now = Instant::now();
+#[cfg(feature = "napi-rs")]
+pub fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
+	let rt = Runtime::new().context("Error creating tokio runtime")?;
+	let old_library = match load_old_library_json(&paths.library_json)? {
+		None => {
+			rt.block_on(Sqlite::create_database(&paths.library_sqlite))
+				.context("Could not create library database")?;
+			return Ok(());
+		}
+		Some(old_library) => old_library,
+	};
 
+	todo!("Save database to disk after migrating");
+}
+
+pub fn load_old_library_json(library_json: &str) -> Result<Option<Library>> {
 	let mut library_file = match File::open(&library_json) {
 		Ok(file) => file,
 		Err(err) => match err.kind() {
-			ErrorKind::NotFound => return Ok(Library::new()),
+			ErrorKind::NotFound => return Ok(None),
 			_ => return Err(err).context("Error opening library file"),
 		},
 	};
-	println!("Read library: {}ms", now.elapsed().as_millis());
-	let now = Instant::now();
 
 	let mut json_bytes = Vec::new();
 	library_file
@@ -71,25 +107,18 @@ pub fn load_library_from_file(library_json: &str) -> Result<Library> {
 		.context("Error reading library file")?;
 
 	let versioned_library: VersionedLibrary = match simd_json::from_slice(&mut json_bytes) {
-		Ok(lib) => {
-			println!("Parsed library: {}ms", now.elapsed().as_millis());
-			lib
-		}
+		Ok(lib) => lib,
 		Err(_) => {
-			let now = Instant::now();
 			library_file
 				.seek(SeekFrom::Start(0))
 				.context("Error seeking to start of library file")?;
 			let versioned_library = parse_old_versionless_library_json(&mut library_file)?;
-			println!("Parsed v0 library: {}ms", now.elapsed().as_millis());
 			versioned_library
 		}
 	};
-	let now = Instant::now();
 
 	let library = versioned_library.upgrade().init_libary();
-	println!("Initialized library: {}ms", now.elapsed().as_millis());
-	Ok(library)
+	Ok(Some(library))
 }
 
 pub fn parse_old_versionless_library_json(library_file: &mut File) -> Result<VersionedLibrary<'_>> {
