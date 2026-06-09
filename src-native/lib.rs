@@ -26,6 +26,8 @@ pub mod filter;
 mod itunes_import;
 pub mod library;
 pub mod library_types;
+#[cfg(feature = "napi-rs")]
+mod migrate;
 pub mod page;
 #[cfg(feature = "napi-rs")]
 pub mod playlists;

@@ -1,12 +1,13 @@
 #[cfg(feature = "napi-rs")]
 use crate::data::Data;
 use crate::library_types::{ItemId, Library, SpecialTrackListName, TrackList, VersionedLibrary};
+#[cfg(feature = "napi-rs")]
+use crate::migrate::migrate_to_sqlite;
 use anyhow::{Context, Result, bail};
 use linked_hash_map::LinkedHashMap;
 use serde_json::{Value, json};
 use sqlx::SqliteConnection;
 use sqlx::{ConnectOptions, sqlite::SqliteConnectOptions};
-use sqlx::{Sqlite, migrate::MigrateDatabase};
 use std::fs::File;
 use std::io::{ErrorKind, Read, Seek, SeekFrom};
 #[cfg(feature = "napi-rs")]
@@ -63,9 +64,9 @@ pub fn open_library(paths: &Paths) -> Result<SqliteConnection> {
 
 	let exists = Path::new(&library_sqlite).exists();
 	if !exists {
-		migrate_to_sqlite(paths);
+		rt.block_on(migrate_to_sqlite(paths))?;
 	}
-	let connection = rt
+	let mut connection = rt
 		.block_on(
 			SqliteConnectOptions::new()
 				.filename(&paths.library_sqlite)
@@ -73,23 +74,12 @@ pub fn open_library(paths: &Paths) -> Result<SqliteConnection> {
 		)
 		.context("Error connecting to library database")?;
 
+	rt.block_on(sqlx::migrate!("./src-native/migrations").run(&mut connection))
+		.map_err(|e| anyhow::anyhow!("{:?}", e))
+		.context("Could not run database migrations")?;
+
 	println!("Open library: {}ms", now.elapsed().as_millis());
 	Ok(connection)
-}
-
-#[cfg(feature = "napi-rs")]
-pub fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
-	let rt = Runtime::new().context("Error creating tokio runtime")?;
-	let old_library = match load_old_library_json(&paths.library_json)? {
-		None => {
-			rt.block_on(Sqlite::create_database(&paths.library_sqlite))
-				.context("Could not create library database")?;
-			return Ok(());
-		}
-		Some(old_library) => old_library,
-	};
-
-	todo!("Save database to disk after migrating");
 }
 
 pub fn load_old_library_json(library_json: &str) -> Result<Option<Library>> {
