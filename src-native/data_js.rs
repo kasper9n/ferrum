@@ -1,7 +1,6 @@
 use crate::data::{Data, app_log_dir, path_to_string};
 use crate::library::Paths;
-use anyhow::Result;
-use napi::Env;
+use napi::{Env, Result};
 use std::fs;
 
 pub fn get_data(env: &Env) -> &mut Data {

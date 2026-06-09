@@ -1,9 +1,10 @@
 use crate::library::{Paths, load_library};
 use crate::library_types::Library;
 use crate::tracks::Tag;
-use anyhow::{Context, Result};
+use anyhow::Context;
 use atomicwrites::{AllowOverwrite, AtomicFile};
 use dirs_next;
+use napi::Result;
 use serde::Serialize;
 use std::env;
 use std::io::Write;
