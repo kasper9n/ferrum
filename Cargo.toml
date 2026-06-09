@@ -58,6 +58,8 @@ simd-json = "0.16.0"
 mimalloc = "0.1.48"
 specta = { version = "=2.0.0-rc.22", features = ["derive"] }
 sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite"] }
+tempfile = "3.27.0"
+rusqlite = "0.40.1"
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 trash = "5.1"
