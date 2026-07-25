@@ -335,7 +335,7 @@ export function init_menu_bar(app: App, main_window: BrowserWindow) {
 				{
 					label: 'Learn More',
 					click: async () => {
-						await shell.openExternal('https://github.com/probablykasper/ferrum')
+						await shell.openExternal('https://github.com/kasper9n/ferrum')
 					},
 				},
 			],

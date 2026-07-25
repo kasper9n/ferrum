@@ -5,9 +5,9 @@
 	"author": "kasper.space",
 	"description": "Music library app",
 	"version": "1.0.0",
-	"repository": "https://github.com/probablykasper/ferrum",
-	"updates_url_prefix": "https://github.com/probablykasper/ferrum/releases",
-	"latest-release-api-url": "https://api.github.com/repos/probablykasper/ferrum/releases/latest",
+	"repository": "https://github.com/kasper9n/ferrum",
+	"updates_url_prefix": "https://github.com/kasper9n/ferrum/releases",
+	"latest-release-api-url": "https://api.github.com/repos/kasper9n/ferrum/releases/latest",
 	"scripts": {
 		"dev": "npm run napi:dev && vite dev",
 		"dev-android": "cd mobile && cargo tauri android dev",
