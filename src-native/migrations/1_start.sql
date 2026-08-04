@@ -1,5 +1,5 @@
 create table tracks (
-	id                TEXT PRIMARY KEY,
+	id                TEXT PRIMARY KEY NOT NULL,
 	filesize          INTEGER NOT NULL, -- u64 (or i64 for js)
 	duration_s        REAL NOT NULL, -- f64
 	bitrate           REAL NOT NULL, -- f64
@@ -40,7 +40,7 @@ create table tracks (
 );
 
 CREATE TABLE plays (
-	id            TEXT PRIMARY KEY,
+	id            TEXT PRIMARY KEY NOT NULL,
 	track_id      TEXT NOT NULL REFERENCES tracks(id),
 	date          INTEGER NULL,
 	date_range_to INTEGER NULL,
@@ -48,7 +48,7 @@ CREATE TABLE plays (
 );
 
 CREATE TABLE skips (
-	id            TEXT PRIMARY KEY,
+	id            TEXT PRIMARY KEY NOT NULL,
 	track_id      TEXt NOT NULL REFERENCES tracks(id),
 	date          INTEGER NULL,
 	date_range_to INTEGER NULL,
@@ -56,7 +56,7 @@ CREATE TABLE skips (
 );
 
 CREATE TABLE track_lists (
-	id            TEXT PRIMARY KEY,
+	id            TEXT PRIMARY KEY NOT NULL,
 	type          TEXT NOT NULL CHECK (type IN ('playlist', 'folder', 'special')),
 	parent_id     TEXT NULL REFERENCES track_lists(id),
 	position      INTEGER NULL,
@@ -78,7 +78,7 @@ CREATE TABLE playlist_tracks (
 );
 
 CREATE TABLE play_times (
-	id         TEXT PRIMARY KEY,
+	id         TEXT PRIMARY KEY NOT NULL,
 	track_id   TEXT NOT NULL REFERENCES tracks(id),
 	started_at INTEGER NOT NULL,
 	duration   INTEGER NOT NULL,
