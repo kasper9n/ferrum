@@ -55,7 +55,7 @@ async fn insert_library_into_db(
 	let mut tx = conn.begin().await?;
 
 	// --- tracks ---
-	for (id, track) in library.get_tracks() {
+	for (track_id, track) in library.get_tracks() {
 		sqlx::query(
 			r#"
 				INSERT INTO tracks (
@@ -105,7 +105,7 @@ async fn insert_library_into_db(
 				)
 			"#,
 		)
-		.bind(id)
+		.bind(track_id)
 		.bind(track.size)
 		.bind(track.duration)
 		.bind(track.bitrate)
@@ -145,64 +145,55 @@ async fn insert_library_into_db(
 		.bind(track.volume)
 		.execute(&mut *tx)
 		.await
-		.with_context(|| format!("Failed to insert track {id}"))?;
+		.with_context(|| format!("Failed to insert track {track_id}"))?;
 
-		// 	// Individual play timestamps (known exact times)
-		// 	if let Some(plays) = &track.plays {
-		// 		for &date in plays {
-		// 			sqlx::query!(
-		// 				"INSERT INTO plays (track_id, date, date_range_to) VALUES (?1, ?2, NULL)",
-		// 				id,
-		// 				date,
-		// 			)
-		// 			.execute(&mut *tx)
-		// 			.await?;
-		// 		}
-		// 	}
+		if let Some(plays) = &track.plays {
+			for &date in plays {
+				sqlx::query("INSERT INTO plays (date, track_id) VALUES (?, ?)")
+					.bind(date)
+					.bind(track_id)
+					.execute(&mut *tx)
+					.await?;
+			}
+		}
 
-		// 	// Imported play ranges (CountObject = fromDate..toDate with a count,
-		// 	// but the schema only stores one row per range — store as a range row
-		// 	// and ignore count since the schema has no count column)
-		// 	if let Some(imported) = &track.playsImported {
-		// 		for co in imported {
-		// 			sqlx::query!(
-		// 				"INSERT INTO plays (track_id, date, date_range_to) VALUES (?1, ?2, ?3)",
-		// 				id,
-		// 				co.fromDate,
-		// 				co.toDate,
-		// 			)
-		// 			.execute(&mut *tx)
-		// 			.await?;
-		// 		}
-		// 	}
+		if let Some(imported) = &track.playsImported {
+			for co in imported {
+				sqlx::query(
+					"INSERT INTO plays_imported (date_range_from, date_range_to, count, track_id) VALUES (?, ?, ?)",
+				)
+				.bind(co.fromDate)
+				.bind(co.toDate)
+				.bind(co.count)
+				.bind(track_id)
+				.execute(&mut *tx)
+				.await?;
+			}
+		}
 
-		// 	// Individual skip timestamps
-		// 	if let Some(skips) = &track.skips {
-		// 		for &date in skips {
-		// 			sqlx::query!(
-		// 				"INSERT INTO skips (track_id, date, date_range_to) VALUES (?1, ?2, NULL)",
-		// 				id,
-		// 				date,
-		// 			)
-		// 			.execute(&mut *tx)
-		// 			.await?;
-		// 		}
-		// 	}
+		if let Some(skips) = &track.skips {
+			for &date in skips {
+				sqlx::query("INSERT INTO skips (date, track_id) VALUES (?, ?)")
+					.bind(date)
+					.bind(track_id)
+					.execute(&mut *tx)
+					.await?;
+			}
+		}
 
-		// 	// Imported skip ranges
-		// 	if let Some(imported) = &track.skipsImported {
-		// 		for co in imported {
-		// 			sqlx::query!(
-		// 				"INSERT INTO skips (track_id, date, date_range_to) VALUES (?1, ?2, ?3)",
-		// 				id,
-		// 				co.fromDate,
-		// 				co.toDate,
-		// 			)
-		// 			.execute(&mut *tx)
-		// 			.await?;
-		// 		}
-		// 	}
-		// }
+		if let Some(imported) = &track.skipsImported {
+			for co in imported {
+				sqlx::query(
+					"INSERT INTO skips_imported (date_range_from, date_range_to, count, track_id) VALUES (?, ?, ?)",
+				)
+				.bind(co.fromDate)
+				.bind(co.toDate)
+				.bind(co.count)
+				.bind(track_id)
+				.execute(&mut *tx)
+				.await?;
+			}
+		}
 
 		// // --- track_lists (folders, playlists, specials) ---
 		// // We need parent_id, which requires a first pass to build the parent map.

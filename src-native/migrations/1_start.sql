@@ -40,19 +40,27 @@ create table tracks (
 );
 
 CREATE TABLE plays (
-	id            TEXT PRIMARY KEY NOT NULL,
+	date          INTEGER PRIMARY KEY NOT NULL,
 	track_id      TEXT NOT NULL REFERENCES tracks(id),
-	date          INTEGER NULL,
-	date_range_to INTEGER NULL,
-	CHECK ((date IS NULL) != (date_range_to IS NULL))
+);
+
+CREATE TABLE plays_imported (
+	date_range_from INTEGER PRIMARY KEY NOT NULL,
+	date_range_to   INTEGER NOT NULL,
+	count           INTEGER NOT NULL,
+	track_id        TEXT NOT NULL REFERENCES tracks(id),
 );
 
 CREATE TABLE skips (
-	id            TEXT PRIMARY KEY NOT NULL,
-	track_id      TEXt NOT NULL REFERENCES tracks(id),
-	date          INTEGER NULL,
-	date_range_to INTEGER NULL,
-	CHECK ((date IS NULL) != (date_range_to IS NULL))
+	date          INTEGER PRIMARY KEY NOT NULL,
+	track_id      TEXT NOT NULL REFERENCES tracks(id),
+);
+
+CREATE TABLE skips_imported (
+	date_range_from INTEGER PRIMARY KEY NOT NULL,
+	date_range_to   INTEGER NOT NULL,
+	count           INTEGER NOT NULL,
+	track_id        TEXT NOT NULL REFERENCES tracks(id),
 );
 
 CREATE TABLE track_lists (
