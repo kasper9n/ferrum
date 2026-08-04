@@ -1,14 +1,11 @@
 use crate::{
 	library::{Paths, load_old_library_json},
-	library_types::{Library, MsSinceUnixEpoch, PercentInteger},
+	library_types::{Library, TrackList, TrackLists},
 };
 use anyhow::{Context, Result};
-use serde::Serialize;
 use sqlx::{
-	ConnectOptions, Connection, Executor, QueryBuilder, Sqlite, migrate::MigrateDatabase,
-	sqlite::SqliteConnectOptions,
+	ConnectOptions, Connection, Sqlite, migrate::MigrateDatabase, sqlite::SqliteConnectOptions,
 };
-use struct_field_names_as_array::FieldNamesAsArray;
 use tempfile::TempDir;
 
 pub async fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
@@ -51,111 +48,6 @@ pub async fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
 	Ok(())
 }
 
-#[derive(FieldNamesAsArray, Serialize)]
-pub struct Track {
-	pub id: i64,
-	pub filesize: i64,
-	pub duration_s: f64,
-	pub bitrate: f64,
-	pub sample_rate: f64,
-	pub file: String,
-	pub modified_at: MsSinceUnixEpoch,
-	pub added_at: MsSinceUnixEpoch,
-	pub name: String,
-	pub imported_from: Option<String>,
-	pub original_id: Option<String>, // Imported ID, like iTunes Persistent ID
-	pub artist: String,
-	pub composer: Option<String>,
-	pub sort_name: Option<String>,
-	pub sort_artist: Option<String>,
-	pub sort_composer: Option<String>,
-	pub genre: Option<String>,
-	pub rating_pct: Option<PercentInteger>,
-	pub year: Option<i64>,
-	pub bpm: Option<f64>,
-	pub comments: Option<String>,
-	pub grouping: Option<String>,
-	pub liked: Option<bool>,
-	pub disliked: Option<bool>,
-	pub disabled: Option<bool>,
-	pub compilation: Option<bool>,
-	pub album_name: Option<String>,
-	pub album_artist: Option<String>,
-	pub sort_album_name: Option<String>,
-	pub sort_album_artist: Option<String>,
-	pub track_num: Option<u32>,
-	pub track_count: Option<u32>,
-	pub disc_num: Option<u32>,
-	pub disc_count: Option<u32>,
-	pub imported_at: Option<MsSinceUnixEpoch>,
-	pub play_count: Option<u32>,
-	pub skip_count: Option<u32>,
-	pub volume: Option<i8>, // -100 to 100
-}
-
-#[macro_export]
-macro_rules! insert_sql {
-    (
-        $qb:expr,
-        $table:expr,
-        $struct_ty:ty,
-        $(
-            $col:ident : $val:expr
-        ),+ $(,)?
-    ) => {{
-        // Compile-time-ish validation block.
-        {
-            let expected = <$struct_ty>::FIELD_NAMES_AS_ARRAY;
-            let provided = [
-                $(
-                    stringify!($col),
-                )+
-            ];
-
-            assert!(
-                expected.len() == provided.len(),
-                "Expected {} fields for {}, got {}",
-                expected.len(),
-                stringify!($struct_ty),
-                provided.len(),
-            );
-
-            for field in expected {
-                assert!(
-                    provided.contains(&field),
-                    "Missing field `{}` for {}",
-                    field,
-                    stringify!($struct_ty),
-                );
-            }
-        }
-
-        $qb.push("INSERT INTO ");
-        $qb.push("\"");
-        $qb.push($table);
-        $qb.push("\"");
-
-        $qb.push(" (");
-        {
-            let mut separated = $qb.separated(", ");
-            $(
-                separated.push(stringify!($col));
-            )+
-        }
-
-        $qb.push(") VALUES (");
-
-        {
-            let mut separated = $qb.separated(", ");
-            $(
-                separated.push_bind($val.clone());
-            )+
-        }
-
-        $qb.push(")");
-    }};
-}
-
 async fn insert_library_into_db(
 	library: &Library,
 	conn: &mut sqlx::SqliteConnection,
@@ -164,53 +56,149 @@ async fn insert_library_into_db(
 
 	// --- tracks ---
 	for (id, track) in library.get_tracks() {
-		let mut query = QueryBuilder::<Sqlite>::new("");
-		insert_sql!(
-			query,
-			"tracks",
-			Track,
-			id: id,
-			filesize: track.size,
-			duration_s: track.duration,
-			bitrate: track.bitrate,
-			sample_rate: track.sampleRate,
-			file: track.file,
-			modified_at: track.dateModified,
-			added_at: track.dateAdded,
-			name: track.name,
-			imported_from: track.importedFrom,
-			original_id: track.originalId,
-			artist: track.artist,
-			composer: track.composer,
-			sort_name: track.sortName,
-			sort_artist: track.sortArtist,
-			sort_composer: track.sortComposer,
-			genre: track.genre,
-			rating_pct: track.rating,
-			year: track.year,
-			bpm: track.bpm,
-			comments: track.comments,
-			grouping: track.grouping,
-			liked: track.liked,
-			disliked: track.disliked,
-			disabled: track.disabled,
-			compilation: track.compilation,
-			album_name: track.albumName,
-			album_artist: track.albumArtist,
-			sort_album_name: track.sortAlbumName,
-			sort_album_artist: track.sortAlbumArtist,
-			track_num: track.trackNum,
-			track_count: track.trackCount,
-			disc_num: track.discNum,
-			disc_count: track.discCount,
-			imported_at: track.dateImported,
-			play_count: track.playCount,
-			skip_count: track.skipCount,
-			volume: track.volume,
-		);
-		tx.execute(query.build())
-			.await
-			.with_context(|| format!("Failed to insert track {id}"))?;
+		conn.execute(
+			"INSERT INTO tracks (
+				id, filesize, duration_s, bitrate, sample_rate, file, modified_at, added_at, name, artist, imported_from, original_id, composer, sort_name, sort_artist, sort_composer, genre, rating_pct, year, bpm, comments, grouping, liked, disliked, disabled, compilation, album_name, album_artist, sort_album_name, sort_album_artist, track_num, track_count, disc_num, disc_count, imported_at, play_count, skip_count, volume
+			) VALUES (
+				:id,:filesize,:duration_s,:bitrate,:sample_rate,:file,:modified_at,:added_at,:name,:artist,:imported_from,:original_id,:composer,:sort_name,:sort_artist,:sort_composer,:genre,:rating_pct,:year,:bpm,:comments,:grouping,:liked,:disliked,:disabled,:compilation,:album_name,:album_artist,:sort_album_name,:sort_album_artist,:track_num,:track_count,:disc_num,:disc_count,:imported_at,:play_count,:skip_count,:volume
+			)",
+			named_params! {
+				":id": track.id,
+				":filesize": track.filesize,
+				":duration_s": track.duration_s,
+				":bitrate": track.bitrate,
+				":sample_rate": track.sample_rate,
+				":file": track.file,
+				":modified_at": track.modified_at,
+				":added_at": track.added_at,
+				":name": track.name,
+				":artist": track.artist,
+				":imported_from": track.imported_from,
+				":original_id": track.original_id,
+				":composer": track.composer,
+				":sort_name": track.sort_name,
+				":sort_artist": track.sort_artist,
+				":sort_composer": track.sort_composer,
+				":genre": track.genre,
+				":rating_pct": track.rating_pct,
+				":year": track.year,
+				":bpm": track.bpm,
+				":comments": track.comments,
+				":grouping": track.grouping,
+				":liked": track.liked,
+				":disliked": track.disliked,
+				":disabled": track.disabled,
+				":compilation": track.compilation,
+				":album_name": track.album_name,
+				":album_artist": track.album_artist,
+				":sort_album_name": track.sort_album_name,
+				":sort_album_artist": track.sort_album_artist,
+				":track_num": track.track_num,
+				":track_count": track.track_count,
+				":disc_num": track.disc_num,
+				":disc_count": track.disc_count,
+				":imported_at": track.imported_at,
+				":play_count": track.play_count,
+				":skip_count": track.skip_count,
+				":volume": track.volume,
+
+			},
+		)?;
+		sqlx::query!(
+			r#"
+				INSERT INTO tracks (
+				id
+				filesize
+				duration_s
+				bitrate
+				sample_rate
+				file
+				modified_at
+				added_at
+				name
+				artist
+				imported_from
+				original_id
+				composer
+				sort_name
+				sort_artist
+				sort_composer
+				genre
+				rating_pct
+				year
+				bpm
+				comments
+				grouping
+				liked
+				disliked
+				disabled
+				compilation
+				album_name
+				album_artist
+				sort_album_name
+				sort_album_artist
+				track_num
+				track_count
+				disc_num
+				disc_count
+				imported_at
+				play_count
+				skip_count
+				volume
+					) VALUES (
+						?1, ?2, ?3, ?4, ?5, ?6,
+						?7, ?8, ?9, ?10,
+						?11, ?12, ?13,
+						?14, ?15, ?16,
+						?17, ?18, ?19, ?20, ?21, ?22,
+						?23, ?24, ?25, ?26,
+						?27, ?28, ?29, ?30,
+						?31, ?32, ?33, ?34,
+						?35, ?36, ?37, ?38
+		      )
+				"#,
+			id,
+			track.size,
+			track.duration,
+			track.bitrate,
+			track.sampleRate,
+			track.file,
+			track.dateModified,
+			track.dateAdded,
+			track.name,
+			track.artist,
+			track.importedFrom,
+			track.originalId,
+			track.composer,
+			track.sortName,
+			track.sortArtist,
+			track.sortComposer,
+			track.genre,
+			track.rating,
+			track.year,
+			track.bpm,
+			track.comments,
+			track.grouping,
+			track.liked,
+			track.disliked,
+			track.disabled,
+			track.compilation,
+			track.albumName,
+			track.albumArtist,
+			track.sortAlbumName,
+			track.sortAlbumArtist,
+			track.trackNum,
+			track.trackCount,
+			track.discNum,
+			track.discCount,
+			track.dateImported,
+			track.playCount,
+			track.skipCount,
+			track.volume,
+		)
+		.execute(&mut *tx)
+		.await
+		.with_context(|| format!("Failed to insert track {id}"))?;
 
 		// 	// Individual play timestamps (known exact times)
 		// 	if let Some(plays) = &track.plays {
