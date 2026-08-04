@@ -35,7 +35,7 @@ pub async fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
 
 	insert_library_into_db(&old_library, &mut connection)
 		.await
-		.context("could not insert library into database")?;
+		.context("Could not insert Library.json into database")?;
 
 	connection
 		.close()
@@ -52,9 +52,8 @@ async fn insert_library_into_db(
 	library: &Library,
 	conn: &mut sqlx::SqliteConnection,
 ) -> anyhow::Result<()> {
-	let mut tx = conn.begin().await?;
+	let mut tx = conn.begin().await.context("Failed to begin transaction")?;
 
-	// --- tracks ---
 	for (track_id, track) in library.get_tracks() {
 		sqlx::query(
 			r#"
@@ -198,116 +197,116 @@ async fn insert_library_into_db(
 				.with_context(|| format!("Failed to insert skips_imported"))?;
 			}
 		}
-
-		// // --- track_lists (folders, playlists, specials) ---
-		// // We need parent_id, which requires a first pass to build the parent map.
-		// let parent_map = build_parent_map(&library.trackLists);
-
-		// for (list_id, tracklist) in &library.trackLists {
-		// 	let parent_id = parent_map.get(list_id.as_str()).map(|s| s.as_str());
-		// 	let position = get_position_in_parent(list_id, &library.trackLists);
-
-		// 	match tracklist {
-		// 		TrackList::Special(s) => {
-		// 			let name = s.name.to_string();
-		// 			sqlx::query!(
-		// 				r#"INSERT INTO track_lists
-		//                        (id, type, parent_id, position, name, description, liked, disliked,
-		//                         imported_from, original_id, imported_at, created_at)
-		//                       VALUES (?1,'special',?2,?3,?4,'',0,0,NULL,NULL,NULL,?5)"#,
-		// 				s.id,
-		// 				parent_id,
-		// 				position,
-		// 				name,
-		// 				s.dateCreated,
-		// 			)
-		// 			.execute(&mut *tx)
-		// 			.await?;
-		// 		}
-		// 		TrackList::Folder(f) => {
-		// 			sqlx::query!(
-		// 				r#"INSERT INTO track_lists
-		//                        (id, type, parent_id, position, name, description, liked, disliked,
-		//                         imported_from, original_id, imported_at, created_at)
-		//                       VALUES (?1,'folder',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)"#,
-		// 				f.id,
-		// 				parent_id,
-		// 				position,
-		// 				f.name,
-		// 				f.description,
-		// 				f.liked,
-		// 				f.disliked,
-		// 				f.importedFrom,
-		// 				f.originalId,
-		// 				f.dateImported,
-		// 				f.dateCreated,
-		// 			)
-		// 			.execute(&mut *tx)
-		// 			.await?;
-		// 		}
-		// 		TrackList::Playlist(p) => {
-		// 			sqlx::query!(
-		// 				r#"INSERT INTO track_lists
-		//                        (id, type, parent_id, position, name, description, liked, disliked,
-		//                         imported_from, original_id, imported_at, created_at)
-		//                       VALUES (?1,'playlist',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)"#,
-		// 				p.id,
-		// 				parent_id,
-		// 				position,
-		// 				p.name,
-		// 				p.description,
-		// 				p.liked,
-		// 				p.disliked,
-		// 				p.importedFrom,
-		// 				p.originalId,
-		// 				p.dateImported,
-		// 				p.dateCreated,
-		// 			)
-		// 			.execute(&mut *tx)
-		// 			.await?;
-
-		// 			// playlist_tracks rows
-		// 			for (pos, track_id) in p.get_track_ids().iter().enumerate() {
-		// 				let pos = pos as i64;
-		// 				sqlx::query!(
-		// 					"INSERT INTO playlist_tracks (track_list_id, track_id, position)
-		//                         VALUES (?1, ?2, ?3)",
-		// 					p.id,
-		// 					track_id,
-		// 					pos,
-		// 				)
-		// 				.execute(&mut *tx)
-		// 				.await?;
-		// 			}
-		// 		}
-		// 	}
 	}
 
-	// // --- play_times (v1 and v2) ---
-	// for (track_id, started_at, duration) in &library.v1PlayTime {
-	// 	sqlx::query!(
-	// 		"INSERT INTO play_times (track_id, started_at, duration, is_v1) VALUES (?1,?2,?3,1)",
-	// 		track_id,
-	// 		started_at,
-	// 		duration,
-	// 	)
-	// 	.execute(&mut *tx)
-	// 	.await?;
-	// }
-	// for (track_id, started_at, duration) in &library.playTime {
-	// 	sqlx::query!(
-	// 		"INSERT INTO play_times (track_id, started_at, duration, is_v1) VALUES (?1,?2,?3,0)",
-	// 		track_id,
-	// 		started_at,
-	// 		duration,
-	// 	)
-	// 	.execute(&mut *tx)
-	// 	.await?;
+	for (track_id, started_at, duration) in &library.v1PlayTime {
+		sqlx::query(
+			"INSERT INTO play_times (started_at, duration, track_id, is_v1) VALUES (?, ?, ?, 1)",
+		)
+		.bind(started_at)
+		.bind(duration)
+		.bind(track_id)
+		.execute(&mut *tx)
+		.await
+		.with_context(|| format!("Failed to insert v1 play_times"))?;
+	}
+	for (track_id, started_at, duration) in &library.playTime {
+		sqlx::query(
+			"INSERT INTO play_times (started_at, duration, track_id, is_v1) VALUES (?, ?, ?, 1)",
+		)
+		.bind(started_at)
+		.bind(duration)
+		.bind(track_id)
+		.execute(&mut *tx)
+		.await
+		.with_context(|| format!("Failed to insert play_times"))?;
+	}
+
+	// // --- track_lists (folders, playlists, specials) ---
+	// // We need parent_id, which requires a first pass to build the parent map.
+	// let parent_map = build_parent_map(&library.trackLists);
+
+	// for (list_id, tracklist) in &library.trackLists {
+	// 	let parent_id = parent_map.get(list_id.as_str()).map(|s| s.as_str());
+	// 	let position = get_position_in_parent(list_id, &library.trackLists);
+
+	// 	match tracklist {
+	// 		TrackList::Special(s) => {
+	// 			let name = s.name.to_string();
+	// 			sqlx::query!(
+	// 				r#"INSERT INTO track_lists
+	// 	                       (id, type, parent_id, position, name, description, liked, disliked,
+	// 	                        imported_from, original_id, imported_at, created_at)
+	// 	                      VALUES (?1,'special',?2,?3,?4,'',0,0,NULL,NULL,NULL,?5)"#,
+	// 				s.id,
+	// 				parent_id,
+	// 				position,
+	// 				name,
+	// 				s.dateCreated,
+	// 			)
+	// 			.execute(&mut *tx)
+	// 			.await?;
+	// 		}
+	// 		TrackList::Folder(f) => {
+	// 			sqlx::query!(
+	// 				r#"INSERT INTO track_lists
+	// 	                       (id, type, parent_id, position, name, description, liked, disliked,
+	// 	                        imported_from, original_id, imported_at, created_at)
+	// 	                      VALUES (?1,'folder',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)"#,
+	// 				f.id,
+	// 				parent_id,
+	// 				position,
+	// 				f.name,
+	// 				f.description,
+	// 				f.liked,
+	// 				f.disliked,
+	// 				f.importedFrom,
+	// 				f.originalId,
+	// 				f.dateImported,
+	// 				f.dateCreated,
+	// 			)
+	// 			.execute(&mut *tx)
+	// 			.await?;
+	// 		}
+	// 		TrackList::Playlist(p) => {
+	// 			sqlx::query!(
+	// 				r#"INSERT INTO track_lists
+	// 	                       (id, type, parent_id, position, name, description, liked, disliked,
+	// 	                        imported_from, original_id, imported_at, created_at)
+	// 	                      VALUES (?1,'playlist',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)"#,
+	// 				p.id,
+	// 				parent_id,
+	// 				position,
+	// 				p.name,
+	// 				p.description,
+	// 				p.liked,
+	// 				p.disliked,
+	// 				p.importedFrom,
+	// 				p.originalId,
+	// 				p.dateImported,
+	// 				p.dateCreated,
+	// 			)
+	// 			.execute(&mut *tx)
+	// 			.await?;
+
+	// 			// playlist_tracks rows
+	// 			for (pos, track_id) in p.get_track_ids().iter().enumerate() {
+	// 				let pos = pos as i64;
+	// 				sqlx::query!(
+	// 					"INSERT INTO playlist_tracks (track_list_id, track_id, position)
+	// 	                        VALUES (?1, ?2, ?3)",
+	// 					p.id,
+	// 					track_id,
+	// 					pos,
+	// 				)
+	// 				.execute(&mut *tx)
+	// 				.await?;
+	// 			}
+	// 		}
+	// 	}
 	// }
 
-	tx.commit()
-		.await
-		.context("Failed to commit migration transaction")?;
+	tx.commit().await.context("Failed to commit transaction")?;
 	Ok(())
 }
 
