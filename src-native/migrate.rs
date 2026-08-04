@@ -29,7 +29,7 @@ pub async fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
 		.context("Error connecting to created library database")?;
 
 	sqlx::migrate!("./src-native/migrations")
-		.run(&mut connection)
+		.run_to(1, &mut connection)
 		.await
 		.context("Could not run database migrations")?;
 
