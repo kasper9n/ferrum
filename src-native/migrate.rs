@@ -153,21 +153,23 @@ async fn insert_library_into_db(
 					.bind(date)
 					.bind(track_id)
 					.execute(&mut *tx)
-					.await?;
+					.await
+					.with_context(|| format!("Failed to insert plays"))?;
 			}
 		}
 
 		if let Some(imported) = &track.playsImported {
 			for co in imported {
 				sqlx::query(
-					"INSERT INTO plays_imported (date_range_from, date_range_to, count, track_id) VALUES (?, ?, ?)",
+					"INSERT INTO plays_imported (date_range_from, date_range_to, count, track_id) VALUES (?, ?, ?, ?)",
 				)
 				.bind(co.fromDate)
 				.bind(co.toDate)
 				.bind(co.count)
 				.bind(track_id)
 				.execute(&mut *tx)
-				.await?;
+				.await
+				.with_context(|| format!("Failed to insert plays_imported"))?;
 			}
 		}
 
@@ -177,21 +179,23 @@ async fn insert_library_into_db(
 					.bind(date)
 					.bind(track_id)
 					.execute(&mut *tx)
-					.await?;
+					.await
+					.with_context(|| format!("Failed to insert skips"))?;
 			}
 		}
 
 		if let Some(imported) = &track.skipsImported {
 			for co in imported {
 				sqlx::query(
-					"INSERT INTO skips_imported (date_range_from, date_range_to, count, track_id) VALUES (?, ?, ?)",
+					"INSERT INTO skips_imported (date_range_from, date_range_to, count, track_id) VALUES (?, ?, ?, ?)",
 				)
 				.bind(co.fromDate)
 				.bind(co.toDate)
 				.bind(co.count)
 				.bind(track_id)
 				.execute(&mut *tx)
-				.await?;
+				.await
+				.with_context(|| format!("Failed to insert skips_imported"))?;
 			}
 		}
 

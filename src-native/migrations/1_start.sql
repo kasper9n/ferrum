@@ -41,26 +41,26 @@ create table tracks (
 
 CREATE TABLE plays (
 	date          INTEGER PRIMARY KEY NOT NULL,
-	track_id      TEXT NOT NULL REFERENCES tracks(id),
+	track_id      TEXT NOT NULL REFERENCES tracks(id)
 );
 
 CREATE TABLE plays_imported (
 	date_range_from INTEGER PRIMARY KEY NOT NULL,
 	date_range_to   INTEGER NOT NULL,
 	count           INTEGER NOT NULL,
-	track_id        TEXT NOT NULL REFERENCES tracks(id),
+	track_id        TEXT NOT NULL REFERENCES tracks(id)
 );
 
 CREATE TABLE skips (
 	date          INTEGER PRIMARY KEY NOT NULL,
-	track_id      TEXT NOT NULL REFERENCES tracks(id),
+	track_id      TEXT NOT NULL REFERENCES tracks(id)
 );
 
 CREATE TABLE skips_imported (
 	date_range_from INTEGER PRIMARY KEY NOT NULL,
 	date_range_to   INTEGER NOT NULL,
 	count           INTEGER NOT NULL,
-	track_id        TEXT NOT NULL REFERENCES tracks(id),
+	track_id        TEXT NOT NULL REFERENCES tracks(id)
 );
 
 CREATE TABLE track_lists (
