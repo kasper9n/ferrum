@@ -1,12 +1,12 @@
 create table tracks (
 	id                TEXT PRIMARY KEY NOT NULL,
-	filesize          INTEGER NOT NULL, -- u64 (or i64 for js)
+	filesize          INTEGER NOT NULL, -- i64
 	duration_s        REAL NOT NULL, -- f64
 	bitrate           REAL NOT NULL, -- f64
 	sample_rate       REAL NOT NULL, -- f64
-	file              TEXT NOT NULL, -- f64
-	modified_at       INTEGER NOT NULL, -- u64 ms since unix epoch
-	added_at          INTEGER NOT NULL, -- u64 ms since unix epoch
+	file              TEXT NOT NULL,
+	modified_at       INTEGER NOT NULL, -- i64 ms since unix epoch
+	added_at          INTEGER NOT NULL, -- i64 ms since unix epoch
 	name              TEXT NOT NULL,
 	artist            TEXT NOT NULL,
 	imported_from     TEXT NULL,
