@@ -58,6 +58,10 @@ async fn insert_library_into_db(
 	conn: &mut sqlx::SqliteConnection,
 ) -> anyhow::Result<()> {
 	let mut tx = conn.begin().await.context("Failed to begin transaction")?;
+	// Defer foreign key checks for track list parent_id
+	sqlx::query("PRAGMA defer_foreign_keys = ON;")
+		.execute(&mut *tx)
+		.await?;
 
 	for (track_id, track) in library.get_tracks() {
 		sqlx::query(
@@ -266,7 +270,7 @@ async fn insert_library_into_db(
 				.bind(parent_id)
 				.bind(index)
 				.bind(&folder.name)
-				.bind(&folder.description)
+				.bind(folder.description.as_deref().unwrap_or(""))
 				.bind(folder.liked)
 				.bind(folder.disliked)
 				.bind(&folder.importedFrom)
@@ -294,7 +298,7 @@ async fn insert_library_into_db(
 				.bind(parent_id)
 				.bind(index)
 				.bind(&playlist.name)
-				.bind(&playlist.description)
+				.bind(playlist.description.as_deref().unwrap_or(""))
 				.bind(playlist.liked)
 				.bind(playlist.disliked)
 				.bind(&playlist.importedFrom)
