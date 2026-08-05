@@ -67,7 +67,7 @@ CREATE TABLE track_lists (
 	id            TEXT PRIMARY KEY NOT NULL,
 	type          TEXT NOT NULL CHECK (type IN ('playlist', 'folder', 'special')),
 	parent_id     TEXT NULL REFERENCES track_lists(id),
-	position      INTEGER NULL,
+	item_index    INTEGER NULL,
 	name          TEXT NOT NULL,
 	description   TEXT NOT NULL,
 	liked         BOOLEAN NOT NULL DEFAULT 0,
@@ -81,8 +81,8 @@ CREATE TABLE track_lists (
 CREATE TABLE playlist_tracks (
 	track_list_id TEXT NOT NULL REFERENCES track_lists(id),
 	track_id      TEXT NOT NULL REFERENCES tracks(id),
-	position      INTEGER NOT NULL,
-	PRIMARY KEY (track_list_id, position)
+	item_index    INTEGER NOT NULL,
+	PRIMARY KEY (track_list_id, item_index)
 );
 
 CREATE TABLE play_times (

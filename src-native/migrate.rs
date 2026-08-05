@@ -1,14 +1,17 @@
 use crate::{
 	library::{Paths, load_old_library_json},
-	library_types::Library,
+	library_types::{Library, TrackList, TrackLists},
 };
 use anyhow::{Context, Result};
 use sqlx::{
 	ConnectOptions, Connection, Sqlite, migrate::MigrateDatabase, sqlite::SqliteConnectOptions,
 };
+use std::time::Instant;
 use tempfile::TempDir;
 
 pub async fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
+	let now = Instant::now();
+
 	let old_library = match load_old_library_json(&paths.library_json)? {
 		None => {
 			return Ok(());
@@ -45,6 +48,8 @@ pub async fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
 	std::fs::rename(&tmp_db, &paths.library_sqlite)
 		.context("Failed to finalize sqlite database")?;
 
+	println!("Migrated to SQLite: {}ms", now.elapsed().as_millis());
+
 	Ok(())
 }
 
@@ -56,7 +61,7 @@ async fn insert_library_into_db(
 
 	for (track_id, track) in library.get_tracks() {
 		sqlx::query(
-			r#"
+			"
 				INSERT INTO tracks (
 					id,
 					filesize,
@@ -102,7 +107,7 @@ async fn insert_library_into_db(
 					?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
 					?, ?, ?, ?, ?, ?, ?, ?
 				)
-			"#,
+			",
 		)
 		.bind(track_id)
 		.bind(track.size)
@@ -222,121 +227,126 @@ async fn insert_library_into_db(
 		.with_context(|| format!("Failed to insert play_times"))?;
 	}
 
-	// // --- track_lists (folders, playlists, specials) ---
-	// // We need parent_id, which requires a first pass to build the parent map.
-	// let parent_map = build_parent_map(&library.trackLists);
+	let parent_map = build_parent_map(&library.trackLists);
 
-	// for (list_id, tracklist) in &library.trackLists {
-	// 	let parent_id = parent_map.get(list_id.as_str()).map(|s| s.as_str());
-	// 	let position = get_position_in_parent(list_id, &library.trackLists);
+	for (list_id, tracklist) in &library.trackLists {
+		match tracklist {
+			TrackList::Special(special) => {
+				let name = special.name.to_string();
+				sqlx::query(
+					"
+						INSERT INTO track_lists
+							(id, type, name, description, created_at)
+						VALUES (?, ?, ?, ?, ?)
+					",
+				)
+				.bind(&special.id)
+				.bind("folder")
+				.bind(special.name.to_string())
+				.bind("")
+				.bind(special.dateCreated)
+				.execute(&mut *tx)
+				.await
+				.with_context(|| format!("Failed to insert special playlist {name}"))?;
+			}
+			TrackList::Folder(folder) => {
+				let (index, parent_id) = parent_map
+					.get(list_id.as_str())
+					.with_context(|| format!("Parent of folder {} not found", folder.name))?;
+				sqlx::query(
+					"
+						INSERT INTO track_lists
+							(id, type, parent_id, item_index, name, description, liked, disliked,
+							imported_from, original_id, imported_at, created_at)
+						VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					",
+				)
+				.bind(&folder.id)
+				.bind("folder")
+				.bind(parent_id)
+				.bind(index)
+				.bind(&folder.name)
+				.bind(&folder.description)
+				.bind(folder.liked)
+				.bind(folder.disliked)
+				.bind(&folder.importedFrom)
+				.bind(&folder.originalId)
+				.bind(folder.dateImported)
+				.bind(folder.dateCreated)
+				.execute(&mut *tx)
+				.await
+				.with_context(|| format!("Failed to insert playlist folder {}", folder.name))?;
+			}
+			TrackList::Playlist(playlist) => {
+				let (index, parent_id) = parent_map
+					.get(list_id.as_str())
+					.with_context(|| format!("Parent of playlist {} not found", playlist.name))?;
+				sqlx::query(
+					"
+						INSERT INTO track_lists
+							(id, type, parent_id, item_index, name, description, liked, disliked,
+							imported_from, original_id, imported_at, created_at)
+						VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					",
+				)
+				.bind(&playlist.id)
+				.bind("folder")
+				.bind(parent_id)
+				.bind(index)
+				.bind(&playlist.name)
+				.bind(&playlist.description)
+				.bind(playlist.liked)
+				.bind(playlist.disliked)
+				.bind(&playlist.importedFrom)
+				.bind(&playlist.originalId)
+				.bind(playlist.dateImported)
+				.bind(playlist.dateCreated)
+				.execute(&mut *tx)
+				.await
+				.with_context(|| format!("Failed to insert playlist {}", playlist.name))?;
 
-	// 	match tracklist {
-	// 		TrackList::Special(s) => {
-	// 			let name = s.name.to_string();
-	// 			sqlx::query!(
-	// 				r#"INSERT INTO track_lists
-	// 	                       (id, type, parent_id, position, name, description, liked, disliked,
-	// 	                        imported_from, original_id, imported_at, created_at)
-	// 	                      VALUES (?1,'special',?2,?3,?4,'',0,0,NULL,NULL,NULL,?5)"#,
-	// 				s.id,
-	// 				parent_id,
-	// 				position,
-	// 				name,
-	// 				s.dateCreated,
-	// 			)
-	// 			.execute(&mut *tx)
-	// 			.await?;
-	// 		}
-	// 		TrackList::Folder(f) => {
-	// 			sqlx::query!(
-	// 				r#"INSERT INTO track_lists
-	// 	                       (id, type, parent_id, position, name, description, liked, disliked,
-	// 	                        imported_from, original_id, imported_at, created_at)
-	// 	                      VALUES (?1,'folder',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)"#,
-	// 				f.id,
-	// 				parent_id,
-	// 				position,
-	// 				f.name,
-	// 				f.description,
-	// 				f.liked,
-	// 				f.disliked,
-	// 				f.importedFrom,
-	// 				f.originalId,
-	// 				f.dateImported,
-	// 				f.dateCreated,
-	// 			)
-	// 			.execute(&mut *tx)
-	// 			.await?;
-	// 		}
-	// 		TrackList::Playlist(p) => {
-	// 			sqlx::query!(
-	// 				r#"INSERT INTO track_lists
-	// 	                       (id, type, parent_id, position, name, description, liked, disliked,
-	// 	                        imported_from, original_id, imported_at, created_at)
-	// 	                      VALUES (?1,'playlist',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)"#,
-	// 				p.id,
-	// 				parent_id,
-	// 				position,
-	// 				p.name,
-	// 				p.description,
-	// 				p.liked,
-	// 				p.disliked,
-	// 				p.importedFrom,
-	// 				p.originalId,
-	// 				p.dateImported,
-	// 				p.dateCreated,
-	// 			)
-	// 			.execute(&mut *tx)
-	// 			.await?;
-
-	// 			// playlist_tracks rows
-	// 			for (pos, track_id) in p.get_track_ids().iter().enumerate() {
-	// 				let pos = pos as i64;
-	// 				sqlx::query!(
-	// 					"INSERT INTO playlist_tracks (track_list_id, track_id, position)
-	// 	                        VALUES (?1, ?2, ?3)",
-	// 					p.id,
-	// 					track_id,
-	// 					pos,
-	// 				)
-	// 				.execute(&mut *tx)
-	// 				.await?;
-	// 			}
-	// 		}
-	// 	}
-	// }
+				// playlist_tracks rows
+				for (i, track_id) in playlist.get_track_ids().iter().enumerate() {
+					let i: i64 = i.try_into().unwrap();
+					assert!(i >= 0);
+					sqlx::query(
+						"INSERT INTO playlist_tracks (track_list_id, track_id, item_index) VALUES (?, ?, ?)",
+					)
+					.bind(&playlist.id)
+					.bind(track_id)
+					.bind(i)
+					.execute(&mut *tx)
+					.await
+					.with_context(|| {
+						format!(
+							"Failed to insert track {} in playlist {}",
+							track_id, playlist.name
+						)
+					})?;
+				}
+			}
+		}
+	}
 
 	tx.commit().await.context("Failed to commit transaction")?;
 	Ok(())
 }
 
-// /// Returns a map of child_id -> parent_id for every tracklist entry.
-// fn build_parent_map(track_lists: &TrackLists) -> std::collections::HashMap<String, String> {
-// 	let mut map = std::collections::HashMap::new();
-// 	for (parent_id, tl) in track_lists {
-// 		let children = match tl {
-// 			TrackList::Folder(f) => &f.children,
-// 			TrackList::Special(s) => &s.children,
-// 			TrackList::Playlist(_) => continue,
-// 		};
-// 		for child_id in children {
-// 			map.insert(child_id.clone(), parent_id.clone());
-// 		}
-// 	}
-// 	map
-// }
-
-// /// Returns the 0-based position of `id` in its parent's children list, or None.
-// fn get_position_in_parent(id: &str, track_lists: &TrackLists) -> Option<i64> {
-// 	for tl in track_lists.values() {
-// 		let children = match tl {
-// 			TrackList::Folder(f) => &f.children,
-// 			TrackList::Special(s) => &s.children,
-// 			TrackList::Playlist(_) => continue,
-// 		};
-// 		if let Some(pos) = children.iter().position(|c| c == id) {
-// 			return Some(pos as i64);
-// 		}
-// 	}
-// 	None
-// }
+/// Returns a map of playlist -> (index, parent_id) for every tracklist entry.
+fn build_parent_map(track_lists: &TrackLists) -> std::collections::HashMap<String, (i64, String)> {
+	let mut map = std::collections::HashMap::new();
+	for (parent_id, tl) in track_lists {
+		let children = match tl {
+			TrackList::Folder(f) => &f.children,
+			TrackList::Special(s) => &s.children,
+			TrackList::Playlist(_) => continue,
+		};
+		for (i, child_id) in children.iter().enumerate() {
+			// SQLite does not support u64
+			let i: i64 = i.try_into().unwrap();
+			assert!(i >= 0);
+			map.insert(child_id.clone(), (i, parent_id.clone()));
+		}
+	}
+	map
+}
