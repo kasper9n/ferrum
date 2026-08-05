@@ -75,7 +75,7 @@ CREATE TABLE track_lists (
 	imported_from TEXT NULL, -- For example "itunes"
 	original_id   TEXT NULL, -- For example iTunes Persistent ID
 	imported_at   INTEGER NULL,
-	created_at    INTEGER NOT NULL
+	created_at    INTEGER NULL -- Nullable for imported playlists
 );
 
 CREATE TABLE playlist_tracks (
