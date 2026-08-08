@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 1.1.0 - 2026 Aug 8
 - Add "Stop" menu item
 - Fix volume shortcuts
 - Fix pause icon not updating when audio playback errors
