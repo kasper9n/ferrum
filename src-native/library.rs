@@ -1,15 +1,12 @@
 #[cfg(feature = "napi-rs")]
 use crate::data::Data;
-use crate::library_types::{ItemId, Library, SpecialTrackListName, TrackList, VersionedLibrary};
+use crate::library_types::{ItemId, Library, SpecialTrackListName, TrackList};
 #[cfg(feature = "napi-rs")]
 use crate::migrate::migrate_to_sqlite;
 use anyhow::{Context, Result, bail};
 use linked_hash_map::LinkedHashMap;
-use serde_json::{Value, json};
 use sqlx::SqliteConnection;
 use sqlx::{ConnectOptions, sqlite::SqliteConnectOptions};
-use std::fs::File;
-use std::io::{ErrorKind, Read, Seek, SeekFrom};
 #[cfg(feature = "napi-rs")]
 use std::path::PathBuf;
 #[cfg(feature = "napi-rs")]
@@ -80,61 +77,6 @@ pub fn open_library(paths: &Paths) -> Result<SqliteConnection> {
 
 	println!("Open library: {}ms", now.elapsed().as_millis());
 	Ok(connection)
-}
-
-pub fn load_old_library_json(library_json: &str) -> Result<Option<Library>> {
-	let mut library_file = match File::open(&library_json) {
-		Ok(file) => file,
-		Err(err) => match err.kind() {
-			ErrorKind::NotFound => return Ok(None),
-			_ => return Err(err).context("Error opening library file"),
-		},
-	};
-
-	let mut json_bytes = Vec::new();
-	library_file
-		.read_to_end(&mut json_bytes)
-		.context("Error reading library file")?;
-
-	let versioned_library: VersionedLibrary = match simd_json::from_slice(&mut json_bytes) {
-		Ok(lib) => lib,
-		Err(_) => {
-			library_file
-				.seek(SeekFrom::Start(0))
-				.context("Error seeking to start of library file")?;
-			let versioned_library = parse_old_versionless_library_json(&mut library_file)?;
-			versioned_library
-		}
-	};
-
-	let library = versioned_library.upgrade().init_libary();
-	Ok(Some(library))
-}
-
-pub fn parse_old_versionless_library_json(library_file: &mut File) -> Result<VersionedLibrary<'_>> {
-	let mut json_str = String::new();
-	library_file
-		.read_to_string(&mut json_str)
-		.context("Error reading library file")?;
-
-	let mut value: Value =
-		serde_json::from_str(&mut json_str).context("Error parsing library file")?;
-	// Migrate version number to string
-	if let Some(obj) = value.as_object_mut() {
-		if let Some(version_field) = obj.get_mut("version") {
-			if let Some(version) = version_field.as_number() {
-				if version.as_u64() == Some(1) {
-					*version_field = json!("1");
-				} else if version.as_u64() == Some(2) {
-					*version_field = json!("2");
-				}
-			}
-		}
-	}
-
-	let versioned_library: VersionedLibrary =
-		serde_json::from_value(value).context("Error parsing library file")?;
-	Ok(versioned_library)
 }
 
 pub enum TrackField {

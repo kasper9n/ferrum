@@ -1,4 +1,4 @@
-use crate::library::{Paths, load_old_library_json, open_library};
+use crate::library::{Paths, open_library};
 use crate::library_types::Library;
 use crate::tracks::Tag;
 use anyhow::Context;
@@ -122,11 +122,10 @@ impl Data {
 		};
 
 		let library_sqlite = open_library(&paths)?;
-		let library_old = load_old_library_json(&paths.library_json).unwrap();
 
 		let data = Data {
 			paths,
-			library: library_old.unwrap_or(Library::new()),
+			library: Library::new(),
 			library_sqlite,
 			current_tag: None,
 		};
