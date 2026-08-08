@@ -75,8 +75,8 @@ impl<'a> V2Library<'a> {
 			tracks: LinkedHashMap::new(),
 			track_item_ids: LinkedHashMap::new(),
 			trackLists: self.trackLists.into_owned(),
-			v1PlayTime: self.playTime.into_owned(),
-			playTime: Vec::new(),
+			v1PlayTime: self.v1PlayTime.into_owned(),
+			playTime: self.playTime.into_owned(),
 			artists: None,
 			genres: None,
 		};

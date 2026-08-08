@@ -1,5 +1,8 @@
 # Changelog
 
+## Next
+- Fix playtime saving
+
 ## 1.0.0 - 2026 Mar 10
 - Add lyrics support
 - Add "Show in Playlist" context menu item

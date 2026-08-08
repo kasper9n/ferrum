@@ -113,17 +113,55 @@ playing_id.subscribe((current_id) => {
 	}
 })
 
+let start_time: number | null = null
+function get_play_time() {
+	return Date.now() - (start_time ?? Date.now())
+}
+
+/** Saves play time if needed */
+function reset_and_save_play_time() {
+	const current_id = queue.getCurrent()?.id
+	if (get_play_time() >= 1000 && current_id && start_time) {
+		add_play_time(current_id, start_time, get_play_time())
+	}
+	start_time = null
+}
+
+audio.oncanplay = () => {
+	if (waiting_to_play) {
+		waiting_to_play = false
+		start_playback()
+	}
+}
 audio.onplay = update_time_details
+audio.onplaying = () => {
+	start_time = Date.now()
+	update_time_details()
+}
 audio.onloadeddata = update_time_details
 audio.onloadedmetadata = update_time_details
-audio.onpause = update_time_details
-audio.ontimeupdate = update_time_details
-
-audio.addEventListener('error', async (e) => {
+audio.onpause = () => {
+	update_time_details()
+	reset_and_save_play_time()
+}
+audio.onwaiting = () => {
+	reset_and_save_play_time()
+}
+audio.onemptied = () => {
+	reset_and_save_play_time()
+}
+audio.onstalled = () => {
+	reset_and_save_play_time()
+}
+audio.onended = () => {
+	reset_and_save_play_time()
+	next(false)
+}
+audio.onerror = async () => {
+	reset_and_save_play_time()
 	stop()
 	let message = 'Audio playback error'
 	let detail = 'Unknown error'
-	const audio = e.target as HTMLAudioElement
 	if (audio && audio.error) {
 		detail = audio.error.message
 		if (audio.error.code === audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED) {
@@ -134,17 +172,13 @@ audio.addEventListener('error', async (e) => {
 		}
 	}
 	await ipc_renderer.invoke('showMessageBox', false, { type: 'error', message, detail })
-})
-
-let start_time = Date.now()
-function set_play_time() {
-	return Date.now() - (start_time ?? Date.now())
 }
+audio.ontimeupdate = update_time_details
+audio.ondurationchange = update_time_details
 
 function start_playback() {
 	audio.play()
-	update_time_details()
-	start_time = Date.now()
+	stopped.set(false)
 	if (media_session) media_session.playbackState = 'playing'
 }
 
@@ -164,31 +198,9 @@ function set_playing_file(id: TrackID, paused = false) {
 	}
 }
 
-audio.oncanplay = () => {
-	if (waiting_to_play) {
-		waiting_to_play = false
-		start_playback()
-		start_time = Date.now()
-		stopped.set(false)
-	}
-}
-
-audio.ondurationchange = update_time_details
-
-/** Saves play time if needed */
-function reset_and_save_play_time() {
-	const current_id = queue.getCurrent()?.id
-	if (set_play_time() >= 1000 && current_id) {
-		add_play_time(current_id, start_time, set_play_time())
-	}
-	start_time = Date.now()
-}
-
 function pause_playback() {
 	waiting_to_play = false
 	audio.pause()
-	update_time_details()
-	reset_and_save_play_time()
 	if (media_session) media_session.playbackState = 'paused'
 }
 
@@ -229,8 +241,6 @@ export function reload() {
 export function stop() {
 	waiting_to_play = false
 	audio.pause()
-	update_time_details()
-	reset_and_save_play_time()
 	stopped.set(true)
 	seek(0)
 	if (media_session) {
@@ -242,10 +252,6 @@ export function stop() {
 quit.set_handler('player', () => {
 	stop()
 })
-
-audio.onended = () => {
-	next(false)
-}
 
 export function skip_to_next() {
 	next(true)
@@ -259,7 +265,6 @@ function next(skip: boolean) {
 		} else {
 			add_play(current_id)
 		}
-		reset_and_save_play_time()
 		queueNext()
 		const new_current_id = queue.getCurrent()?.id
 		if (new_current_id) {
@@ -272,7 +277,6 @@ function next(skip: boolean) {
 export function previous() {
 	const current_id = queue.getCurrent()?.id
 	if (current_id) {
-		reset_and_save_play_time()
 		queuePrev()
 		const new_current_id = queue.getCurrent()?.id
 		if (new_current_id) {
