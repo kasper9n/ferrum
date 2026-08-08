@@ -206,28 +206,7 @@ async fn insert_library_into_db(
 		}
 	}
 
-	for (track_id, started_at, duration) in &library.v1PlayTime {
-		sqlx::query(
-			"INSERT INTO play_times (started_at, duration, track_id, is_v1) VALUES (?, ?, ?, 1)",
-		)
-		.bind(started_at)
-		.bind(duration)
-		.bind(track_id)
-		.execute(&mut *tx)
-		.await
-		.with_context(|| format!("Failed to insert v1 play_times"))?;
-	}
-	for (track_id, started_at, duration) in &library.playTime {
-		sqlx::query(
-			"INSERT INTO play_times (started_at, duration, track_id, is_v1) VALUES (?, ?, ?, 1)",
-		)
-		.bind(started_at)
-		.bind(duration)
-		.bind(track_id)
-		.execute(&mut *tx)
-		.await
-		.with_context(|| format!("Failed to insert play_times"))?;
-	}
+	// Playtimes were incorrect and overwritten after relaunch, so nothing to keep
 
 	let parent_map = build_parent_map(&library.trackLists);
 
@@ -425,11 +404,11 @@ mod old_library {
 	pub struct V2Library {
 		pub tracks: LinkedHashMap<TrackID, Track>,
 		pub trackLists: TrackLists,
-		/// v1 playtime has two issues:
-		/// - some durations are double counted (or triple, etc.)
-		/// - timestamps aren't updated after pausing
-		pub v1PlayTime: Vec<PlayTime>,
-		pub playTime: Vec<PlayTime>,
+		// Playtimes were incorrect and overwritten after relaunch, so nothing to keep
+		#[allow(unused)]
+		v1PlayTime: Vec<PlayTime>,
+		#[allow(unused)]
+		playTime: Vec<PlayTime>,
 	}
 
 	#[derive(Deserialize, Clone, Debug)]

@@ -88,9 +88,5 @@ CREATE TABLE playlist_tracks (
 CREATE TABLE play_times (
 	started_at INTEGER PRIMARY KEY NOT NULL,
 	duration   INTEGER NOT NULL,
-	track_id   TEXT NOT NULL REFERENCES tracks(id),
-	-- v1 playtime has two issues:
-	-- - some durations are double counted (or triple, etc.)
-	-- - timestamps aren't updated after pausing
-	is_v1      BOOLEAN NOT NULL DEFAULT 0
+	track_id   TEXT NOT NULL REFERENCES tracks(id)
 );
