@@ -233,6 +233,13 @@ export function init_menu_bar(app: App, main_window: BrowserWindow) {
 					},
 				},
 				{
+					label: 'Stop',
+					// no accelerator because it's unreliable
+					click() {
+						web_contents.send('Stop')
+					},
+				},
+				{
 					label: 'Next',
 					accelerator: 'CmdOrCtrl+Right',
 					click() {

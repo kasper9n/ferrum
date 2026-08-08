@@ -1,6 +1,7 @@
 # Changelog
 
 ## Next
+- Add "Stop" menu item
 - Fix playtime saving
 - Fix pause icon not updating when audio playback errors
 
