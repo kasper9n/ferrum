@@ -74,17 +74,17 @@ export const volume = (() => {
 	return {
 		set,
 		toggle() {
-			if (audio.volume > 0) set(0)
+			if (gain_node.gain.value > 0) set(0)
 			else set(last_volume || 1)
 		},
 		subscribe: store.subscribe,
 	}
 })()
 ipc_renderer.on('volumeUp', () => {
-	volume.set(audio.volume + 0.05)
+	volume.set(gain_node.gain.value + 0.05)
 })
 ipc_renderer.on('volumeDown', () => {
-	volume.set(audio.volume - 0.05)
+	volume.set(gain_node.gain.value - 0.05)
 })
 
 export const cover_src = (() => {

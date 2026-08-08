@@ -2,8 +2,9 @@
 
 ## Next
 - Add "Stop" menu item
-- Fix playtime saving
+- Fix volume shortcuts
 - Fix pause icon not updating when audio playback errors
+- Fix playtime saving
 
 ## 1.0.0 - 2026 Mar 10
 - Add lyrics support
