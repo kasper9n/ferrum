@@ -42,15 +42,18 @@ export const time_record = writable({
 	duration: 0,
 })
 function update_time_details() {
-	if (!Number.isNaN(audio.duration)) {
-		time_record.update((record) => {
+	time_record.update((record) => {
+		if (Number.isNaN(audio.duration)) {
+			record.elapsed = 0
+			record.duration = 0
+		} else {
 			record.elapsed = audio.currentTime
-			record.at_timestamp = Date.now()
-			record.paused = audio.paused
 			record.duration = audio.duration
-			return record
-		})
-	}
+		}
+		record.at_timestamp = Date.now()
+		record.paused = audio.paused
+		return record
+	})
 }
 export const playing_track: Writable<Track | null> = writable(null)
 export const playing_id = derived(queue, () => {
@@ -192,7 +195,7 @@ function set_playing_file(id: TrackID, paused = false) {
 		media_session.metadata = new MediaMetadata({
 			title: track.name,
 			artist: track.artist,
-			album: track.albumName || '',
+			album: track.albumName,
 			// artwork: [{ src: 'podcast.jpg' }],
 		})
 	}

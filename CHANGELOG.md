@@ -2,6 +2,7 @@
 
 ## Next
 - Fix playtime saving
+- Fix pause icon not updating when audio playback errors
 
 ## 1.0.0 - 2026 Mar 10
 - Add lyrics support
