@@ -1,3 +1,5 @@
+import { untrack } from 'svelte'
+
 export type Column = {
 	name: string
 	key: string
@@ -152,6 +154,7 @@ export class VirtualGrid<I, R extends Record<string, unknown>> {
 
 	columns: Column[] = $state([])
 	set_columns(columns: Column[]) {
+		const old_columns = untrack(() => this.columns)
 		const total_fixed_width = columns.reduce((sum, col) => sum + (col.is_pct ? 0 : col.width), 0)
 		const total_percent_pct = columns.reduce((sum, col) => sum + (col.is_pct ? col.width : 0), 0)
 		const container_width = this.viewport?.clientWidth ?? total_fixed_width
@@ -169,11 +172,11 @@ export class VirtualGrid<I, R extends Record<string, unknown>> {
 		})
 
 		let resize_only = true
-		if (this.columns.length !== new_columns.length) {
+		if (old_columns.length !== new_columns.length) {
 			resize_only = false
 		}
-		for (let i = 0; i < this.columns.length; i++) {
-			if (new_columns[i]?.key !== this.columns[i]?.key) {
+		for (let i = 0; i < old_columns.length; i++) {
+			if (new_columns[i]?.key !== old_columns[i]?.key) {
 				resize_only = false
 				break
 			}
@@ -185,8 +188,8 @@ export class VirtualGrid<I, R extends Record<string, unknown>> {
 				if (!row.element) {
 					throw new Error('Unexpected missing row element')
 				}
-				for (let ci = 0; ci < this.columns.length; ci++) {
-					const column = this.columns[ci]
+				for (let ci = 0; ci < new_columns.length; ci++) {
+					const column = new_columns[ci]
 					const cell = row.element.children[ci] as HTMLElement
 					cell.style.width = `${column.width}px`
 					cell.style.translate = `${column.offset}px 0`
@@ -201,7 +204,7 @@ export class VirtualGrid<I, R extends Record<string, unknown>> {
 
 			this.refresh(RefreshLevel.NewRows)
 		}
-		return this.columns
+		return new_columns
 	}
 
 	#render() {

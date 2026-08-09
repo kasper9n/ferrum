@@ -18,8 +18,6 @@
 </script>
 
 <script lang="ts">
-	import { run, self, handlers } from 'svelte/legacy'
-
 	import {
 		filter,
 		move_tracks,
@@ -55,39 +53,37 @@
 	import type { SelectedTracksAction } from '$electron/typed_ipc'
 	import { RefreshLevel, VirtualGrid, type Column } from '$lib/virtual-grid.svelte'
 
-	let tracklist_element: HTMLDivElement = $state()
+	let tracklist_element: HTMLDivElement | undefined = $state()
 
 	interface Props {
 		params: { playlist_id: string }
 	}
 
 	let { params }: Props = $props()
-	run(() => {
+	$effect(() => {
 		$current_playlist_id = params.playlist_id
 	})
 
-	let tracks_page = $derived(
-		get_tracks_page({
-			playlistId: params.playlist_id,
-			filterQuery: $filter,
-			sortKey: $sort_key,
-			sortDesc: $sort_desc,
-			groupAlbumTracks: $group_album_tracks,
+	const page_options = $derived({
+		playlistId: params.playlist_id,
+		filterQuery: $filter,
+		sortKey: $sort_key,
+		sortDesc: $sort_desc,
+		groupAlbumTracks: $group_album_tracks,
+	})
+
+	let tracks_page = $derived(get_tracks_page(page_options))
+	onDestroy(
+		tracklist_updated.subscribe(() => {
+			tracks_page = get_tracks_page(page_options)
 		}),
 	)
-	run(() => {
-		// eslint-disable-next-line no-constant-condition
-		if ($tracklist_updated || $tracks_updated || true) {
-			tracks_page = get_tracks_page({
-				playlistId: params.playlist_id,
-				filterQuery: $filter,
-				sortKey: $sort_key,
-				sortDesc: $sort_desc,
-				groupAlbumTracks: $group_album_tracks,
-			})
-		}
-	})
-	run(() => {
+	onDestroy(
+		tracks_updated.subscribe(() => {
+			tracks_page = get_tracks_page(page_options)
+		}),
+	)
+	$effect(() => {
 		$tracks_page_item_ids = tracks_page.itemIds
 	})
 
@@ -109,6 +105,7 @@
 		}
 	}
 
+	// svelte-ignore state_referenced_locally
 	const selection = new SvelteSelection(tracks_page.itemIds, {
 		scroll_to({ index }) {
 			tracklist_actions.scroll_to_index?.(index)
@@ -126,12 +123,12 @@
 			}
 		},
 	})
-	run(() => {
+	$effect(() => {
 		selection.update_all_items(tracks_page.itemIds)
 	})
 
 	const track_action_unlisten = ipc_listen('selected_tracks_action', (_, action) => {
-		if (tracklist_element.contains(document.activeElement)) {
+		if (tracklist_element?.contains(document.activeElement)) {
 			handle_action(action)
 		}
 	})
@@ -198,7 +195,7 @@
 		new_playback_instance(all_track_ids, index)
 	}
 
-	let drag_line: HTMLElement = $state()
+	let drag_line: HTMLElement | undefined = $state()
 	let drag_item_ids: ItemId[] = []
 	function on_drag_start(e: DragEvent) {
 		if (e.dataTransfer) {
@@ -218,6 +215,8 @@
 			e.dataTransfer.setData('ferrum.tracks', '')
 		}
 	}
+
+	let viewport: HTMLElement | undefined = $state()
 	let drag_to_index: null | number = $state(null)
 	function on_drag_over(e: DragEvent, element: Element, index: number) {
 		if (
@@ -232,7 +231,9 @@
 		if (
 			dragged.tracks?.playlist_indexes &&
 			e.currentTarget instanceof HTMLElement &&
-			e.dataTransfer?.types[0] === 'ferrum.tracks'
+			e.dataTransfer?.types[0] === 'ferrum.tracks' &&
+			drag_line &&
+			viewport
 		) {
 			e.preventDefault()
 			const rect = element.getBoundingClientRect()
@@ -264,8 +265,6 @@
 			return { id: null, track: null }
 		}
 	}
-
-	let viewport: HTMLElement = $state()
 
 	type TrackListColumn = Column & {
 		name: string
@@ -430,8 +429,8 @@
 		}),
 	)
 
-	let col_container: HTMLElement = $state()
-	let col_drag_line: HTMLElement = $state()
+	let col_container: HTMLElement | undefined = $state()
+	let col_drag_line: HTMLElement | undefined = $state()
 	let col_drag_index: number | null = null
 	function on_col_drag_start(e: DragEvent, index: number) {
 		if (e.dataTransfer) {
@@ -440,7 +439,12 @@
 	}
 	let col_drag_to_index: null | number = $state(null)
 	function on_col_drag_over(e: DragEvent, index: number) {
-		if (col_drag_index !== null && e.currentTarget instanceof HTMLElement) {
+		if (
+			col_drag_index !== null &&
+			e.currentTarget instanceof HTMLElement &&
+			col_container &&
+			col_drag_line
+		) {
 			e.preventDefault()
 			const rect = e.currentTarget.getBoundingClientRect()
 			const container_rect = col_container.getBoundingClientRect()
@@ -485,6 +489,7 @@
 		}
 	}
 
+	// svelte-ignore state_referenced_locally
 	const virtual_grid = VirtualGrid.create(tracks_page.itemIds, {
 		buffer: 20,
 		row_prepare(item_id, i) {
@@ -519,15 +524,22 @@
 			row.classList.toggle('playing', !!$playing_id && $playing_id === item.track_id)
 		},
 	})
-	run(() => {
+	$effect(() => {
 		virtual_grid.set_columns(columns)
 	})
-	run(() => {
+	$effect(() => {
 		virtual_grid.set_source_items(tracks_page.itemIds)
 	})
-	run(() => {
-		;($selection, $playing_id, virtual_grid.refresh(RefreshLevel.AllRows))
-	})
+	onDestroy(
+		selection.subscribe(() => {
+			virtual_grid.refresh(RefreshLevel.AllRows)
+		}),
+	)
+	onDestroy(
+		playing_id.subscribe(() => {
+			virtual_grid.refresh(RefreshLevel.AllRows)
+		}),
+	)
 
 	onMount(() => {
 		tracklist_actions.scroll_to_index = virtual_grid.scroll_to_index.bind(virtual_grid)
@@ -615,15 +627,16 @@
 		bind:this={viewport}
 		class="main-focus-element relative h-full overflow-y-auto outline-none"
 		tabindex="0"
-		onmousedown={handlers(
-			self(() => selection.clear()),
-			(e: MouseEvent) => {
+		onmousedown={(e) => {
+			if (e.target === e.currentTarget) {
+				selection.clear()
+			} else {
 				const row = get_row(e)
 				if (row) {
 					selection.handle_mousedown(e, row.index)
 				}
-			},
-		)}
+			}
+		}}
 		onkeydown={keydown}
 		onclick={(e: MouseEvent) => {
 			const row = get_row(e)
