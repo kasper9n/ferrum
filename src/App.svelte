@@ -222,8 +222,14 @@
 	<div class="meat">
 		<Sidebar />
 		<div class="flex size-full min-w-0 flex-col">
-			<Route route="/playlist/:playlist_id" component={TrackList} />
-			<Route route="/artists" component={ArtistList} />
+			<Route route="/playlist/:playlist_id">
+				{#snippet children({ playlist_id })}
+					<TrackList params={{ playlist_id }} />
+				{/snippet}
+			</Route>
+			<Route route="/artists">
+				<ArtistList />
+			</Route>
 			{#if media_keys_result}
 				<div class="shrink-0 overflow-hidden">
 					<div

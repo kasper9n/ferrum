@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type { SvelteComponent } from 'svelte'
+	import type { Snippet } from 'svelte'
 	import { url_pathname } from './router'
 
 	interface Props {
 		route: string
-		component: typeof SvelteComponent<Record<string, unknown>, Record<string, unknown>>
+		children: Snippet<[Record<string, string>]>
 	}
 
-	let { route, component }: Props = $props()
+	let { route, children }: Props = $props()
 
 	function parse(pathname: string) {
 		const params: Record<string, string> = {}
@@ -31,6 +31,5 @@
 </script>
 
 {#if params}
-	{@const SvelteComponent_1 = component}
-	<SvelteComponent_1 {params} />
+	{@render children(params)}
 {/if}
