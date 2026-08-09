@@ -160,7 +160,7 @@ async fn insert_library_into_db(
 					.bind(&track_id)
 					.execute(&mut *tx)
 					.await
-					.with_context(|| format!("Failed to insert plays"))?;
+					.with_context(|| format!("Failed to insert plays with date {}", date))?;
 			}
 		}
 
@@ -175,7 +175,7 @@ async fn insert_library_into_db(
 				.bind(&track_id)
 				.execute(&mut *tx)
 				.await
-				.with_context(|| format!("Failed to insert plays_imported"))?;
+				.with_context(|| format!("Failed to insert plays_imported with fromDate {}", co.fromDate))?;
 			}
 		}
 
@@ -186,7 +186,7 @@ async fn insert_library_into_db(
 					.bind(&track_id)
 					.execute(&mut *tx)
 					.await
-					.with_context(|| format!("Failed to insert skips"))?;
+					.with_context(|| format!("Failed to insert skips with date {}", date))?;
 			}
 		}
 
@@ -201,7 +201,7 @@ async fn insert_library_into_db(
 				.bind(&track_id)
 				.execute(&mut *tx)
 				.await
-				.with_context(|| format!("Failed to insert skips_imported"))?;
+				.with_context(|| format!("Failed to insert skips_imported with fromDate {}", co.fromDate))?;
 			}
 		}
 	}

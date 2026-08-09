@@ -40,27 +40,35 @@ create table tracks (
 );
 
 CREATE TABLE plays (
-	date          INTEGER PRIMARY KEY NOT NULL,
-	track_id      TEXT NOT NULL REFERENCES tracks(id)
+	date          INTEGER NOT NULL,
+	track_id      TEXT NOT NULL REFERENCES tracks(id),
+	-- iTunes imports had duplicate play timestamps for some tracks, so we allow
+	-- duplicate timestamps. iTunes plays are in plays_imported, except the most recent play.
+	PRIMARY KEY (date, track_id)
 );
 
 CREATE TABLE plays_imported (
-	date_range_from INTEGER PRIMARY KEY NOT NULL,
+	date_range_from INTEGER NOT NULL,
 	date_range_to   INTEGER NOT NULL,
 	count           INTEGER NOT NULL,
-	track_id        TEXT NOT NULL REFERENCES tracks(id)
+	track_id        TEXT NOT NULL REFERENCES tracks(id),
+	PRIMARY KEY (date_range_from, track_id)
 );
 
 CREATE TABLE skips (
-	date          INTEGER PRIMARY KEY NOT NULL,
-	track_id      TEXT NOT NULL REFERENCES tracks(id)
+	date          INTEGER NOT NULL,
+	track_id      TEXT NOT NULL REFERENCES tracks(id),
+	-- iTunes imports had duplicate play timestamps for some tracks, so we allow
+	-- duplicate timestamps. iTunes plays are in plays_imported, except the most recent play.
+	PRIMARY KEY (date, track_id)
 );
 
 CREATE TABLE skips_imported (
-	date_range_from INTEGER PRIMARY KEY NOT NULL,
+	date_range_from INTEGER NOT NULL,
 	date_range_to   INTEGER NOT NULL,
 	count           INTEGER NOT NULL,
-	track_id        TEXT NOT NULL REFERENCES tracks(id)
+	track_id        TEXT NOT NULL REFERENCES tracks(id),
+	PRIMARY KEY (date_range_from, track_id)
 );
 
 CREATE TABLE track_lists (
