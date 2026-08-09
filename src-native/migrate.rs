@@ -4,13 +4,17 @@ use anyhow::{Context, Result};
 use sqlx::{
 	ConnectOptions, Connection, Sqlite, migrate::MigrateDatabase, sqlite::SqliteConnectOptions,
 };
+use std::path::PathBuf;
 use std::time::Instant;
 use tempfile::TempDir;
 
 pub async fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
 	let now = Instant::now();
 
-	let library_json = match load_library_json(&paths.library_json)? {
+	let library_dir = PathBuf::from(&paths.library_dir);
+	let library_json = library_dir.join("Library.json");
+
+	let library_json = match load_library_json(&library_json)? {
 		None => {
 			return Ok(());
 		}
@@ -47,6 +51,11 @@ pub async fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
 		.context("Failed to finalize sqlite database")?;
 
 	println!("Migrated to SQLite: {}ms", now.elapsed().as_millis());
+
+	// Move Library.json to Library.json.bak
+	let library_json_backup = library_dir.join("Library backup.json");
+	std::fs::rename(&paths.library_json, library_json_backup)
+		.context("Failed to rename Library.json to Library backup.json")?;
 
 	Ok(())
 }
@@ -341,8 +350,9 @@ mod old_library {
 	use serde_json::{Value, json};
 	use std::fs::File;
 	use std::io::{ErrorKind, Read, Seek, SeekFrom};
+	use std::path::PathBuf;
 
-	pub fn load_library_json(library_json: &str) -> Result<Option<Library>> {
+	pub fn load_library_json(library_json: &PathBuf) -> Result<Option<Library>> {
 		let mut library_file = match File::open(&library_json) {
 			Ok(file) => file,
 			Err(err) => match err.kind() {
