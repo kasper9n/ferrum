@@ -21,7 +21,8 @@ pub fn load_data(
 	env: Env,
 ) -> Result<()> {
 	std::panic::set_hook(Box::new(move |info| {
-		let log_msg = format!("{}", info);
+		let backtrace = std::backtrace::Backtrace::force_capture();
+		let log_msg = format!("{info}\n\nBacktrace:\n{backtrace}");
 		eprintln!("{}", log_msg);
 
 		let logs_dir = app_log_dir().unwrap();
