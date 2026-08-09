@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy'
-
 	import { get_track, join_paths, paths, tracks_updated } from '$lib/data'
-	import type { Track } from '../../ferrum-addon'
+	import { onDestroy } from 'svelte'
 
 	interface Props {
 		id: string
@@ -10,10 +8,12 @@
 
 	let { id }: Props = $props()
 
-	let track: Track = $state()
-	run(() => {
-		;($tracks_updated, (track = get_track(id)))
-	})
+	let track = $derived(get_track(id))
+	onDestroy(
+		tracks_updated.subscribe(() => {
+			track = get_track(id)
+		}),
+	)
 
 	let src = $derived(
 		'app://trackimg?path=' +

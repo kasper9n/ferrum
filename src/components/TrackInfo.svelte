@@ -70,8 +70,6 @@
 </script>
 
 <script lang="ts">
-	import { self } from 'svelte/legacy'
-
 	import { check_shortcut } from '$lib/helpers'
 	import Button from './Button.svelte'
 	import type { Track, TrackID } from '../../ferrum-addon'
@@ -319,7 +317,14 @@
 </script>
 
 <svelte:window onkeydown={keydown} />
-<svelte:body onkeydown={self(keydown_none_selected)} onpaste={cover_paste} />
+<svelte:body
+	onkeydown={(e) => {
+		if (e.target === e.currentTarget) {
+			keydown_none_selected(e)
+		}
+	}}
+	onpaste={cover_paste}
+/>
 <Modal on_cancel={cancel} cancel_on_escape form={save}>
 	<main class="modal">
 		<div class="header" class:has-subtitle={image && image.totalImages >= 2}>

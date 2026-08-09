@@ -29,8 +29,6 @@
 </script>
 
 <script lang="ts">
-	import { run, stopPropagation, self, preventDefault } from 'svelte/legacy'
-
 	import type { TrackListDetails } from '../../ferrum-addon'
 	import { type Writable, writable } from 'svelte/store'
 	import { getContext } from 'svelte'
@@ -59,7 +57,7 @@
 		prevent_drop?: boolean
 		children: Child[]
 		level?: number
-		on_select_down?: any
+		on_select_down?: () => void
 	}
 
 	let {
@@ -68,7 +66,7 @@
 		prevent_drop = false,
 		children,
 		level = 0,
-		on_select_down = () => {},
+		on_select_down,
 	}: Props = $props()
 	function select_first(item: Child) {
 		const child_id = item.children?.[0]
@@ -100,7 +98,7 @@
 		} else if (children[i + 1]) {
 			navigate(`/playlist/${children[i + 1].id}`)
 		} else {
-			on_select_down()
+			on_select_down?.()
 		}
 	}
 
@@ -134,16 +132,16 @@
 		}
 		e.preventDefault()
 	}
-	run(() => {
+	$effect(() => {
 		if (children.find((child) => `/playlist/${child.id}` === $url_pathname)) {
 			const item_handle = getContext<Writable<SidebarItemHandle | null>>('itemHandle')
 			item_handle.set({ handleKey: handle_key })
 		}
 	})
 
-	let drag_track_onto_index = $state(null as number | null)
+	let drag_track_onto_index: number | null = $state(null)
 	let drop_above = $state(false)
-	let drag_playlist_onto_index = $state(null as number | null)
+	let drag_playlist_onto_index: number | null = $state(null)
 
 	function on_drag_start(e: DragEvent, tracklist: TrackListDetails) {
 		if (e.dataTransfer && tracklist.kind !== 'special' && parent_id) {
@@ -166,11 +164,12 @@
 <div
 	class="sub"
 	class:show
-	onmousedown={stopPropagation(() => {
+	onmousedown={(e) => {
+		e.stopPropagation()
 		requestAnimationFrame(() => {
 			tracklist_actions.focus()
 		})
-	})}
+	}}
 >
 	{#each children as child_list, i}
 		{#if child_list.kind === 'folder'}
@@ -210,13 +209,14 @@
 					class="arrow"
 					role="button"
 					aria-label="Arrow button"
-					onmousedown={stopPropagation(() => {
+					onmousedown={(e) => {
+						e.stopPropagation()
 						if ($shown_folders.includes(child_list.id)) {
 							hide_folder(child_list.id)
 						} else {
 							show_folder(child_list.id)
 						}
-					})}
+					}}
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
 					height="24"
@@ -240,9 +240,11 @@
 							e.preventDefault()
 						}
 					}}
-					ondragleave={self(() => {
-						drag_playlist_onto_index = null
-					})}
+					ondragleave={(e) => {
+						if (e.target === e.currentTarget) {
+							drag_playlist_onto_index = null
+						}
+					}}
 				>
 					{child_list.name}
 				</div>
@@ -259,7 +261,7 @@
 					if (i < children.length - 1) {
 						navigate(`/playlist/${children[i + 1].id}`)
 					} else {
-						on_select_down()
+						on_select_down?.()
 					}
 				}}
 			/>
@@ -322,10 +324,12 @@
 							drop_above = e.pageY < rect.bottom - rect.height / 2
 						}
 					}}
-					ondragleave={self(() => {
-						drag_track_onto_index = null
-						drag_playlist_onto_index = null
-					})}
+					ondragleave={(e) => {
+						if (e.target === e.currentTarget) {
+							drag_track_onto_index = null
+							drag_playlist_onto_index = null
+						}
+					}}
 				>
 					{child_list.name}
 				</div>
@@ -336,7 +340,10 @@
 				tabindex="-1"
 				class="item rounded-r-[5px]"
 				style:padding-left={14 * level + 'px'}
-				onmousedown={preventDefault(() => navigate(`/playlist/${child_list.id}`))}
+				onmousedown={(e) => {
+					e.preventDefault()
+					navigate(`/playlist/${child_list.id}`)
+				}}
 				class:active={`/playlist/${child_list.id}` === $url_pathname}
 			>
 				<div class="arrow"></div>

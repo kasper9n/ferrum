@@ -137,3 +137,13 @@ export function create_singular_request_animation_frame() {
 		return scheduled
 	}
 }
+
+export function prevent_default(e: Event) {
+	e.preventDefault()
+}
+
+export function prevent_default_self(e: Event) {
+	if (e.target === e.currentTarget) {
+		e.preventDefault()
+	}
+}

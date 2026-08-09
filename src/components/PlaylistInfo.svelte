@@ -36,7 +36,7 @@
 	on_cancel={cancel}
 	cancel_on_escape
 	form={save}
-	on:keydown={form_keydown}
+	onkeydown={form_keydown}
 	title={(info.editMode ? 'Edit' : 'New') + ' Playlist' + (info.isFolder ? ' Folder' : '')}
 >
 	<main class="space-y-1">

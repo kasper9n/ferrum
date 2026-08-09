@@ -8,7 +8,6 @@
 		subtitle: string
 		description: string | undefined
 	}
-
 	let { title, subtitle, description }: Props = $props()
 </script>
 

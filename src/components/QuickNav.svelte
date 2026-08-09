@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy'
-
 	import { onDestroy } from 'svelte'
 	import { check_shortcut } from '../lib/helpers'
 	import { ipc_listen } from '$lib/window'
@@ -14,8 +12,8 @@
 	type Result = TrackListDetails & { path?: string }
 
 	let value = $state('')
-	let playlists: Result[] = $state([])
 	let show = $state(false)
+	let playlists: Result[] = $derived(show ? get_playlists() : [])
 	function get_playlists() {
 		const playlists: Result[] = [...special_playlists_nav]
 		for (const playlist of Object.values($track_lists_details_map)) {
@@ -26,16 +24,19 @@
 		return playlists
 	}
 
-	let filtered_items = $state(fuzzysort.go(value, playlists, { key: 'name', all: true }))
+	let filtered_items = $derived(fuzzysort.go(value, playlists, { key: 'name', all: true }))
 
 	function select_input(el: HTMLInputElement) {
 		el.select()
 	}
 
-	let selected_index = $state(0)
+	let selected_index = $derived(0)
+	$effect(() => {
+		selected_index = clamp_index(selected_index)
+	})
 
-	function clamp_index() {
-		selected_index = Math.max(0, Math.min(filtered_items.length - 1, selected_index))
+	function clamp_index(index: number) {
+		return Math.max(0, Math.min(filtered_items.length - 1, index))
 	}
 	let list_items: HTMLElement[] = $state([])
 
@@ -49,15 +50,13 @@
 			navigate('/playlist/' + filtered_items[selected_index].obj.id)
 			show = false
 		} else if (check_shortcut(e, 'ArrowUp')) {
-			selected_index--
-			clamp_index()
+			selected_index = clamp_index(selected_index - 1)
 			list_items[selected_index].scrollIntoView({
 				block: 'nearest',
 			})
 			e.preventDefault()
 		} else if (check_shortcut(e, 'ArrowDown')) {
-			selected_index++
-			clamp_index()
+			selected_index = clamp_index(selected_index + 1)
 			list_items[selected_index].scrollIntoView({
 				block: 'nearest',
 			})
@@ -70,18 +69,6 @@
 			show = !show
 		}),
 	)
-	run(() => {
-		if (show) {
-			playlists = get_playlists()
-		}
-	})
-	run(() => {
-		filtered_items = fuzzysort.go(value, playlists, { key: 'name', all: true })
-		clamp_index()
-	})
-	run(() => {
-		;(list_items, clamp_index())
-	})
 </script>
 
 {#if show}

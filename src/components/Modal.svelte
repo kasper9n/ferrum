@@ -5,11 +5,9 @@
 </script>
 
 <script lang="ts">
-	import { self, createBubbler, handlers, preventDefault } from 'svelte/legacy'
-
-	const bubble = createBubbler()
-	import { onDestroy, onMount } from 'svelte'
 	import { check_shortcut } from '../lib/helpers'
+	import { onDestroy, onMount } from 'svelte'
+	import type { HTMLDialogAttributes } from 'svelte/elements'
 
 	interface Props {
 		on_cancel: () => void
@@ -17,6 +15,7 @@
 		form?: (() => void) | undefined
 		plain?: boolean
 		title?: string | null
+		onkeydown?: HTMLDialogAttributes['onkeydown']
 		children?: import('svelte').Snippet
 		buttons?: import('svelte').Snippet
 	}
@@ -28,25 +27,27 @@
 		plain = false,
 		title = null,
 		children,
+		onkeydown,
 		buttons,
 	}: Props = $props()
-	let dialog_el: HTMLDialogElement = $state()
 
-	let last_focused_el: Element | undefined | null
+	function modal(node: HTMLDialogElement) {
+		const last_focused_el = document.activeElement
+		node.showModal()
 
-	$modal_count += 1
+		return () => {
+			node.close()
+			if (last_focused_el instanceof HTMLElement) {
+				// For some reason necessary with Svelte 5, maybe onDestroy runs too early
+				last_focused_el?.focus()
+			}
+		}
+	}
+	onMount(() => {
+		$modal_count += 1
+	})
 	onDestroy(() => {
 		$modal_count -= 1
-		dialog_el.close()
-		if (last_focused_el instanceof HTMLElement) {
-			// For some reason necessary with Svelte 5, maybe onDestroy runs too early
-			last_focused_el?.focus()
-		}
-	})
-
-	onMount(() => {
-		last_focused_el = document.activeElement
-		dialog_el.showModal()
 	})
 
 	// Prevent clicks where the mousedown or mouseup happened on a child element. This could've
@@ -65,36 +66,38 @@
 
 <dialog
 	class="modal m-auto"
-	bind:this={dialog_el}
+	{@attach modal}
 	tabindex="-1"
-	onclick={self(() => {
-		if (clickable) {
+	onclick={(e) => {
+		if (e.target === e.currentTarget && clickable) {
 			on_cancel()
 		}
-	})}
-	onkeydown={handlers(
-		bubble('keydown'),
-		(e) => {
-			if (check_shortcut(e, 'Escape')) {
-				e.preventDefault()
-				if (cancel_on_escape) {
-					on_cancel()
-				}
+	}}
+	onkeydown={(e) => {
+		onkeydown?.(e)
+		if (e.defaultPrevented) {
+			return
+		} else if (check_shortcut(e, 'Escape')) {
+			e.preventDefault()
+			if (cancel_on_escape) {
+				on_cancel()
 			}
-		},
-		self((e) => {
+		} else if (e.target === e.currentTarget) {
 			if (form && check_shortcut(e, 'Enter')) {
 				form()
 				e.preventDefault()
 			}
-		}),
-	)}
+		}
+	}}
 >
 	<svelte:element
 		this={tag}
 		class="box"
 		class:padded={!plain}
-		onsubmit={preventDefault(form)}
+		onsubmit={(e) => {
+			e.preventDefault()
+			form?.()
+		}}
 		onmousedown={() => {
 			clickable = false
 		}}

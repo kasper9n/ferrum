@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { run, self, handlers, createBubbler, preventDefault } from 'svelte/legacy'
-
-	const bubble = createBubbler()
 	import {
 		clear_user_queue,
 		get_by_queue_index,
@@ -10,13 +7,13 @@
 		queue,
 		type QueueItem,
 	} from '../lib/queue'
-	import { onDestroy, tick } from 'svelte'
+	import { onDestroy } from 'svelte'
 	import QueueItemComponent from './QueueItem.svelte'
 	import { dragged } from '$lib/drag-drop'
 	import { get_track } from '$lib/data'
 	import * as dragGhost from './DragGhost.svelte'
 	import { ipc_listen, ipc_renderer } from '$lib/window'
-	import { check_shortcut } from '$lib/helpers'
+	import { check_shortcut, prevent_default } from '$lib/helpers'
 	import { fly } from 'svelte/transition'
 	import { ScrollAnimation } from '$lib/scroll'
 	import VirtualListBlock, { scroll_container_keydown } from './VirtualListBlock.svelte'
@@ -43,11 +40,11 @@
 	let first_visible_index = $derived(show_history ? 0 : up_next_index)
 	let autoplay_index = $derived(up_next_index + $queue.user_queue.length)
 
-	let history_list: VirtualListBlock<QueueItem> | null = $state()
-	let up_next_list: VirtualListBlock<QueueItem> | null = $state()
-	let autoplay_list: VirtualListBlock<QueueItem> = $state()
+	let history_list: VirtualListBlock<QueueItem> | null | undefined = $state()
+	let up_next_list: VirtualListBlock<QueueItem> | null | undefined = $state()
+	let autoplay_list: VirtualListBlock<QueueItem> | undefined = $state()
 
-	let visible_qids = $state(
+	let visible_qids = $derived(
 		[
 			...(show_history ? $queue.past : []),
 			...(show_history && $queue.current ? [$queue.current.item] : []),
@@ -55,14 +52,7 @@
 			...$queue.auto_queue,
 		].map((item) => item.qId),
 	)
-	run(() => {
-		visible_qids = [
-			...(show_history ? $queue.past : []),
-			...(show_history && $queue.current ? [$queue.current.item] : []),
-			...$queue.user_queue,
-			...$queue.auto_queue,
-		].map((item) => item.qId)
-	})
+	// svelte-ignore state_referenced_locally
 	const selection = new SvelteSelection(visible_qids, {
 		scroll_to: ({ index }) => {
 			if (show_history) {
@@ -79,7 +69,7 @@
 				return up_next_list?.scroll_to_index(index, 40)
 			}
 			index -= $queue.user_queue.length
-			autoplay_list.scroll_to_index(index, 40)
+			autoplay_list?.scroll_to_index(index, 40)
 		},
 		async on_contextmenu() {
 			const indexes = selection.get_selected_indexes()
@@ -96,7 +86,7 @@
 			}
 		},
 	})
-	run(() => {
+	$effect(() => {
 		selection.update_all_items(visible_qids)
 	})
 
@@ -117,7 +107,7 @@
 	}
 	onDestroy(ipc_listen('context.Remove from Queue', remove_from_queue))
 
-	let queue_element: HTMLElement = $state()
+	let queue_element: HTMLElement | undefined = $state()
 	const indicator_scroll_anim = new ScrollAnimation()
 
 	function handle_action(action: SelectedTracksAction) {
@@ -134,13 +124,13 @@
 	}
 
 	const track_action_unlisten = ipc_listen('selected_tracks_action', (_, action) => {
-		if (queue_element.contains(document.activeElement)) {
+		if (queue_element?.contains(document.activeElement)) {
 			handle_action(action)
 		}
 	})
 	onDestroy(track_action_unlisten)
 
-	let drag_line: HTMLElement = $state()
+	let drag_line: HTMLElement | undefined = $state()
 	let dragged_indexes: number[] = []
 	function on_drag_start(e: DragEvent) {
 		if (e.dataTransfer) {
@@ -163,7 +153,13 @@
 	let drag_to_index: null | number = $state(null)
 	let drag_top_of_item = false
 	function on_drag_over(e: DragEvent, index: number) {
-		if (e.currentTarget && e.dataTransfer?.types[0] === 'ferrum.tracks' && index >= up_next_index) {
+		if (
+			e.currentTarget &&
+			e.dataTransfer?.types[0] === 'ferrum.tracks' &&
+			index >= up_next_index &&
+			queue_element &&
+			drag_line
+		) {
 			e.preventDefault()
 			const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
 			if (e.pageY < rect.bottom - rect.height / 2) {
@@ -211,15 +207,20 @@
 		bind:this={queue_element}
 		class="content relative -mt-px border-l outline-none"
 		tabindex="-1"
-		onmousedown={self(() => selection.clear())}
-		onkeydown={handlers(scroll_container_keydown, (e) => {
+		onmousedown={(e) => {
+			if (e.target === e.currentTarget) {
+				selection.clear()
+			}
+		}}
+		onkeydown={(e) => {
+			scroll_container_keydown(e)
 			if (check_shortcut(e, 'Backspace') && selection.items.size >= 1) {
 				e.preventDefault()
 				remove_from_queue()
 			} else {
 				selection.handle_keydown(e)
 			}
-		})}
+		}}
 	>
 		{#if $queue.past.length || $queue.current}
 			<div class="relative">
@@ -227,25 +228,25 @@
 					<button
 						type="button"
 						onclick={() => {
+							if (!queue_element) {
+								return
+							}
 							const history_rows = $queue.past.length + Number(!!$queue.current)
-							const show = !show_history
 							show_history = !show_history
-							tick().then(() => {
-								if (show) {
-									const old_top = queue_element.scrollTop + history_rows * entry_height
-									queue_element.scrollTop = old_top
-									const top = old_top - entry_height * 5
-									indicator_scroll_anim.smooth_scroll_to(queue_element, top, 200)
-								} else {
-									queue_element.scrollTop = 0
-								}
-								up_next_list?.refresh()
-								autoplay_list.refresh()
-							})
+							if (show_history) {
+								const old_top = queue_element.scrollTop + history_rows * entry_height
+								queue_element.scrollTop = old_top
+								const top = old_top - entry_height * 5
+								indicator_scroll_anim.smooth_scroll_to(queue_element, top, 200)
+							} else {
+								queue_element.scrollTop = 0
+							}
+							up_next_list?.refresh()
+							autoplay_list?.refresh()
 						}}
 						class="group ml-1.5 flex h-full items-center pl-1 font-semibold"
 						tabindex="-1"
-						onmousedown={preventDefault(bubble('mousedown'))}
+						onmousedown={prevent_default}
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -324,7 +325,11 @@
 				<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 				<h4
 					class="sticky top-0 z-1 flex h-[40px] items-center justify-between bg-black/50 px-7 font-semibold backdrop-blur-md"
-					onmousedown={self(() => selection.clear())}
+					onmousedown={(e) => {
+						if (e.target === e.currentTarget) {
+							selection.clear()
+						}
+					}}
 				>
 					Up Next
 					{#if $queue.user_queue.length > 0}
@@ -332,7 +337,7 @@
 							type="button"
 							aria-label="Clear 'Up Next'"
 							tabindex="-1"
-							onmousedown={preventDefault(bubble('mousedown'))}
+							onmousedown={prevent_default}
 							onclick={clear_user_queue}
 						>
 							<svg

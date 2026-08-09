@@ -1,27 +1,31 @@
 <script lang="ts">
-	import { createBubbler } from 'svelte/legacy'
-
-	const bubble = createBubbler()
 	import { onDestroy } from 'svelte'
 	import { filter } from '$lib/data'
 	import { ipc_listen } from '../lib/window'
+	import type { HTMLInputAttributes } from 'svelte/elements'
 
-	let filter_input: HTMLInputElement = $state()
+	let filter_input: HTMLInputElement | undefined = $state()
 	onDestroy(
 		ipc_listen('filter', (e, text) => {
 			if (text) {
 				$filter = text
-				filter_input.select()
+				filter_input?.select()
 			} else {
-				filter_input.select()
+				filter_input?.select()
 			}
 		}),
 	)
+
+	interface Props {
+		onfocus: HTMLInputAttributes['onfocus']
+		onkeydown: HTMLInputAttributes['onkeydown']
+	}
+	let { onfocus, onkeydown }: Props = $props()
 </script>
 
 <input
-	onfocus={bubble('focus')}
-	onkeydown={bubble('keydown')}
+	{onfocus}
+	{onkeydown}
 	bind:this={filter_input}
 	type="text"
 	class="search rounded-[5px] text-[13px] leading-none"

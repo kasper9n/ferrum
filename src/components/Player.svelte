@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { run, createBubbler, preventDefault } from 'svelte/legacy'
-
-	const bubble = createBubbler()
 	import {
 		stopped,
 		play_pause,
@@ -14,7 +11,7 @@
 		volume,
 		time_record,
 	} from '../lib/player'
-	import { get_duration } from '../lib/helpers'
+	import { get_duration, prevent_default } from '../lib/helpers'
 	import { queue_visible, queue, shuffle, repeat } from '../lib/queue'
 	import { lyrics_state, toggle_lyrics_visibility } from '$lib/lyrics.svelte'
 	import { get_track, is_dev } from '$lib/data'
@@ -33,14 +30,13 @@
 	interface Props {
 		on_toggle_visualizer: () => void
 	}
-
 	let { on_toggle_visualizer }: Props = $props()
 
 	function toggle_queue() {
 		$queue_visible = !$queue_visible
 		lyrics_state.visible = false
 	}
-	run(() => {
+	$effect(() => {
 		ipc_renderer.invoke('update:Show Queue', $queue_visible)
 	})
 	ipc_renderer.on('Show Queue', toggle_queue)
@@ -133,7 +129,7 @@
 				class="side-controls shuffle"
 				class:on={$shuffle}
 				tabindex="-1"
-				onmousedown={preventDefault(bubble('mousedown'))}
+				onmousedown={prevent_default}
 				onclick={() => ($shuffle = !$shuffle)}
 			>
 				<div class="parent-active-zoom">
@@ -155,7 +151,7 @@
 				class="previous"
 				onclick={previous}
 				tabindex="-1"
-				onmousedown={preventDefault(bubble('mousedown'))}
+				onmousedown={prevent_default}
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -176,7 +172,7 @@
 				onclick={play_pause}
 				class:cannot-play={$tracks_page_item_ids.length === 0}
 				tabindex="-1"
-				onmousedown={preventDefault(bubble('mousedown'))}
+				onmousedown={prevent_default}
 			>
 				{#if $time_record.paused}
 					<svg
@@ -211,7 +207,7 @@
 				class="next"
 				onclick={skip_to_next}
 				tabindex="-1"
-				onmousedown={preventDefault(bubble('mousedown'))}
+				onmousedown={prevent_default}
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -232,7 +228,7 @@
 				class="side-controls repeat"
 				class:on={$repeat}
 				tabindex="-1"
-				onmousedown={preventDefault(bubble('mousedown'))}
+				onmousedown={prevent_default}
 				onclick={() => ($repeat = !$repeat)}
 			>
 				<div class="parent-active-zoom">
@@ -340,7 +336,7 @@
 			class="mr-2"
 			aria-label="Toggle lyrics"
 			tabindex="-1"
-			onmousedown={preventDefault(bubble('mousedown'))}
+			onmousedown={(e) => e.preventDefault()}
 			onclick={toggle_lyrics}
 			class:on={lyrics_state.visible}
 		>
@@ -365,7 +361,7 @@
 			type="button"
 			aria-label="Toggle queue"
 			tabindex="-1"
-			onmousedown={preventDefault(bubble('mousedown'))}
+			onmousedown={(e) => e.preventDefault()}
 			onclick={toggle_queue}
 			class:on={$queue_visible}
 		>

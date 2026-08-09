@@ -6,9 +6,6 @@
 </script>
 
 <script lang="ts">
-	import { run, createBubbler, preventDefault, self } from 'svelte/legacy'
-
-	const bubble = createBubbler()
 	import SidebarItems, { type SidebarItemHandle } from './SidebarItems.svelte'
 	import Filter from './Filter.svelte'
 	import { is_mac, track_lists_details_map, move_playlist } from '$lib/data'
@@ -19,8 +16,9 @@
 	import { tracklist_actions } from '$lib/page'
 	import { navigate } from '$lib/router'
 	import { current_playlist_id } from './TrackList.svelte'
+	import { prevent_default_self } from '$lib/helpers'
 
-	let viewport: HTMLElement = $state()
+	let viewport: HTMLElement | undefined = $state()
 	const item_handle = setContext('itemHandle', writable(null as SidebarItemHandle | null))
 
 	onDestroy(
@@ -63,12 +61,12 @@
 		}
 	}
 
-	let content_element: HTMLDivElement = $state()
+	let content_element: HTMLDivElement | undefined = $state()
 
 	async function scroll_to_active() {
 		await tick()
 		const active = content_element?.querySelector('.active')
-		if (active instanceof HTMLElement) {
+		if (content_element && active instanceof HTMLElement) {
 			const top = active.offsetTop
 			if (content_element.scrollTop > top) {
 				content_element.scrollTop = top
@@ -80,30 +78,36 @@
 			}
 		}
 	}
+	onDestroy(
+		current_playlist_id.subscribe(() => {
+			scroll_to_active()
+		}),
+	)
 
 	/** Prevent focus weirdness */
 	function focuser() {
-		const scroll_top = content_element.scrollTop
-		viewport.focus()
-		content_element.scrollTop = scroll_top
-		scroll_to_active()
+		if (content_element) {
+			const scroll_top = content_element.scrollTop
+			viewport?.focus()
+			content_element.scrollTop = scroll_top
+			scroll_to_active()
+		}
 	}
-	run(() => {
-		;($current_playlist_id, scroll_to_active())
-	})
 </script>
 
 <!-- NOTE: aside is used as css selector in SidebarItems -->
-<aside onmousedown={self(preventDefault(bubble('mousedown')))} role="none">
+<aside onmousedown={prevent_default_self} role="none">
 	{#if is_mac}
-		<div class="titlebar" onmousedown={self(preventDefault(bubble('mousedown')))} role="none"></div>
+		<div class="titlebar" onmousedown={prevent_default_self} role="none"></div>
 	{/if}
 	<div class="content" bind:this={content_element}>
 		<Filter
-			on:focus={() => {
-				content_element.scrollTop = 0
+			onfocus={() => {
+				if (content_element) {
+					content_element.scrollTop = 0
+				}
 			}}
-			on:keydown={(e) => {
+			onkeydown={(e) => {
 				if (e.key === 'Escape') {
 					tracklist_actions.focus()
 				}
@@ -114,11 +118,12 @@
 		<nav
 			class="items"
 			tabindex="-1"
-			onmousedown={preventDefault(() => {
+			onmousedown={(e) => {
+				e.preventDefault()
 				if (document.activeElement === document.body) {
 					tracklist_actions.focus()
 				}
-			})}
+			}}
 			onkeydown={(e) => {
 				if (e.key === 'Escape') {
 					e.preventDefault()
@@ -136,10 +141,26 @@
 			}}
 			bind:this={viewport}
 			class:droppable={root_droppable}
-			oncontextmenu={self(on_context_menu)}
-			ondragover={self(dragover)}
-			ondragleave={self(dragleave)}
-			ondrop={self(drop)}
+			oncontextmenu={(e) => {
+				if (e.target === e.currentTarget) {
+					on_context_menu()
+				}
+			}}
+			ondragover={(e) => {
+				if (e.target === e.currentTarget) {
+					dragover(e)
+				}
+			}}
+			ondragleave={(e) => {
+				if (e.target === e.currentTarget) {
+					dragleave()
+				}
+			}}
+			ondrop={(e) => {
+				if (e.target === e.currentTarget) {
+					drop(e)
+				}
+			}}
 		>
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 			<div class="focuser" tabindex="0" onfocus={focuser}></div>

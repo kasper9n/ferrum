@@ -66,7 +66,7 @@
 		$current_playlist_id = params.playlist_id
 	})
 
-	let tracks_page = $state(
+	let tracks_page = $derived(
 		get_tracks_page({
 			playlistId: params.playlist_id,
 			filterQuery: $filter,

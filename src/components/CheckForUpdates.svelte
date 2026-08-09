@@ -41,7 +41,7 @@
 			latest_update = null
 		}}
 		title="A new version of Ferrum is available!"
-		on:keydown={(e) => {
+		onkeydown={(e) => {
 			if (check_shortcut(e, 'Enter')) {
 				ipc_renderer.invoke('open_url', channel.url)
 				latest_update = null
