@@ -26,7 +26,6 @@ napi-rs = ["napi", "napi-derive"]
 napi = { version = "3.3", features = [
 	"serde-json",
 	"napi6",
-	"tokio_rt",
 	"async",
 	"anyhow",
 ], optional = true }
