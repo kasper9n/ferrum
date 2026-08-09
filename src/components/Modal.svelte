@@ -1,20 +1,36 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
 	import { writable } from 'svelte/store'
 
 	export const modal_count = writable(0)
 </script>
 
 <script lang="ts">
+	import { self, createBubbler, handlers, preventDefault } from 'svelte/legacy'
+
+	const bubble = createBubbler()
 	import { onDestroy, onMount } from 'svelte'
 	import { check_shortcut } from '../lib/helpers'
 
-	export let on_cancel: () => void
-	export let cancel_on_escape = false
-	export let form: (() => void) | undefined = undefined
-	export let plain = false
-	$: tag = form === undefined ? 'div' : 'form'
-	export let title: string | null = null
-	let dialog_el: HTMLDialogElement
+	interface Props {
+		on_cancel: () => void
+		cancel_on_escape?: boolean
+		form?: (() => void) | undefined
+		plain?: boolean
+		title?: string | null
+		children?: import('svelte').Snippet
+		buttons?: import('svelte').Snippet
+	}
+
+	let {
+		on_cancel,
+		cancel_on_escape = false,
+		form = undefined,
+		plain = false,
+		title = null,
+		children,
+		buttons,
+	}: Props = $props()
+	let dialog_el: HTMLDialogElement = $state()
 
 	let last_focused_el: Element | undefined | null
 
@@ -35,11 +51,12 @@
 
 	// Prevent clicks where the mousedown or mouseup happened on a child element. This could've
 	// been solved with a non-parent backdrop element, but that interferes with text selection.
-	let clickable = true
+	let clickable = $state(true)
+	let tag = $derived(form === undefined ? 'div' : 'form')
 </script>
 
 <svelte:body
-	on:click={() => {
+	onclick={() => {
 		clickable = true
 	}}
 />
@@ -50,36 +67,38 @@
 	class="modal m-auto"
 	bind:this={dialog_el}
 	tabindex="-1"
-	on:click|self={() => {
+	onclick={self(() => {
 		if (clickable) {
 			on_cancel()
 		}
-	}}
-	on:keydown
-	on:keydown={(e) => {
-		if (check_shortcut(e, 'Escape')) {
-			e.preventDefault()
-			if (cancel_on_escape) {
-				on_cancel()
+	})}
+	onkeydown={handlers(
+		bubble('keydown'),
+		(e) => {
+			if (check_shortcut(e, 'Escape')) {
+				e.preventDefault()
+				if (cancel_on_escape) {
+					on_cancel()
+				}
 			}
-		}
-	}}
-	on:keydown|self={(e) => {
-		if (form && check_shortcut(e, 'Enter')) {
-			form()
-			e.preventDefault()
-		}
-	}}
+		},
+		self((e) => {
+			if (form && check_shortcut(e, 'Enter')) {
+				form()
+				e.preventDefault()
+			}
+		}),
+	)}
 >
 	<svelte:element
 		this={tag}
 		class="box"
 		class:padded={!plain}
-		on:submit|preventDefault={form}
-		on:mousedown={() => {
+		onsubmit={preventDefault(form)}
+		onmousedown={() => {
 			clickable = false
 		}}
-		on:mouseup={() => {
+		onmouseup={() => {
 			clickable = false
 		}}
 		role="none"
@@ -87,10 +106,10 @@
 		{#if title !== null}
 			<h3 class="text-lg">{title}</h3>
 		{/if}
-		<slot />
-		{#if $$slots.buttons}
+		{@render children?.()}
+		{#if buttons}
 			<div class="buttons">
-				<slot name="buttons" />
+				{@render buttons?.()}
 			</div>
 		{/if}
 	</svelte:element>

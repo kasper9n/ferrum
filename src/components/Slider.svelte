@@ -1,35 +1,42 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy'
+
 	import { onDestroy } from 'svelte'
 	import type { HTMLBaseAttributes } from 'svelte/elements'
-	export let value: number
-	/** Growth rate per second. This is for providing a smooth visual with low CPU usage. */
-	export let growth_rate: number = 0
-	export let max = 100
-	export let update_on_drag = true
-	export let on_user_change: (value: number) => void = () => {}
-	export let klass = ''
-	export { klass as class }
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	interface $$Props extends HTMLBaseAttributes {
+	interface Props {
 		value: number
+		/** Growth rate per second. This is for providing a smooth visual with low CPU usage. */
 		growth_rate?: number
 		max?: number
-		step?: number
-		class?: string
 		update_on_drag?: boolean
 		on_user_change?: (value: number) => void
+		class?: string
+		step?: number
+		[key: string]: any
 	}
 
-	let bar: HTMLDivElement
-	let dragging = false
+	let {
+		value = $bindable(),
+		growth_rate = 0,
+		max = 100,
+		update_on_drag = true,
+		on_user_change = () => {},
+		class: klass = '',
+		...rest
+	}: Props = $props()
 
-	let internal_value = value
-	let updated_at = Date.now()
-	$: if (update_on_drag || !dragging) {
-		internal_value = value
-		updated_at = Date.now()
-	}
+	let bar: HTMLDivElement = $state()
+	let dragging = $state(false)
+
+	let internal_value = $state(value)
+	let updated_at = $state(Date.now())
+	run(() => {
+		if (update_on_drag || !dragging) {
+			internal_value = value
+			updated_at = Date.now()
+		}
+	})
 
 	function apply(e: MouseEvent) {
 		const delta = e.clientX - bar.getBoundingClientRect().left
@@ -53,9 +60,11 @@
 		const secs_per_pixel = max / (bar.clientWidth * devicePixelRatio * 2 * growth_rate)
 		interval = setInterval(update_value, secs_per_pixel * 1000)
 	}
-	$: if (growth_rate && bar) {
-		start_growing()
-	}
+	run(() => {
+		if (growth_rate && bar) {
+			start_growing()
+		}
+	})
 
 	onDestroy(() => {
 		if (interval) clearInterval(interval)
@@ -63,12 +72,12 @@
 </script>
 
 <svelte:window
-	on:mousemove={(e) => {
+	onmousemove={(e) => {
 		if (dragging) {
 			apply(e)
 		}
 	}}
-	on:mouseup={(e) => {
+	onmouseup={(e) => {
 		if (dragging) {
 			dragging = false
 			apply(e)
@@ -78,12 +87,12 @@
 />
 <!-- If we had an <input>, it would cause a reflow every time the value updates. Instead of that, we CSS and mouse events. -->
 <!-- We also don't use the Web Animation API, because somehow that had way higher CPU usage for me -->
-<div class="slider{` ${klass}`.trimEnd()}" {...$$restProps}>
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
+<div class="slider{` ${klass}`.trimEnd()}" {...rest}>
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<!-- Make sure it has enough padding for the thumb to not overflow -->
 	<div
 		class="group flex h-5 w-full items-center justify-center overflow-hidden p-2"
-		on:mousedown={(e) => {
+		onmousedown={(e) => {
 			apply(e)
 			dragging = true
 		}}

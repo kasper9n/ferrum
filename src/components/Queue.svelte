@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { run, self, handlers, createBubbler, preventDefault } from 'svelte/legacy'
+
+	const bubble = createBubbler()
 	import {
 		clear_user_queue,
 		get_by_queue_index,
@@ -34,28 +37,32 @@
 		}
 	})
 
-	let show_history = false
-	$: current_index = $queue.past.length
-	$: up_next_index = current_index + Number(!!$queue.current)
-	$: first_visible_index = show_history ? 0 : up_next_index
-	$: autoplay_index = up_next_index + $queue.user_queue.length
+	let show_history = $state(false)
+	let current_index = $derived($queue.past.length)
+	let up_next_index = $derived(current_index + Number(!!$queue.current))
+	let first_visible_index = $derived(show_history ? 0 : up_next_index)
+	let autoplay_index = $derived(up_next_index + $queue.user_queue.length)
 
-	let history_list: VirtualListBlock<QueueItem> | null
-	let up_next_list: VirtualListBlock<QueueItem> | null
-	let autoplay_list: VirtualListBlock<QueueItem>
+	let history_list: VirtualListBlock<QueueItem> | null = $state()
+	let up_next_list: VirtualListBlock<QueueItem> | null = $state()
+	let autoplay_list: VirtualListBlock<QueueItem> = $state()
 
-	let visible_qids = [
-		...(show_history ? $queue.past : []),
-		...(show_history && $queue.current ? [$queue.current.item] : []),
-		...$queue.user_queue,
-		...$queue.auto_queue,
-	].map((item) => item.qId)
-	$: visible_qids = [
-		...(show_history ? $queue.past : []),
-		...(show_history && $queue.current ? [$queue.current.item] : []),
-		...$queue.user_queue,
-		...$queue.auto_queue,
-	].map((item) => item.qId)
+	let visible_qids = $state(
+		[
+			...(show_history ? $queue.past : []),
+			...(show_history && $queue.current ? [$queue.current.item] : []),
+			...$queue.user_queue,
+			...$queue.auto_queue,
+		].map((item) => item.qId),
+	)
+	run(() => {
+		visible_qids = [
+			...(show_history ? $queue.past : []),
+			...(show_history && $queue.current ? [$queue.current.item] : []),
+			...$queue.user_queue,
+			...$queue.auto_queue,
+		].map((item) => item.qId)
+	})
 	const selection = new SvelteSelection(visible_qids, {
 		scroll_to: ({ index }) => {
 			if (show_history) {
@@ -89,7 +96,9 @@
 			}
 		},
 	})
-	$: selection.update_all_items(visible_qids)
+	run(() => {
+		selection.update_all_items(visible_qids)
+	})
 
 	function get_visible_track_ids() {
 		return [
@@ -108,7 +117,7 @@
 	}
 	onDestroy(ipc_listen('context.Remove from Queue', remove_from_queue))
 
-	let queue_element: HTMLElement
+	let queue_element: HTMLElement = $state()
 	const indicator_scroll_anim = new ScrollAnimation()
 
 	function handle_action(action: SelectedTracksAction) {
@@ -131,7 +140,7 @@
 	})
 	onDestroy(track_action_unlisten)
 
-	let drag_line: HTMLElement
+	let drag_line: HTMLElement = $state()
 	let dragged_indexes: number[] = []
 	function on_drag_start(e: DragEvent) {
 		if (e.dataTransfer) {
@@ -151,7 +160,7 @@
 			e.dataTransfer.setData('ferrum.tracks', '')
 		}
 	}
-	let drag_to_index: null | number = null
+	let drag_to_index: null | number = $state(null)
 	let drag_top_of_item = false
 	function on_drag_over(e: DragEvent, index: number) {
 		if (e.currentTarget && e.dataTransfer?.types[0] === 'ferrum.tracks' && index >= up_next_index) {
@@ -197,28 +206,27 @@
 
 <aside transition:fly={{ x: '100%', duration: 150, opacity: 1 }}>
 	<div class="shadow"></div>
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		bind:this={queue_element}
 		class="content relative -mt-px border-l outline-none"
 		tabindex="-1"
-		on:mousedown|self={() => selection.clear()}
-		on:keydown={scroll_container_keydown}
-		on:keydown={(e) => {
+		onmousedown={self(() => selection.clear())}
+		onkeydown={handlers(scroll_container_keydown, (e) => {
 			if (check_shortcut(e, 'Backspace') && selection.items.size >= 1) {
 				e.preventDefault()
 				remove_from_queue()
 			} else {
 				selection.handle_keydown(e)
 			}
-		}}
+		})}
 	>
 		{#if $queue.past.length || $queue.current}
 			<div class="relative">
 				<div class="sticky top-0 z-1 flex h-[40px] items-center bg-black/50 backdrop-blur-md">
 					<button
 						type="button"
-						on:click={() => {
+						onclick={() => {
 							const history_rows = $queue.past.length + Number(!!$queue.current)
 							const show = !show_history
 							show_history = !show_history
@@ -237,7 +245,7 @@
 						}}
 						class="group ml-1.5 flex h-full items-center pl-1 font-semibold"
 						tabindex="-1"
-						on:mousedown|preventDefault
+						onmousedown={preventDefault(bubble('mousedown'))}
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -266,21 +274,21 @@
 						scroll_container={queue_element}
 					>
 						{#snippet children({ item, i: qi })}
-							<!-- svelte-ignore a11y-click-events-have-key-events -->
-							<!-- svelte-ignore a11y-interactive-supports-focus -->
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<!-- svelte-ignore a11y_interactive_supports_focus -->
 							<div
 								class="row"
 								role="row"
 								class:selected={$selection.has(item.qId)}
-								on:mousedown={(e) => selection.handle_mousedown(e, qi)}
-								on:contextmenu={(e) => selection.handle_contextmenu(e, qi)}
-								on:click={(e) => selection.handle_click(e, qi)}
+								onmousedown={(e) => selection.handle_mousedown(e, qi)}
+								oncontextmenu={(e) => selection.handle_contextmenu(e, qi)}
+								onclick={(e) => selection.handle_click(e, qi)}
 								draggable="true"
-								on:dragstart={on_drag_start}
-								on:dragover={(e) => on_drag_over(e, qi)}
-								on:drop={drop_handler}
-								on:dragleave={drag_end_handler}
-								on:dragend={drag_end_handler}
+								ondragstart={on_drag_start}
+								ondragover={(e) => on_drag_over(e, qi)}
+								ondrop={drop_handler}
+								ondragleave={drag_end_handler}
+								ondragend={drag_end_handler}
 							>
 								<QueueItemComponent id={item.id} />
 							</div>
@@ -288,21 +296,21 @@
 					</VirtualListBlock>
 					{#if $queue.current}
 						{@const qi = current_index}
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-interactive-supports-focus -->
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_interactive_supports_focus -->
 						<div
 							class="row"
 							role="row"
 							class:selected={$selection.has($queue.current.item.qId)}
-							on:mousedown={(e) => selection.handle_mousedown(e, qi)}
-							on:contextmenu={(e) => selection.handle_contextmenu(e, qi)}
-							on:click={(e) => selection.handle_click(e, qi)}
+							onmousedown={(e) => selection.handle_mousedown(e, qi)}
+							oncontextmenu={(e) => selection.handle_contextmenu(e, qi)}
+							onclick={(e) => selection.handle_click(e, qi)}
 							draggable="true"
-							on:dragstart={on_drag_start}
-							on:dragover={(e) => on_drag_over(e, qi)}
-							on:drop={drop_handler}
-							on:dragleave={drag_end_handler}
-							on:dragend={drag_end_handler}
+							ondragstart={on_drag_start}
+							ondragover={(e) => on_drag_over(e, qi)}
+							ondrop={drop_handler}
+							ondragleave={drag_end_handler}
+							ondragend={drag_end_handler}
 						>
 							<QueueItemComponent id={$queue.current.item.id} />
 						</div>
@@ -313,10 +321,10 @@
 
 		{#if $queue.user_queue.length || queue.getQueueLength() === 0}
 			<div class="relative">
-				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+				<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 				<h4
 					class="sticky top-0 z-1 flex h-[40px] items-center justify-between bg-black/50 px-7 font-semibold backdrop-blur-md"
-					on:mousedown|self={() => selection.clear()}
+					onmousedown={self(() => selection.clear())}
 				>
 					Up Next
 					{#if $queue.user_queue.length > 0}
@@ -324,8 +332,8 @@
 							type="button"
 							aria-label="Clear 'Up Next'"
 							tabindex="-1"
-							on:mousedown|preventDefault
-							on:click={clear_user_queue}
+							onmousedown={preventDefault(bubble('mousedown'))}
+							onclick={clear_user_queue}
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -350,21 +358,21 @@
 				>
 					{#snippet children({ item, i })}
 						{@const qi = i + up_next_index}
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-interactive-supports-focus -->
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_interactive_supports_focus -->
 						<div
 							class="row"
 							role="row"
 							class:selected={$selection.has(item.qId)}
-							on:mousedown={(e) => selection.handle_mousedown(e, qi - first_visible_index)}
-							on:contextmenu={(e) => selection.handle_contextmenu(e, qi - first_visible_index)}
-							on:click={(e) => selection.handle_click(e, qi - first_visible_index)}
+							onmousedown={(e) => selection.handle_mousedown(e, qi - first_visible_index)}
+							oncontextmenu={(e) => selection.handle_contextmenu(e, qi - first_visible_index)}
+							onclick={(e) => selection.handle_click(e, qi - first_visible_index)}
 							draggable="true"
-							on:dragstart={on_drag_start}
-							on:dragover={(e) => on_drag_over(e, qi)}
-							on:drop={drop_handler}
-							on:dragleave={drag_end_handler}
-							on:dragend={drag_end_handler}
+							ondragstart={on_drag_start}
+							ondragover={(e) => on_drag_over(e, qi)}
+							ondrop={drop_handler}
+							ondragleave={drag_end_handler}
+							ondragend={drag_end_handler}
 						>
 							<QueueItemComponent id={item.id} />
 						</div>
@@ -375,10 +383,10 @@
 
 		{#if $queue.auto_queue.length}
 			<div class="relative">
-				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+				<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 				<h4
 					class="sticky top-0 z-1 flex h-[40px] items-center bg-black/50 px-7 font-semibold backdrop-blur-md"
-					on:mousedown={() => selection.clear()}
+					onmousedown={() => selection.clear()}
 				>
 					Autoplay
 				</h4>
@@ -391,21 +399,21 @@
 				>
 					{#snippet children({ item, i })}
 						{@const qi = i + autoplay_index}
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-interactive-supports-focus -->
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_interactive_supports_focus -->
 						<div
 							class="row"
 							role="row"
 							class:selected={$selection.has(item.qId)}
-							on:mousedown={(e) => selection.handle_mousedown(e, qi - first_visible_index)}
-							on:contextmenu={(e) => selection.handle_contextmenu(e, qi - first_visible_index)}
-							on:click={(e) => selection.handle_click(e, qi - first_visible_index)}
+							onmousedown={(e) => selection.handle_mousedown(e, qi - first_visible_index)}
+							oncontextmenu={(e) => selection.handle_contextmenu(e, qi - first_visible_index)}
+							onclick={(e) => selection.handle_click(e, qi - first_visible_index)}
 							draggable="true"
-							on:dragstart={on_drag_start}
-							on:dragover={(e) => on_drag_over(e, qi)}
-							on:drop={drop_handler}
-							on:dragleave={drag_end_handler}
-							on:dragend={drag_end_handler}
+							ondragstart={on_drag_start}
+							ondragover={(e) => on_drag_over(e, qi)}
+							ondrop={drop_handler}
+							ondragleave={drag_end_handler}
+							ondragend={drag_end_handler}
 						>
 							<QueueItemComponent id={item.id} />
 						</div>

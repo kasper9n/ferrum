@@ -5,7 +5,7 @@
 	import { is_dev, save_view_options, view_options } from '$lib/data'
 	import { check_shortcut } from '$lib/helpers'
 
-	let latest_update: Awaited<ReturnType<typeof check>> | null = null
+	let latest_update: Awaited<ReturnType<typeof check>> | null = $state(null)
 
 	check()
 	async function check() {
@@ -48,7 +48,7 @@
 			}
 		}}
 	>
-		<!-- svelte-ignore a11y-autofocus -->
+		<!-- svelte-ignore a11y_autofocus -->
 		<div class="w-md max-w-xl text-sm outline-none" autofocus tabindex="-1">
 			<p class="pb-3">
 				Ferrum {latest_update.channel.version} is available. You are currently on {latest_update.app_version}
@@ -58,7 +58,7 @@
 				{latest_update.body}
 			</p>
 		</div>
-		<svelte:fragment slot="buttons">
+		{#snippet buttons()}
 			<Button
 				secondary
 				onclick={() => {
@@ -69,6 +69,6 @@
 			<div class="grow"></div>
 			<Button secondary onclick={() => (latest_update = null)}>Later</Button>
 			<Button type="submit">Update</Button>
-		</svelte:fragment>
+		{/snippet}
 	</Modal>
 {/if}

@@ -1,22 +1,31 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy'
+
 	import { get_track, join_paths, paths, tracks_updated } from '$lib/data'
 	import type { Track } from '../../ferrum-addon'
 
-	export let id: string
+	interface Props {
+		id: string
+	}
 
-	let track: Track
-	$: ($tracks_updated, (track = get_track(id)))
+	let { id }: Props = $props()
 
-	$: src =
+	let track: Track = $state()
+	run(() => {
+		;($tracks_updated, (track = get_track(id)))
+	})
+
+	let src = $derived(
 		'app://trackimg?path=' +
-		encodeURIComponent(join_paths(paths.tracksDir, track.file)) +
-		'&cache_db_path=' +
-		encodeURIComponent(paths.cacheDb) +
-		'&date_modified=' +
-		encodeURIComponent(track.dateModified)
+			encodeURIComponent(join_paths(paths.tracksDir, track.file)) +
+			'&cache_db_path=' +
+			encodeURIComponent(paths.cacheDb) +
+			'&date_modified=' +
+			encodeURIComponent(track.dateModified),
+	)
 
-	let failed_src: string | null = null
-	let loaded = false
+	let failed_src: string | null = $state(null)
+	let loaded = $state(false)
 </script>
 
 <div class="box">
@@ -38,11 +47,11 @@
 			class:invisible={!loaded}
 			{src}
 			alt=""
-			on:load={() => {
+			onload={() => {
 				loaded = true
 				failed_src = null
 			}}
-			on:error={() => {
+			onerror={() => {
 				failed_src = src
 			}}
 		/>

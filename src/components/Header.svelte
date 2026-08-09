@@ -3,9 +3,13 @@
 	import { modal_count } from './Modal.svelte'
 	import { queue_visible } from '$lib/queue'
 
-	export let title: string
-	export let subtitle: string
-	export let description: string | undefined
+	interface Props {
+		title: string
+		subtitle: string
+		description: string | undefined
+	}
+
+	let { title, subtitle, description }: Props = $props()
 </script>
 
 <div class="relative px-5 pt-4 pb-5">

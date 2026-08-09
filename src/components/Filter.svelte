@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { createBubbler } from 'svelte/legacy'
+
+	const bubble = createBubbler()
 	import { onDestroy } from 'svelte'
 	import { filter } from '$lib/data'
 	import { ipc_listen } from '../lib/window'
 
-	let filter_input: HTMLInputElement
+	let filter_input: HTMLInputElement = $state()
 	onDestroy(
 		ipc_listen('filter', (e, text) => {
 			if (text) {
@@ -17,8 +20,8 @@
 </script>
 
 <input
-	on:focus
-	on:keydown
+	onfocus={bubble('focus')}
+	onkeydown={bubble('keydown')}
 	bind:this={filter_input}
 	type="text"
 	class="search rounded-[5px] text-[13px] leading-none"

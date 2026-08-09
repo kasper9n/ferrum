@@ -2,11 +2,12 @@
 	import type { SvelteComponent } from 'svelte'
 	import { url_pathname } from './router'
 
-	export let route: string
-	$: route_segments = route.split('/')
-	$: params = parse($url_pathname)
+	interface Props {
+		route: string
+		component: typeof SvelteComponent<Record<string, unknown>, Record<string, unknown>>
+	}
 
-	export let component: typeof SvelteComponent<Record<string, unknown>, Record<string, unknown>>
+	let { route, component }: Props = $props()
 
 	function parse(pathname: string) {
 		const params: Record<string, string> = {}
@@ -25,8 +26,11 @@
 		}
 		return params
 	}
+	let route_segments = $derived(route.split('/'))
+	let params = $derived(parse($url_pathname))
 </script>
 
 {#if params}
-	<svelte:component this={component} {params} />
+	{@const SvelteComponent_1 = component}
+	<SvelteComponent_1 {params} />
 {/if}

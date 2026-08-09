@@ -6,11 +6,15 @@
 	import Modal from './Modal.svelte'
 	import { strict_call } from '$lib/error'
 
-	export let cancel: () => void
+	interface Props {
+		cancel: () => void
+	}
+
+	let { cancel }: Props = $props()
 	let itunes_import = ItunesImport.new()
 
 	type Stage = 'select' | 'fileSelect' | 'scanning' | ImportStatus
-	let stage: Stage = 'select'
+	let stage: Stage = $state('select')
 
 	function cancel_handler() {
 		if (stage === 'fileSelect' || stage === 'scanning') {

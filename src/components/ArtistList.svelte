@@ -4,7 +4,7 @@
 	import Header from './Header.svelte'
 
 	let all_artists = get_artists()
-	$: artists = fuzzysort.go($filter, all_artists, { all: true })
+	let artists = $derived(fuzzysort.go($filter, all_artists, { all: true }))
 </script>
 
 <Header title="Artists" subtitle="{all_artists.length} artists" description={undefined} />

@@ -70,6 +70,8 @@
 </script>
 
 <script lang="ts">
+	import { self } from 'svelte/legacy'
+
 	import { check_shortcut } from '$lib/helpers'
 	import Button from './Button.svelte'
 	import type { Track, TrackID } from '../../ferrum-addon'
@@ -316,8 +318,8 @@
 	}
 </script>
 
-<svelte:window on:keydown={keydown} />
-<svelte:body on:keydown|self={keydown_none_selected} on:paste={cover_paste} />
+<svelte:window onkeydown={keydown} />
+<svelte:body onkeydown={self(keydown_none_selected)} onpaste={cover_paste} />
 <Modal on_cancel={cancel} cancel_on_escape form={save}>
 	<main class="modal">
 		<div class="header" class:has-subtitle={image && image.totalImages >= 2}>
@@ -508,10 +510,10 @@
 		</div>
 		<div class="spacer"></div>
 	</main>
-	<svelte:fragment slot="buttons">
+	{#snippet buttons()}
 		<Button secondary onclick={cancel}>Cancel</Button>
 		<Button type="submit" onclick={() => save()}>Save</Button>
-	</svelte:fragment>
+	{/snippet}
 </Modal>
 
 <style lang="sass">

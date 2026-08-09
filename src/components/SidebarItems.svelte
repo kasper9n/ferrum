@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
 	import {
 		track_lists_details_map,
 		add_tracks_to_playlist,
@@ -29,6 +29,8 @@
 </script>
 
 <script lang="ts">
+	import { run, stopPropagation, self, preventDefault } from 'svelte/legacy'
+
 	import type { TrackListDetails } from '../../ferrum-addon'
 	import { type Writable, writable } from 'svelte/store'
 	import { getContext } from 'svelte'
@@ -40,13 +42,8 @@
 	import { current_playlist_id } from './TrackList.svelte'
 	import { tracklist_actions } from '$lib/page'
 
-	export let show = true
-	export let parent_id: string | null
-	export let prevent_drop = false
 	type Child = TrackListDetails
-	export let children: Child[]
 
-	export let level = 0
 	async function tracklist_context_menu(id: string, is_folder: boolean) {
 		await ipc_renderer.invoke('showTracklistMenu', { id, isFolder: is_folder, isRoot: false })
 	}
@@ -56,7 +53,23 @@
 		return list.children && list.children.length > 0 && $shown_folders.includes(id)
 	}
 
-	export let on_select_down = () => {}
+	interface Props {
+		show?: boolean
+		parent_id: string | null
+		prevent_drop?: boolean
+		children: Child[]
+		level?: number
+		on_select_down?: any
+	}
+
+	let {
+		show = true,
+		parent_id,
+		prevent_drop = false,
+		children,
+		level = 0,
+		on_select_down = () => {},
+	}: Props = $props()
 	function select_first(item: Child) {
 		const child_id = item.children?.[0]
 		if (child_id) {
@@ -121,14 +134,16 @@
 		}
 		e.preventDefault()
 	}
-	$: if (children.find((child) => `/playlist/${child.id}` === $url_pathname)) {
-		const item_handle = getContext<Writable<SidebarItemHandle | null>>('itemHandle')
-		item_handle.set({ handleKey: handle_key })
-	}
+	run(() => {
+		if (children.find((child) => `/playlist/${child.id}` === $url_pathname)) {
+			const item_handle = getContext<Writable<SidebarItemHandle | null>>('itemHandle')
+			item_handle.set({ handleKey: handle_key })
+		}
+	})
 
-	let drag_track_onto_index = null as number | null
-	let drop_above = false
-	let drag_playlist_onto_index = null as number | null
+	let drag_track_onto_index = $state(null as number | null)
+	let drop_above = $state(false)
+	let drag_playlist_onto_index = $state(null as number | null)
 
 	function on_drag_start(e: DragEvent, tracklist: TrackListDetails) {
 		if (e.dataTransfer && tracklist.kind !== 'special' && parent_id) {
@@ -151,11 +166,11 @@
 <div
 	class="sub"
 	class:show
-	on:mousedown|stopPropagation={() => {
+	onmousedown={stopPropagation(() => {
 		requestAnimationFrame(() => {
 			tracklist_actions.focus()
 		})
-	}}
+	})}
 >
 	{#each children as child_list, i}
 		{#if child_list.kind === 'folder'}
@@ -166,10 +181,10 @@
 				style:padding-left={14 * level + 'px'}
 				class:active={`/playlist/${child_list.id}` === $url_pathname}
 				draggable="true"
-				on:dragstart={(e) => on_drag_start(e, child_list)}
+				ondragstart={(e) => on_drag_start(e, child_list)}
 				class:show={$shown_folders.includes(child_list.id)}
 				class:droppable={drag_playlist_onto_index === i}
-				on:drop={(e) => {
+				ondrop={(e) => {
 					if (
 						e.currentTarget &&
 						e.dataTransfer?.types[0] === 'ferrum.playlist' &&
@@ -187,21 +202,21 @@
 						drag_playlist_onto_index = null
 					}
 				}}
-				on:mousedown={() => navigate(`/playlist/${child_list.id}`)}
-				on:contextmenu={() => tracklist_context_menu(child_list.id, true)}
+				onmousedown={() => navigate(`/playlist/${child_list.id}`)}
+				oncontextmenu={() => tracklist_context_menu(child_list.id, true)}
 			>
-				<!-- svelte-ignore a11y-interactive-supports-focus -->
+				<!-- svelte-ignore a11y_interactive_supports_focus -->
 				<svg
 					class="arrow"
 					role="button"
 					aria-label="Arrow button"
-					on:mousedown|stopPropagation={() => {
+					onmousedown={stopPropagation(() => {
 						if ($shown_folders.includes(child_list.id)) {
 							hide_folder(child_list.id)
 						} else {
 							show_folder(child_list.id)
 						}
-					}}
+					})}
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
 					height="24"
@@ -209,11 +224,11 @@
 				>
 					<path d="M21 12l-18 12v-24z" />
 				</svg>
-				<!-- svelte-ignore a11y-interactive-supports-focus -->
+				<!-- svelte-ignore a11y_interactive_supports_focus -->
 				<div
 					class="text"
 					role="link"
-					on:dragover={(e) => {
+					ondragover={(e) => {
 						if (
 							e.currentTarget &&
 							e.dataTransfer?.types[0] === 'ferrum.playlist' &&
@@ -225,9 +240,9 @@
 							e.preventDefault()
 						}
 					}}
-					on:dragleave|self={() => {
+					ondragleave={self(() => {
 						drag_playlist_onto_index = null
-					}}
+					})}
 				>
 					{child_list.name}
 				</div>
@@ -249,7 +264,7 @@
 				}}
 			/>
 		{:else if child_list.kind === 'playlist'}
-			<!-- svelte-ignore a11y-interactive-supports-focus -->
+			<!-- svelte-ignore a11y_interactive_supports_focus -->
 			<a
 				href="/playlist/{child_list.id}"
 				tabindex="-1"
@@ -257,13 +272,13 @@
 				aria-label="playlist"
 				style:padding-left={14 * level + 'px'}
 				draggable="true"
-				on:dragstart={(e) => on_drag_start(e, child_list)}
+				ondragstart={(e) => on_drag_start(e, child_list)}
 				class:active={`/playlist/${child_list.id}` === $url_pathname}
-				on:mousedown={() => navigate(`/playlist/${child_list.id}`)}
+				onmousedown={() => navigate(`/playlist/${child_list.id}`)}
 				class:droppable={drag_track_onto_index === i}
 				class:droppable-above={drag_playlist_onto_index === i && drop_above}
 				class:droppable-below={drag_playlist_onto_index === i && !drop_above}
-				on:drop={(e) => {
+				ondrop={(e) => {
 					if (e.currentTarget && e.dataTransfer?.types[0] === 'ferrum.tracks' && dragged.tracks) {
 						add_tracks_to_playlist(child_list.id, dragged.tracks.ids)
 						drag_track_onto_index = null
@@ -285,13 +300,13 @@
 						drag_playlist_onto_index = null
 					}
 				}}
-				on:contextmenu={() => tracklist_context_menu(child_list.id, false)}
+				oncontextmenu={() => tracklist_context_menu(child_list.id, false)}
 			>
 				<div class="arrow"></div>
 				<div
 					class="text"
 					role="link"
-					on:dragover={(e) => {
+					ondragover={(e) => {
 						if (e.currentTarget && e.dataTransfer?.types[0] === 'ferrum.tracks' && dragged.tracks) {
 							drag_track_onto_index = i
 							e.preventDefault()
@@ -307,10 +322,10 @@
 							drop_above = e.pageY < rect.bottom - rect.height / 2
 						}
 					}}
-					on:dragleave|self={() => {
+					ondragleave={self(() => {
 						drag_track_onto_index = null
 						drag_playlist_onto_index = null
-					}}
+					})}
 				>
 					{child_list.name}
 				</div>
@@ -321,7 +336,7 @@
 				tabindex="-1"
 				class="item rounded-r-[5px]"
 				style:padding-left={14 * level + 'px'}
-				on:mousedown|preventDefault={() => navigate(`/playlist/${child_list.id}`)}
+				onmousedown={preventDefault(() => navigate(`/playlist/${child_list.id}`))}
 				class:active={`/playlist/${child_list.id}` === $url_pathname}
 			>
 				<div class="arrow"></div>

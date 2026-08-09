@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
 	export let drag_el: HTMLElement
 	export let div: HTMLElement
 	export function set_inner_text(new_text: string) {

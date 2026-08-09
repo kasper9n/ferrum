@@ -4,8 +4,12 @@
 	import Modal from './Modal.svelte'
 	import Button from './Button.svelte'
 
-	export let info: PlaylistInfo
-	export let cancel: () => void
+	interface Props {
+		info: PlaylistInfo
+		cancel: () => void
+	}
+
+	let { info = $bindable(), cancel }: Props = $props()
 
 	function rows(value: string) {
 		const matches = value.match(/\n/g) || []
@@ -40,10 +44,10 @@
 		<textarea rows={rows(info.description)} bind:value={info.description} placeholder="Description"
 		></textarea>
 	</main>
-	<svelte:fragment slot="buttons">
+	{#snippet buttons()}
 		<Button secondary onclick={cancel}>Cancel</Button>
 		<Button onclick={save}>Save</Button>
-	</svelte:fragment>
+	{/snippet}
 </Modal>
 
 <style lang="sass">

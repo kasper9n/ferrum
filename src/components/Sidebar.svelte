@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
 	export const special_playlists_nav = [
 		{ id: 'root', name: 'Songs', kind: 'special' },
 		// { id: 'root', name: 'Artists', kind: 'special', path: '/artists' },
@@ -6,6 +6,9 @@
 </script>
 
 <script lang="ts">
+	import { run, createBubbler, preventDefault, self } from 'svelte/legacy'
+
+	const bubble = createBubbler()
 	import SidebarItems, { type SidebarItemHandle } from './SidebarItems.svelte'
 	import Filter from './Filter.svelte'
 	import { is_mac, track_lists_details_map, move_playlist } from '$lib/data'
@@ -17,7 +20,7 @@
 	import { navigate } from '$lib/router'
 	import { current_playlist_id } from './TrackList.svelte'
 
-	let viewport: HTMLElement
+	let viewport: HTMLElement = $state()
 	const item_handle = setContext('itemHandle', writable(null as SidebarItemHandle | null))
 
 	onDestroy(
@@ -39,7 +42,7 @@
 		})
 	}
 
-	let root_droppable = false
+	let root_droppable = $state(false)
 	function dragover(e: DragEvent) {
 		if (e.currentTarget && e.dataTransfer?.types[0] === 'ferrum.playlist') {
 			root_droppable = true
@@ -60,9 +63,8 @@
 		}
 	}
 
-	let content_element: HTMLDivElement
+	let content_element: HTMLDivElement = $state()
 
-	$: ($current_playlist_id, scroll_to_active())
 	async function scroll_to_active() {
 		await tick()
 		const active = content_element?.querySelector('.active')
@@ -86,12 +88,15 @@
 		content_element.scrollTop = scroll_top
 		scroll_to_active()
 	}
+	run(() => {
+		;($current_playlist_id, scroll_to_active())
+	})
 </script>
 
 <!-- NOTE: aside is used as css selector in SidebarItems -->
-<aside on:mousedown|self|preventDefault role="none">
+<aside onmousedown={self(preventDefault(bubble('mousedown')))} role="none">
 	{#if is_mac}
-		<div class="titlebar" on:mousedown|self|preventDefault role="none"></div>
+		<div class="titlebar" onmousedown={self(preventDefault(bubble('mousedown')))} role="none"></div>
 	{/if}
 	<div class="content" bind:this={content_element}>
 		<Filter
@@ -104,17 +109,17 @@
 				}
 			}}
 		/>
-		<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<nav
 			class="items"
 			tabindex="-1"
-			on:mousedown|preventDefault={() => {
+			onmousedown={preventDefault(() => {
 				if (document.activeElement === document.body) {
 					tracklist_actions.focus()
 				}
-			}}
-			on:keydown={(e) => {
+			})}
+			onkeydown={(e) => {
 				if (e.key === 'Escape') {
 					e.preventDefault()
 					tracklist_actions.focus()
@@ -131,13 +136,13 @@
 			}}
 			bind:this={viewport}
 			class:droppable={root_droppable}
-			on:contextmenu|self={on_context_menu}
-			on:dragover|self={dragover}
-			on:dragleave|self={dragleave}
-			on:drop|self={drop}
+			oncontextmenu={self(on_context_menu)}
+			ondragover={self(dragover)}
+			ondragleave={self(dragleave)}
+			ondrop={self(drop)}
 		>
-			<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-			<div class="focuser" tabindex="0" on:focus={focuser}></div>
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<div class="focuser" tabindex="0" onfocus={focuser}></div>
 			<div class="spacer"></div>
 			<SidebarItems
 				parent_id={null}

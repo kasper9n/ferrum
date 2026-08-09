@@ -3,9 +3,13 @@
 	import Button from './Button.svelte'
 	import { save_view_options, view_options } from '$lib/data'
 
-	export let on_close: () => void
+	interface Props {
+		on_close: () => void
+	}
 
-	let auto_update = !view_options.noAutoUpdate
+	let { on_close }: Props = $props()
+
+	let auto_update = $state(!view_options.noAutoUpdate)
 
 	function save() {
 		view_options.noAutoUpdate = !auto_update
@@ -25,8 +29,8 @@
 			Automatically check for updates on startup
 		</label>
 	</div>
-	<svelte:fragment slot="buttons">
+	{#snippet buttons()}
 		<Button secondary onclick={on_close}>Cancel</Button>
 		<Button type="submit" onclick={save}>Save</Button>
-	</svelte:fragment>
+	{/snippet}
 </Modal>

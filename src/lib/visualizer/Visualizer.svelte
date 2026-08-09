@@ -410,7 +410,7 @@
 </script>
 
 <svelte:window
-	on:resize={() => {
+	onresize={() => {
 		for (const vis of visualisers) {
 			schedule_resize(vis)
 		}
@@ -418,7 +418,7 @@
 />
 
 <svelte:document
-	on:visibilitychange={() => {
+	onvisibilitychange={() => {
 		if (document.hidden) {
 			next_vis.toy?.pause()
 			main_vis.toy?.pause()

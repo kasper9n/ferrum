@@ -9,12 +9,7 @@ export type UpdateJson = {
 }
 
 export type JsonValue =
-	| string
-	| number
-	| boolean
-	| null
-	| JsonValue[]
-	| { [key: string]: JsonValue }
+	string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 
 function popup(message: string, detail: string) {
 	console.error(`${message}: ${detail}`)

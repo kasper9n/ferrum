@@ -182,8 +182,7 @@
 				artist_name: params.artist_name?.trim() || '',
 			})
 			const found_raw = (await get_json(`https://lrclib.net/api/search?${search_query}`)) as
-				| LrclibApiTrack[]
-				| null
+				LrclibApiTrack[] | null
 
 			if (request_key !== next_key) return
 			const found = found_raw?.map(normalize_track) ?? []

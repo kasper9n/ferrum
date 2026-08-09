@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy'
+
 	import { onDestroy } from 'svelte'
 	import { check_shortcut } from '../lib/helpers'
 	import { ipc_listen } from '$lib/window'
@@ -11,12 +13,9 @@
 
 	type Result = TrackListDetails & { path?: string }
 
-	let value = ''
-	let playlists: Result[] = []
-	let show = false
-	$: if (show) {
-		playlists = get_playlists()
-	}
+	let value = $state('')
+	let playlists: Result[] = $state([])
+	let show = $state(false)
 	function get_playlists() {
 		const playlists: Result[] = [...special_playlists_nav]
 		for (const playlist of Object.values($track_lists_details_map)) {
@@ -27,23 +26,18 @@
 		return playlists
 	}
 
-	let filtered_items = fuzzysort.go(value, playlists, { key: 'name', all: true })
-	$: {
-		filtered_items = fuzzysort.go(value, playlists, { key: 'name', all: true })
-		clamp_index()
-	}
+	let filtered_items = $state(fuzzysort.go(value, playlists, { key: 'name', all: true }))
 
 	function select_input(el: HTMLInputElement) {
 		el.select()
 	}
 
-	let selected_index = 0
+	let selected_index = $state(0)
 
 	function clamp_index() {
 		selected_index = Math.max(0, Math.min(filtered_items.length - 1, selected_index))
 	}
-	$: (list_items, clamp_index())
-	let list_items: HTMLElement[] = []
+	let list_items: HTMLElement[] = $state([])
 
 	function handle_keydown(e: KeyboardEvent) {
 		if (e.key === 'Tab') {
@@ -76,6 +70,18 @@
 			show = !show
 		}),
 	)
+	run(() => {
+		if (show) {
+			playlists = get_playlists()
+		}
+	})
+	run(() => {
+		filtered_items = fuzzysort.go(value, playlists, { key: 'name', all: true })
+		clamp_index()
+	})
+	run(() => {
+		;(list_items, clamp_index())
+	})
 </script>
 
 {#if show}
@@ -88,7 +94,7 @@
 		<input
 			type="text"
 			bind:value
-			on:keydown={handle_keydown}
+			onkeydown={handle_keydown}
 			placeholder="Search for a playlist..."
 			use:select_input
 		/>
@@ -97,7 +103,7 @@
 				<button
 					bind:this={list_items[i]}
 					type="button"
-					on:click={() => {
+					onclick={() => {
 						navigate(item.obj.path ?? '/playlist/' + item.obj.id)
 						show = false
 					}}

@@ -36,7 +36,7 @@
 		})
 	})
 
-	let media_keys_result: Awaited<ReturnType<typeof init_media_keys>> | null = null
+	let media_keys_result: Awaited<ReturnType<typeof init_media_keys>> | null = $state(null)
 	async function init_media_keys(prompt: boolean) {
 		return await ipc_renderer.invoke('init_media_keys', prompt)
 	}
@@ -67,7 +67,7 @@
 		ipc_renderer.removeListener('Toggle Visualizer', toggle_visualizer)
 	})
 
-	let droppable = false
+	let droppable = $state(false)
 	const allowed_mimes = ['audio/mpeg', 'audio/x-m4a', 'audio/ogg'] // mp3, m4a
 	function get_file_paths(e: DragEvent): string[] {
 		if (!e.dataTransfer) return []
@@ -121,7 +121,7 @@
 		}
 	}
 
-	let show_settings = false
+	let show_settings = $state(false)
 	onDestroy(
 		ipc_listen('show_settings', () => {
 			if ($modal_count === 0) {
@@ -130,7 +130,7 @@
 		}),
 	)
 
-	let show_itunes_import = false
+	let show_itunes_import = $state(false)
 	onDestroy(
 		ipc_listen('itunesImport', () => {
 			if ($modal_count === 0) {
@@ -139,9 +139,9 @@
 		}),
 	)
 
-	let show_visualizer = false
+	let show_visualizer = $state(false)
 
-	let playlist_info: PlaylistInfo | null = null
+	let playlist_info: PlaylistInfo | null = $state(null)
 	onDestroy(
 		ipc_listen('context.playlist.edit', (_, id) => {
 			const list = get_track_list(id)
@@ -192,8 +192,8 @@
 </script>
 
 <svelte:window
-	on:keydown={keydown}
-	on:focus={async () => {
+	onkeydown={keydown}
+	onfocus={async () => {
 		if (media_keys_result?.needs_accessibility_permission) {
 			media_keys_result = null
 			media_keys_result = await ipc_renderer.invoke('init_media_keys', false)
@@ -204,10 +204,10 @@
 	<title>Ferrum</title>
 </svelte:head>
 
-<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main
-	on:dragenter|capture={drag_enter_or_over}
-	on:keydown={(e) => {
+	ondragentercapture={drag_enter_or_over}
+	onkeydown={(e) => {
 		if (e.target) {
 			if (check_shortcut(e, 'ArrowUp', { cmd_or_ctrl: true })) {
 				e.preventDefault()
@@ -296,9 +296,9 @@
 		<!-- svelte-ignore a11y_interactive_supports_focus -->
 		<div
 			class="dropzone"
-			on:dragleave={drag_leave}
-			on:drop={drop}
-			on:dragover={drag_enter_or_over}
+			ondragleave={drag_leave}
+			ondrop={drop}
+			ondragover={drag_enter_or_over}
 			role="dialog"
 			aria-label="Drop files to import"
 			aria-dropeffect="copy"
