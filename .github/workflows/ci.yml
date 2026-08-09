@@ -24,9 +24,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Node.js setup
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: '.node-version'
 
       - name: 'Install dependencies (Linux)'
         if: matrix.os == 'ubuntu-latest'
@@ -53,9 +53,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Node.js setup
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: '.node-version'
 
       - name: JDK 17 Setup
         uses: actions/setup-java@v4
