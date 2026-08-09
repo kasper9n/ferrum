@@ -73,7 +73,7 @@ CREATE TABLE skips_imported (
 
 CREATE TABLE track_lists (
 	id            TEXT PRIMARY KEY NOT NULL,
-	type          TEXT NOT NULL CHECK (type IN ('playlist', 'folder', 'special')),
+	kind          TEXT NOT NULL CHECK (kind IN ('playlist', 'folder', 'special')),
 	parent_id     TEXT NULL REFERENCES track_lists(id),
 	item_index    INTEGER NULL,
 	name          TEXT NOT NULL,

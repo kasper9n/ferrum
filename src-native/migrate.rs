@@ -226,7 +226,7 @@ async fn insert_library_into_db(
 				sqlx::query(
 					"
 						INSERT INTO track_lists
-							(id, type, name, description, created_at)
+							(id, kind, name, description, created_at)
 						VALUES (?, ?, ?, ?, ?)
 					",
 				)
@@ -246,7 +246,7 @@ async fn insert_library_into_db(
 				sqlx::query(
 					"
 						INSERT INTO track_lists
-							(id, type, parent_id, item_index, name, description, liked, disliked,
+							(id, kind, parent_id, item_index, name, description, liked, disliked,
 							imported_from, original_id, imported_at, created_at)
 						VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 					",
@@ -274,7 +274,7 @@ async fn insert_library_into_db(
 				sqlx::query(
 					"
 						INSERT INTO track_lists
-							(id, type, parent_id, item_index, name, description, liked, disliked,
+							(id, kind, parent_id, item_index, name, description, liked, disliked,
 							imported_from, original_id, imported_at, created_at)
 						VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 					",
