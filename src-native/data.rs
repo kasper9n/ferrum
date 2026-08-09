@@ -1,4 +1,4 @@
-use crate::library::{Paths, open_library};
+use crate::library::{Paths, load_library_json, open_library};
 use crate::library_types::Library;
 use crate::tracks::Tag;
 use anyhow::Context;
@@ -123,9 +123,12 @@ impl Data {
 
 		let library_sqlite = open_library(&paths)?;
 
+		let loaded_library_json =
+			load_library_json(&library_dir.join("Library.json"))?.unwrap_or(Library::new());
+
 		let data = Data {
 			paths,
-			library: Library::new(),
+			library: loaded_library_json,
 			db: library_sqlite,
 			current_tag: None,
 		};
