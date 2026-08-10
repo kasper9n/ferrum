@@ -44,9 +44,6 @@ export default defineConfig({
 				build: {
 					outDir: './build/electron',
 					emptyOutDir: true,
-					rollupOptions: {
-						external: [/^.*\.node$/],
-					},
 				},
 			},
 		}),

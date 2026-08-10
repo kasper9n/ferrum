@@ -1,6 +1,8 @@
 import { app, ipcMain, session, BrowserWindow, dialog, protocol, net } from 'electron'
 import is from './is'
-import addon from 'ferrum-addon'
+import { createRequire } from 'node:module'
+const require = createRequire(import.meta.url)
+const addon = require('ferrum-addon')
 
 if (is.dev) app.setName('Ferrum Dev')
 
@@ -60,7 +62,7 @@ const local_data_path = process.env.LOCAL_DATA ? path.resolve(process.env.LOCAL_
 if (is.dev) {
 	const data_path =
 		local_data_path ??
-		path.join(__dirname, '../../src-native/appdata/LocalData/space.kasper.ferrum')
+		path.join(import.meta.dirname, '../../src-native/appdata/LocalData/space.kasper.ferrum')
 	const electron_data_path = path.join(data_path, 'Electron Data')
 	app.setPath('userData', electron_data_path)
 } else {
@@ -111,7 +113,7 @@ app.whenReady().then(async () => {
 		webPreferences: {
 			contextIsolation: false,
 			nodeIntegration: true,
-			preload: path.resolve(__dirname, './preload.js'),
+			preload: path.resolve(import.meta.dirname, './preload.js'),
 		},
 		backgroundColor: '#0D1115',
 		show: false,
@@ -140,7 +142,7 @@ app.whenReady().then(async () => {
 		throw new Error('VITE_DEV_SERVER_URL missing')
 	}
 
-	const web_folder = path.join(path.dirname(__dirname), 'web')
+	const web_folder = path.join(path.dirname(import.meta.dirname), 'web')
 	const origin = 'app://app'
 
 	protocol.handle('app', (request) => {

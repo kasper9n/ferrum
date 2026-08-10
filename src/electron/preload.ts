@@ -1,6 +1,8 @@
 import path from 'path'
 import is from './is'
-import addon from 'ferrum-addon'
+import { createRequire } from 'node:module'
+const require = createRequire(import.meta.url)
+const addon = require('ferrum-addon')
 import { webUtils } from 'electron'
 
 window.addon = addon

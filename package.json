@@ -1,5 +1,6 @@
 {
 	"name": "ferrum",
+	"type": "module",
 	"private": true,
 	"productName": "Ferrum",
 	"author": "kasper.space",
@@ -19,7 +20,7 @@
 		"build:web": "vite build",
 		"build-android": "cd mobile && cargo tauri android dev",
 		"electron-builder": "electron-builder",
-		"generate-update-json": "node ./generate-update-json.mjs",
+		"generate-update-json": "node ./generate-update-json.js",
 		"preview": "LOCAL_DATA=./src-native/appdata/local_data LIBRARY=./src-native/appdata/Library ./build/app/mac/Ferrum.app/Contents/MacOS/Ferrum",
 		"lint": "svelte-check --tsconfig ./tsconfig.json && eslint src && prettier --check src",
 		"format": "eslint --fix src && prettier --write src",
