@@ -75,7 +75,7 @@ interface TypedIpcRenderer<
 		channel: K,
 		listener: (event: IpcRendererEvent, ...args: Parameters<IpcEvents[K]>) => void,
 	): this
-	removeAllListeners<K extends keyof IpcEvents>(channel: K): this
+	removeAllListeners<K extends keyof IpcEvents>(channel?: K): this
 	send<K extends keyof IpcEvents>(channel: K, ...args: Parameters<IpcEvents[K]>): void
 	sendSync<K extends keyof IpcEvents>(
 		channel: K,
