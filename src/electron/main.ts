@@ -110,6 +110,8 @@ app.whenReady().then(async () => {
 	})
 	browser_windows.main_window = main_window
 
+	// Deprecated, but Range requests do not work: https://github.com/electron/electron/issues/38749
+	// Possible workaround: https://github.com/laurent22/joplin/blob/2654b33620775080d1d59c552259d41e33dad3d2/packages/app-desktop/utils/customProtocols/handleCustomProtocols.ts
 	protocol.registerFileProtocol('track', (request, callback) => {
 		const url = decodeURI(request.url)
 		const path = url.substring(6)
