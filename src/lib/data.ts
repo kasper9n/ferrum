@@ -19,6 +19,7 @@ export const local_data_path = window.local_data_path
 export const library_path = window.library_path
 export const is_mac = window.is_mac
 export const is_windws = window.is_windows
+export const get_file_path = window.get_file_path
 const inner_addon = window.addon
 export const ItunesImport = inner_addon.ItunesImport
 

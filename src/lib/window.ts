@@ -19,5 +19,6 @@ declare global {
 		library_path?: string
 		is_mac: boolean
 		is_windows: boolean
+		get_file_path: (file: File) => string
 	}
 }

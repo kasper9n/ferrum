@@ -11,7 +11,13 @@
 	import { queue_visible } from './lib/queue'
 	import { lyrics_state } from '$lib/lyrics.svelte'
 	import { ipc_listen, ipc_renderer } from '$lib/window'
-	import { delete_track_list, get_track_list, import_tracks, type PlaylistInfo } from '$lib/data'
+	import {
+		delete_track_list,
+		get_track_list,
+		import_tracks,
+		get_file_path,
+		type PlaylistInfo,
+	} from '$lib/data'
 	import { play_pause, playing_track, time_record } from './lib/player'
 	import DragGhost from './components/DragGhost.svelte'
 	import ItunesImport from './components/ItunesImport.svelte'
@@ -75,7 +81,7 @@
 		for (let i = 0; i < e.dataTransfer.files.length; i++) {
 			const file = e.dataTransfer.files[i]
 			if (allowed_mimes.includes(file.type)) {
-				valid_paths.push(file.path)
+				valid_paths.push(get_file_path(file))
 			}
 		}
 		return valid_paths

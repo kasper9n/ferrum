@@ -78,6 +78,7 @@
 	import { get } from 'svelte/store'
 	import Modal, { modal_count } from './Modal.svelte'
 	import {
+		get_file_path,
 		get_genres,
 		get_image,
 		get_track,
@@ -209,12 +210,12 @@
 
 	let droppable = $state(false)
 	const allowed_mimes = ['image/jpeg', 'image/png']
-	function get_file_path(e: DragEvent): File | null {
+	function get_first_matching_drop_file(e: DragEvent): File | null {
 		if (e.dataTransfer && has_file(e)) {
 			for (let i = 0; i < e.dataTransfer.files.length; i++) {
 				const file = e.dataTransfer.files[i]
 				if (allowed_mimes.includes(file.type)) {
-					return file.path
+					return file
 				}
 			}
 		}
@@ -242,8 +243,9 @@
 	function drop(e: DragEvent) {
 		e.preventDefault()
 		droppable = false
-		const path = get_file_path(e)
-		if (path !== null) {
+		const file = get_first_matching_drop_file(e)
+		if (file !== null) {
+			const path = get_file_path(file)
 			replace_cover(path)
 		}
 	}
@@ -298,8 +300,9 @@
 	function cover_paste(e: ClipboardEvent) {
 		if (e.clipboardData && e.clipboardData.files.length === 1) {
 			const file = e.clipboardData.files[0]
-			if (allowed_mimes.includes(file.type) && file.path !== '' && file.path) {
-				replace_cover(file.path)
+			const path = get_file_path(file)
+			if (allowed_mimes.includes(file.type) && path) {
+				replace_cover(path)
 			} else if (allowed_mimes.includes(file.type)) {
 				const reader = new FileReader()
 				reader.onload = (e) => {
