@@ -1,14 +1,15 @@
 <script lang="ts">
+	import '../app.css'
+	import '../assets/fonts.css'
 	import { onDestroy, onMount } from 'svelte'
 	import { fade, fly } from 'svelte/transition'
-	import TrackList from './components/TrackList.svelte'
-	import Player from './components/Player.svelte'
-	import Sidebar from './components/Sidebar.svelte'
-	import Queue from './components/Queue.svelte'
-	import Lyrics from './components/Lyrics.svelte'
-	import TrackInfo, { track_info_state } from './components/TrackInfo.svelte'
-	import PlaylistInfoModal from './components/PlaylistInfo.svelte'
-	import { queue_visible } from './lib/queue'
+	import Player from '$components/Player.svelte'
+	import Sidebar from '$components/Sidebar.svelte'
+	import Queue from '$components/Queue.svelte'
+	import Lyrics from '$components/Lyrics.svelte'
+	import TrackInfo, { track_info_state } from '$components/TrackInfo.svelte'
+	import PlaylistInfoModal from '$components/PlaylistInfo.svelte'
+	import { queue_visible } from '$lib/queue'
 	import { lyrics_state } from '$lib/lyrics.svelte'
 	import { ipc_listen, ipc_renderer } from '$lib/window'
 	import {
@@ -18,21 +19,19 @@
 		get_file_path,
 		type PlaylistInfo,
 	} from '$lib/data'
-	import { play_pause, playing_track, time_record } from './lib/player'
-	import DragGhost from './components/DragGhost.svelte'
-	import ItunesImport from './components/ItunesImport.svelte'
-	import { modal_count } from './components/Modal.svelte'
-	import QuickNav from './components/QuickNav.svelte'
-	import { check_shortcut } from './lib/helpers'
-	import ArtistList from './components/ArtistList.svelte'
-	import { tracklist_actions } from './lib/page'
-	import Route from './lib/Route.svelte'
-	import { navigate_back, navigate_forward } from './lib/router'
-	import './lib/router'
-	import CheckForUpdates from './components/CheckForUpdates.svelte'
-	import Settings from './components/Settings.svelte'
-	import Button from './components/Button.svelte'
+	import { play_pause, playing_track, time_record } from '$lib/player'
+	import DragGhost from '$components/DragGhost.svelte'
+	import ItunesImport from '$components/ItunesImport.svelte'
+	import { modal_count } from '$components/Modal.svelte'
+	import QuickNav from '$components/QuickNav.svelte'
+	import { check_shortcut } from '$lib/helpers'
+	import { tracklist_actions } from '$lib/page'
+	import CheckForUpdates from '$components/CheckForUpdates.svelte'
+	import Settings from '$components/Settings.svelte'
+	import Button from '$components/Button.svelte'
 	import Visualizer from '$lib/visualizer/Visualizer.svelte'
+
+	let { children } = $props()
 
 	ipc_renderer.invoke('app_loaded').catch(() => {
 		ipc_renderer.invoke('showMessageBox', false, {
@@ -189,8 +188,16 @@
 		}),
 	)
 
-	onDestroy(ipc_listen('Back', navigate_back))
-	onDestroy(ipc_listen('Forward', navigate_forward))
+	onDestroy(
+		ipc_listen('Back', () => {
+			window.history.back()
+		}),
+	)
+	onDestroy(
+		ipc_listen('Forward', () => {
+			window.history.forward()
+		}),
+	)
 
 	onMount(() => {
 		tracklist_actions.focus()
@@ -228,14 +235,7 @@
 	<div class="meat">
 		<Sidebar />
 		<div class="flex size-full min-w-0 flex-col">
-			<Route route="/playlist/:playlist_id">
-				{#snippet children({ playlist_id })}
-					<TrackList params={{ playlist_id }} />
-				{/snippet}
-			</Route>
-			<Route route="/artists">
-				<ArtistList />
-			</Route>
+			{@render children()}
 			{#if media_keys_result}
 				<div class="shrink-0 overflow-hidden">
 					<div

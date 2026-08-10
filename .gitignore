@@ -1,5 +1,26 @@
-/node_modules
+node_modules
+target
+src-native/appdata
+ferrum-addon/addon.node
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
 /build
-/target
-/src-native/appdata
-/ferrum-addon/addon.node
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*

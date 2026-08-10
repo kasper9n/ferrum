@@ -7,9 +7,10 @@
 	import type { TrackListDetails } from 'ferrum-addon'
 	import Modal from './Modal.svelte'
 	import { special_playlists_nav } from './Sidebar.svelte'
-	import { navigate } from '$lib/router'
+	import { goto } from '$app/navigation'
+	import { resolve } from '$app/paths'
 
-	type Result = TrackListDetails & { path?: string }
+	type Result = TrackListDetails
 
 	let value = $state('')
 	let show = $state(false)
@@ -47,7 +48,8 @@
 			show = false
 			value = ''
 		} else if (check_shortcut(e, 'Enter')) {
-			navigate('/playlist/' + filtered_items[selected_index].obj.id)
+			const id = filtered_items[selected_index].obj.id
+			goto(resolve('/playlist/[id]', { id }))
 			show = false
 		} else if (check_shortcut(e, 'ArrowUp')) {
 			selected_index = clamp_index(selected_index - 1)
@@ -91,7 +93,7 @@
 					bind:this={list_items[i]}
 					type="button"
 					onclick={() => {
-						navigate(item.obj.path ?? '/playlist/' + item.obj.id)
+						goto(resolve('/playlist/[id]', { id: item.obj.id }))
 						show = false
 					}}
 					class:selected={selected_index === i}

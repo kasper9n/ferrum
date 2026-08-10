@@ -15,7 +15,7 @@ import {
 import type { Track, TrackID } from 'ferrum-addon'
 import { ipc_renderer } from './window'
 import { queue, set_new_queue, next as queueNext, prev as queuePrev } from './queue'
-import { tracks_page_item_ids } from '$components/TrackList.svelte'
+import { tracks_page_item_ids } from '$routes/playlist/[id]/+page.svelte'
 
 const audio = new Audio()
 export const audio_context = new AudioContext()

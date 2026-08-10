@@ -36,9 +36,11 @@
 	import * as dragGhost from './DragGhost.svelte'
 	import { ipc_renderer } from '$lib/window'
 	import { check_shortcut } from '$lib/helpers'
-	import { navigate, url_pathname } from '$lib/router'
-	import { current_playlist_id } from './TrackList.svelte'
+	import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
 	import { tracklist_actions } from '$lib/page'
+	import { resolve } from '$app/paths'
+	import { goto } from '$app/navigation'
+	import { page } from '$app/state'
 
 	type Child = TrackListDetails
 
@@ -71,7 +73,8 @@
 	function select_first(item: Child) {
 		const child_id = item.children?.[0]
 		if (child_id) {
-			navigate('/playlist/' + $track_lists_details_map[child_id].id)
+			const id = $track_lists_details_map[child_id].id
+			goto(resolve('/playlist/[id]', { id }))
 		}
 	}
 	function select_last(in_id: string) {
@@ -79,24 +82,25 @@
 		if (children && (has_showing_children(in_id) || in_id === 'root')) {
 			select_last(children[children.length - 1])
 		} else {
-			navigate('/playlist/' + $track_lists_details_map[in_id].id)
+			const id = $track_lists_details_map[in_id].id
+			goto(resolve('/playlist/[id]', { id }))
 		}
 	}
 	function select_up(i: number) {
 		const prev = children[i - 1] || null
 		if (i === 0 && parent_id) {
-			navigate(`/playlist/${parent_id}`)
+			goto(resolve('/playlist/[id]', { id: parent_id }))
 		} else if (prev && has_showing_children(prev.id)) {
 			select_last(prev.id)
 		} else if (prev) {
-			navigate(`/playlist/${prev.id}`)
+			goto(resolve('/playlist/[id]', { id: prev.id }))
 		}
 	}
 	function select_down(i: number) {
 		if (has_showing_children(children[i].id)) {
 			select_first(children[i])
 		} else if (children[i + 1]) {
-			navigate(`/playlist/${children[i + 1].id}`)
+			goto(resolve('/playlist/[id]', { id: children[i + 1].id }))
 		} else {
 			on_select_down?.()
 		}
@@ -104,7 +108,7 @@
 
 	export function handle_key(e: KeyboardEvent) {
 		const index = children.findIndex((child) => {
-			return `/playlist/${child.id}` === $url_pathname
+			return resolve('/playlist/[id]', { id: child.id }) === page.url.pathname
 		})
 		if (index < 0) {
 			return
@@ -114,7 +118,7 @@
 		if (check_shortcut(e, 'ArrowUp')) {
 			select_up(index)
 		} else if (check_shortcut(e, 'ArrowUp', { alt: true })) {
-			navigate('/playlist/root')
+			goto(resolve('/playlist/root'))
 		} else if (check_shortcut(e, 'ArrowDown', { alt: true })) {
 			select_last('root')
 		} else if (check_shortcut(e, 'ArrowDown')) {
@@ -123,7 +127,7 @@
 			if (selected_list.kind === 'folder' && $shown_folders.includes(selected_list.id)) {
 				hide_folder(selected_list.id)
 			} else if (parent_id) {
-				navigate(`/playlist/${parent_id}`)
+				goto(resolve('/playlist/[id]', { id: parent_id }))
 			}
 		} else if (check_shortcut(e, 'ArrowRight') && selected_list.kind === 'folder') {
 			show_folder(selected_list.id)
@@ -133,7 +137,9 @@
 		e.preventDefault()
 	}
 	$effect(() => {
-		if (children.find((child) => `/playlist/${child.id}` === $url_pathname)) {
+		if (
+			children.find((child) => resolve(`/playlist/[id]`, { id: child.id }) === page.url.pathname)
+		) {
 			const item_handle = getContext<Writable<SidebarItemHandle | null>>('itemHandle')
 			item_handle.set({ handleKey: handle_key })
 		}
@@ -174,11 +180,11 @@
 	{#each children as child_list, i}
 		{#if child_list.kind === 'folder'}
 			<a
-				href="/playlist/{child_list.id}"
+				href={resolve('/playlist/[id]', { id: child_list.id })}
 				tabindex="-1"
 				class="item rounded-r-[5px] outline-none"
 				style:padding-left={14 * level + 'px'}
-				class:active={`/playlist/${child_list.id}` === $url_pathname}
+				class:active={resolve(`/playlist/[id]`, { id: child_list.id }) === page.url.pathname}
 				draggable="true"
 				ondragstart={(e) => on_drag_start(e, child_list)}
 				class:show={$shown_folders.includes(child_list.id)}
@@ -201,7 +207,9 @@
 						drag_playlist_onto_index = null
 					}
 				}}
-				onmousedown={() => navigate(`/playlist/${child_list.id}`)}
+				onmousedown={() => {
+					goto(resolve('/playlist/[id]', { id: child_list.id }))
+				}}
 				oncontextmenu={() => tracklist_context_menu(child_list.id, true)}
 			>
 				<!-- svelte-ignore a11y_interactive_supports_focus -->
@@ -259,7 +267,7 @@
 				prevent_drop={prevent_drop || dragged.playlist?.id === child_list.id}
 				on_select_down={() => {
 					if (i < children.length - 1) {
-						navigate(`/playlist/${children[i + 1].id}`)
+						goto(resolve('/playlist/[id]', { id: children[i + 1].id }))
 					} else {
 						on_select_down?.()
 					}
@@ -268,15 +276,17 @@
 		{:else if child_list.kind === 'playlist'}
 			<!-- svelte-ignore a11y_interactive_supports_focus -->
 			<a
-				href="/playlist/{child_list.id}"
+				href={resolve('/playlist/[id]', { id: child_list.id })}
 				tabindex="-1"
 				class="item rounded-r-[5px]"
 				aria-label="playlist"
 				style:padding-left={14 * level + 'px'}
 				draggable="true"
 				ondragstart={(e) => on_drag_start(e, child_list)}
-				class:active={`/playlist/${child_list.id}` === $url_pathname}
-				onmousedown={() => navigate(`/playlist/${child_list.id}`)}
+				class:active={resolve(`/playlist/[id]`, { id: child_list.id }) === page.url.pathname}
+				onmousedown={() => {
+					goto(resolve('/playlist/[id]', { id: child_list.id }))
+				}}
 				class:droppable={drag_track_onto_index === i}
 				class:droppable-above={drag_playlist_onto_index === i && drop_above}
 				class:droppable-below={drag_playlist_onto_index === i && !drop_above}
@@ -336,15 +346,15 @@
 			</a>
 		{:else}
 			<a
-				href="/playlist/{child_list.id}"
+				href={resolve('/playlist/[id]', { id: child_list.id })}
 				tabindex="-1"
 				class="item rounded-r-[5px]"
 				style:padding-left={14 * level + 'px'}
 				onmousedown={(e) => {
 					e.preventDefault()
-					navigate(`/playlist/${child_list.id}`)
+					goto(resolve('/playlist/[id]', { id: child_list.id }))
 				}}
-				class:active={`/playlist/${child_list.id}` === $url_pathname}
+				class:active={resolve(`/playlist/[id]`, { id: child_list.id }) === page.url.pathname}
 			>
 				<div class="arrow"></div>
 				<div class="text">

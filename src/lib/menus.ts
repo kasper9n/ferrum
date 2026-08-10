@@ -13,9 +13,10 @@ import { get } from 'svelte/store'
 import { append_to_user_queue, prepend_to_user_queue } from './queue'
 import type { SelectedTracksAction } from '$electron/typed_ipc'
 import { open_track_info } from '$components/TrackInfo.svelte'
-import { navigate } from './router'
 import { tracklist_actions } from './page'
 import { tick } from 'svelte'
+import { goto } from '$app/navigation'
+import { resolve } from '$app/paths'
 
 export function get_flattened_tracklists() {
 	const track_lists = get(track_lists_details_map)
@@ -69,7 +70,7 @@ export function handle_selected_tracks_action({
 		if (list.type === 'playlist') {
 			reveal_index = list.tracks.indexOf(first_track_id)
 		}
-		navigate('/playlist/' + action.playlist_id)
+		goto(resolve('/playlist/[id]', { id: action.playlist_id }))
 		tick().then(() => {
 			tracklist_actions.go_to_index(reveal_index)
 		})

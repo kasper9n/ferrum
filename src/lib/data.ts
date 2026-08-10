@@ -10,9 +10,10 @@ import type {
 	ViewOptions,
 } from 'ferrum-addon'
 import { init_queue_persistence, queue } from './queue'
-import { current_playlist_id } from '$components/TrackList.svelte'
-import { navigate } from './router'
+import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
 import { call_sync, get_error_message, strict_call } from './error'
+import { goto } from '$app/navigation'
+import { resolve } from '$app/paths'
 
 export const is_dev = window.is_dev
 export const local_data_path = window.local_data_path
@@ -173,7 +174,7 @@ export function get_track_list(id: TrackListID) {
 export function delete_track_list(id: TrackListID) {
 	strict_call((addon) => addon.delete_track_list(id))
 	if (id === get(current_playlist_id)) {
-		navigate('/playlist/root')
+		goto(resolve('/playlist/root'))
 	}
 	track_lists_details_map.refresh()
 	save()

@@ -34,15 +34,15 @@
 		paths,
 		join_paths,
 	} from '$lib/data'
-	import { new_playback_instance, playing_id } from '../lib/player'
-	import { get_duration, format_date, check_mouse_shortcut, check_shortcut } from '../lib/helpers'
-	import { tracklist_actions } from '../lib/page'
-	import { ipc_listen, ipc_renderer } from '../lib/window'
+	import { new_playback_instance, playing_id } from '$lib/player'
+	import { get_duration, format_date, check_mouse_shortcut, check_shortcut } from '$lib/helpers'
+	import { tracklist_actions } from '$lib/page'
+	import { ipc_listen, ipc_renderer } from '$lib/window'
 	import { onDestroy, onMount } from 'svelte'
-	import { dragged } from '../lib/drag-drop'
-	import * as DragGhost from './DragGhost.svelte'
+	import { dragged } from '$lib/drag-drop'
+	import * as DragGhost from '$components/DragGhost.svelte'
 	import type { ItemId, Track, TracksPage } from 'ferrum-addon'
-	import Header from './Header.svelte'
+	import Header from '$components/Header.svelte'
 	import { writable } from 'svelte/store'
 	import { SvelteSelection } from '$lib/selection'
 	import {
@@ -55,17 +55,13 @@
 
 	let tracklist_element: HTMLDivElement | undefined = $state()
 
-	interface Props {
-		params: { playlist_id: string }
-	}
-
-	let { params }: Props = $props()
+	let { params } = $props()
 	$effect(() => {
-		$current_playlist_id = params.playlist_id
+		$current_playlist_id = params.id
 	})
 
 	const page_options = $derived({
-		playlistId: params.playlist_id,
+		playlistId: params.id,
 		filterQuery: $filter,
 		sortKey: $sort_key,
 		sortDesc: $sort_desc,
@@ -178,7 +174,7 @@
 				defaultId: 0,
 			})
 			if ((await result).response === 0) {
-				remove_from_playlist(params.playlist_id, Array.from(selection.items))
+				remove_from_playlist(params.id, Array.from(selection.items))
 			}
 		} else if (check_shortcut(e, 'Backspace', { cmd_or_ctrl: true }) && $selection.size > 0) {
 			e.preventDefault()
@@ -252,7 +248,7 @@
 	}
 	function drop_handler() {
 		if (drag_to_index !== null) {
-			const _result = move_tracks(params.playlist_id, drag_item_ids, drag_to_index)
+			const _result = move_tracks(params.id, drag_item_ids, drag_to_index)
 			// Same handling for success and error
 			drag_to_index = null
 		}
@@ -552,7 +548,7 @@
 </script>
 
 <Header
-	title={params.playlist_id === 'root' ? 'Songs' : tracks_page.playlistName}
+	title={params.id === 'root' ? 'Songs' : tracks_page.playlistName}
 	subtitle="{tracks_page.itemIds.length} songs"
 	description={tracks_page.playlistDescription}
 />

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { filter, get_artists } from '$lib/data'
 	import fuzzysort from 'fuzzysort'
-	import Header from './Header.svelte'
+	import Header from '$components/Header.svelte'
 
 	let all_artists = get_artists()
 	let artists = $derived(fuzzysort.go($filter, all_artists, { all: true }))

@@ -14,9 +14,10 @@
 	import { onDestroy, setContext, tick } from 'svelte'
 	import { dragged } from '../lib/drag-drop'
 	import { tracklist_actions } from '$lib/page'
-	import { navigate } from '$lib/router'
-	import { current_playlist_id } from './TrackList.svelte'
+	import { goto } from '$app/navigation'
+	import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
 	import { prevent_default_self } from '$lib/helpers'
+	import { resolve } from '$app/paths'
 
 	let viewport: HTMLElement | undefined = $state()
 	const item_handle = setContext('itemHandle', writable(null as SidebarItemHandle | null))
@@ -170,7 +171,8 @@
 				children={special_playlists_nav}
 				on_select_down={() => {
 					if ($track_lists_details_map.root.children && $track_lists_details_map.root.children[0]) {
-						navigate('/playlist/' + $track_lists_details_map.root.children[0])
+						const id = $track_lists_details_map.root.children[0]
+						goto(resolve('/playlist/[id]', { id }))
 					}
 				}}
 			/>

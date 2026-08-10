@@ -2,7 +2,7 @@ import { app, ipcMain, session, BrowserWindow, dialog, protocol, net } from 'ele
 import is from './is'
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
-const addon = require('ferrum-addon')
+const addon: typeof import('ferrum-addon') = require('ferrum-addon')
 
 if (is.dev) app.setName('Ferrum Dev')
 

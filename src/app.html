@@ -3,10 +3,10 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-
-		<link href="./src/assets/fonts.css" rel="stylesheet" />
+		<meta name="text-scale" content="scale" />
+		%sveltekit.head%
 	</head>
 	<body tabindex="-1">
-		<script defer type="module" src="./src/main.ts"></script>
+		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

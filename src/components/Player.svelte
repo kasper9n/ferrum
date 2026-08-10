@@ -24,7 +24,7 @@
 		handle_selected_tracks_action,
 	} from '$lib/menus'
 	import { ipc_renderer } from '$lib/window'
-	import { tracks_page_item_ids } from './TrackList.svelte'
+	import { tracks_page_item_ids } from '$routes/playlist/[id]/+page.svelte'
 	import { onDestroy } from 'svelte'
 
 	interface Props {
