@@ -144,15 +144,14 @@
 		return result.data
 	}
 
-	let image = $state(get_track_info_image(instance.image_index))
+	let image = $derived(get_track_info_image(instance.image_index))
 	/** Undefined when loading, null when no image exists */
 	let object_url = $state<string | null | undefined>()
 
 	// First, we set the object_url to undefined (loading)
 	$effect(() => {
+		const new_image = image
 		object_url = undefined
-		const new_image = get_track_info_image(instance.image_index)
-		image = new_image
 
 		// We set the object URL asynchronously, so that the loading state is shown
 		if (new_image === null) {
@@ -210,7 +209,7 @@
 
 	let droppable = $state(false)
 	const allowed_mimes = ['image/jpeg', 'image/png']
-	function get_file_path(e: DragEvent): string | null {
+	function get_file_path(e: DragEvent): File | null {
 		if (e.dataTransfer && has_file(e)) {
 			for (let i = 0; i < e.dataTransfer.files.length; i++) {
 				const file = e.dataTransfer.files[i]
@@ -245,11 +244,7 @@
 		droppable = false
 		const path = get_file_path(e)
 		if (path !== null) {
-			const result = set_image(image?.index || 0, path)
-			if (!result.error) {
-				info.image_edited = true
-				instance.image_index = image?.index || 0
-			}
+			replace_cover(path)
 		}
 	}
 	function cover_keydown(e: KeyboardEvent) {
@@ -285,17 +280,19 @@
 		}
 	}
 	function replace_cover(file_path: string) {
-		const result = set_image(image?.index || 0, file_path)
+		const result = set_image(image?.index ?? 0, file_path)
 		if (!result.error) {
 			info.image_edited = true
-			instance.image_index = image?.index || 0
+			instance.image_index = image?.index ?? 0
+			image = get_track_info_image(instance.image_index)
 		}
 	}
 	function replace_cover_data(data: ArrayBuffer) {
-		const result = set_image_data(image?.index || 0, data)
+		const result = set_image_data(image?.index ?? 0, data)
 		if (!result.error) {
 			info.image_edited = true
-			instance.image_index = image?.index || 0
+			instance.image_index = image?.index ?? 0
+			image = get_track_info_image(instance.image_index)
 		}
 	}
 	function cover_paste(e: ClipboardEvent) {
