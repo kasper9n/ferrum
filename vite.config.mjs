@@ -15,6 +15,11 @@ export default defineConfig({
 			$electron: path.resolve(__dirname, './src/electron'),
 		},
 	},
+	server: {
+		watch: {
+			ignored: ['**/src-native/**'],
+		},
+	},
 	build: {
 		outDir: './build/web',
 		sourcemap: true,
