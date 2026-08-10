@@ -1,4 +1,4 @@
-import type { TrackID } from '../../ferrum-addon'
+import type { TrackID } from 'ferrum-addon'
 import { get, writable } from 'svelte/store'
 import { getter_writable } from './helpers'
 import { ipc_renderer } from './window'

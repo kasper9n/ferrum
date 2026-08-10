@@ -12,7 +12,7 @@ import {
 	paths,
 	read_cover_async,
 } from '$lib/data'
-import type { Track, TrackID } from '../../ferrum-addon'
+import type { Track, TrackID } from 'ferrum-addon'
 import { ipc_renderer } from './window'
 import { queue, set_new_queue, next as queueNext, prev as queuePrev } from './queue'
 import { tracks_page_item_ids } from '$components/TrackList.svelte'

@@ -1,6 +1,6 @@
 import { app, ipcMain, session, BrowserWindow, dialog, protocol, net } from 'electron'
 import is from './is'
-import addon from '../../ferrum-addon'
+import addon from 'ferrum-addon'
 
 if (is.dev) app.setName('Ferrum Dev')
 

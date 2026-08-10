@@ -72,7 +72,7 @@
 <script lang="ts">
 	import { check_shortcut } from '$lib/helpers'
 	import Button from './Button.svelte'
-	import type { Track, TrackID } from '../../ferrum-addon'
+	import type { Track, TrackID } from 'ferrum-addon'
 	import { ipc_listen, ipc_renderer } from '$lib/window'
 	import { playing_id, reload } from '$lib/player'
 	import { get } from 'svelte/store'

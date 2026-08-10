@@ -29,7 +29,7 @@
 </script>
 
 <script lang="ts">
-	import type { TrackListDetails } from '../../ferrum-addon'
+	import type { TrackListDetails } from 'ferrum-addon'
 	import { type Writable, writable } from 'svelte/store'
 	import { getContext } from 'svelte'
 	import { dragged } from '../lib/drag-drop'

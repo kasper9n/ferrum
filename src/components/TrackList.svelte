@@ -41,7 +41,7 @@
 	import { onDestroy, onMount } from 'svelte'
 	import { dragged } from '../lib/drag-drop'
 	import * as DragGhost from './DragGhost.svelte'
-	import type { ItemId, Track, TracksPage } from 'ferrum-addon/addon'
+	import type { ItemId, Track, TracksPage } from 'ferrum-addon'
 	import Header from './Header.svelte'
 	import { writable } from 'svelte/store'
 	import { SvelteSelection } from '$lib/selection'

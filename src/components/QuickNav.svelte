@@ -4,7 +4,7 @@
 	import { ipc_listen } from '$lib/window'
 	import fuzzysort from 'fuzzysort'
 	import { track_lists_details_map } from '$lib/data'
-	import type { TrackListDetails } from '../../ferrum-addon/addon'
+	import type { TrackListDetails } from 'ferrum-addon'
 	import Modal from './Modal.svelte'
 	import { special_playlists_nav } from './Sidebar.svelte'
 	import { navigate } from '$lib/router'

@@ -8,7 +8,7 @@ import type {
 	TrackMd,
 	TracksPageOptions,
 	ViewOptions,
-} from '../../ferrum-addon'
+} from 'ferrum-addon'
 import { init_queue_persistence, queue } from './queue'
 import { current_playlist_id } from '$components/TrackList.svelte'
 import { navigate } from './router'

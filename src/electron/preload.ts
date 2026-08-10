@@ -1,6 +1,6 @@
 import path from 'path'
 import is from './is'
-import addon from '../../ferrum-addon'
+import addon from 'ferrum-addon'
 import { webUtils } from 'electron'
 
 window.addon = addon

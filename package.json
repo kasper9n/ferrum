@@ -60,8 +60,7 @@
 		},
 		"files": [
 			"build/web",
-			"build/electron",
-			"ferrum-addon/addon.node"
+			"build/electron"
 		],
 		"directories": {
 			"buildResources": "build_resources",
@@ -118,5 +117,8 @@
 				}
 			}
 		]
+	},
+	"dependencies": {
+		"ferrum-addon": "file:ferrum-addon"
 	}
 }

@@ -9,7 +9,7 @@ import type {
 	MenuItemConstructorOptions,
 } from 'electron'
 import { ipcMain as electronIpcMain } from 'electron'
-import type { TrackID } from '../../ferrum-addon'
+import type { TrackID } from 'ferrum-addon'
 import type { UpdateJson } from './update'
 
 type InputMap = {
