@@ -10,9 +10,9 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			// These must also be specified in tsconfig.json
-			$lib: path.resolve(__dirname, './src/lib'),
-			$components: path.resolve(__dirname, './src/components'),
-			$electron: path.resolve(__dirname, './src/electron'),
+			$lib: path.resolve(import.meta.dirname, './src/lib'),
+			$components: path.resolve(import.meta.dirname, './src/components'),
+			$electron: path.resolve(import.meta.dirname, './src/electron'),
 		},
 	},
 	server: {
