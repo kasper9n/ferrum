@@ -192,7 +192,7 @@ app.whenReady().then(async () => {
 	})
 
 	main_window.on('close', (e) => {
-		if (!quitting) {
+		if (!quitting && is.mac) {
 			e.preventDefault()
 			app.hide()
 		}
