@@ -87,6 +87,14 @@ protocol.registerSchemesAsPrivileged([
 			supportFetchAPI: true,
 		},
 	},
+	{
+		scheme: 'track',
+		privileges: {
+			standard: true,
+			stream: true,
+			supportFetchAPI: true,
+		},
+	},
 ])
 
 export const browser_windows = {
