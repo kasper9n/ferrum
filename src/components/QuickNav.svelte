@@ -25,7 +25,8 @@
 		return playlists
 	}
 
-	let filtered_items = $derived(fuzzysort.go(value, playlists, { key: 'name', all: true }))
+	let snapshot_items = $derived(fuzzysort.snapshot(playlists, { key: 'name' }))
+	let filtered_items = $derived(fuzzysort.go(value, snapshot_items, { limit: 10 }))
 
 	function select_input(el: HTMLInputElement) {
 		el.select()

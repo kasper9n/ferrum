@@ -4,7 +4,8 @@
 	import Header from '$components/Header.svelte'
 
 	let all_artists = get_artists()
-	let artists = $derived(fuzzysort.go($filter, all_artists, { all: true }))
+	let snapshot_artists = $derived(fuzzysort.snapshot(all_artists))
+	let artists = $derived(fuzzysort.go($filter, snapshot_artists, { limit: 0 }))
 </script>
 
 <Header title="Artists" subtitle="{all_artists.length} artists" description={undefined} />
