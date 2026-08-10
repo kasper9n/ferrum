@@ -81,7 +81,7 @@
 		"@tsconfig/svelte": "^5.0.8",
 		"@types/d3-scale": "^4.0.9",
 		"d3-scale": "^4.0.2",
-		"electron": "^31.7.7",
+		"electron": "^33.4.11",
 		"electron-builder": "^26.15.3",
 		"eslint": "^9.39.5",
 		"eslint-config-prettier": "^10.1.8",
