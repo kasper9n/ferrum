@@ -1,4 +1,4 @@
-use crate::data_js::get_data;
+use crate::data::Data;
 use crate::get_now_timestamp;
 use crate::library::Paths;
 use crate::library_types::{
@@ -586,7 +586,7 @@ pub struct ItunesImport {
 impl ItunesImport {
 	#[napi(factory)]
 	pub fn new() -> Self {
-		let data = get_data();
+		let data = Data::get_blocking();
 		Self {
 			new_library: Some(data.library.clone()).into(),
 			itunes_track_paths: HashMap::new().into(),
@@ -599,7 +599,7 @@ impl ItunesImport {
 	}
 	#[napi]
 	pub fn finish(&mut self) -> napi::Result<()> {
-		let mut data = get_data();
+		let mut data = Data::get_blocking();
 		let itunes_track_paths = &mut *self.itunes_track_paths.lock().unwrap();
 		for (itunes_path, ferrum_file) in itunes_track_paths {
 			let new_path = data.paths.get_track_file_path(ferrum_file);

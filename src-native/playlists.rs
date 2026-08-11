@@ -1,5 +1,4 @@
 use crate::data::Data;
-use crate::data_js::get_data;
 use crate::library_types::{
 	ItemId, Library, SpecialTrackListName, TRACK_ID_MAP, TrackID, TrackList,
 	get_track_ids_from_item_ids, new_item_ids_from_track_ids,
@@ -26,7 +25,7 @@ pub struct TrackListDetails {
 #[napi(js_name = "get_track_lists_details")]
 #[allow(dead_code)]
 pub fn get_track_lists_details() -> HashMap<String, TrackListDetails> {
-	let data = get_data();
+	let data = Data::get_blocking();
 	data.library
 		.trackLists
 		.iter()
@@ -59,7 +58,7 @@ pub fn get_track_lists_details() -> HashMap<String, TrackListDetails> {
 #[napi(js_name = "get_track_list", ts_return_type = "TrackList")]
 #[allow(dead_code)]
 pub fn get_track_list<'a>(id: String, env: Env) -> Result<Unknown<'a>> {
-	let data = get_data();
+	let data = Data::get_blocking();
 	let tracklist = data.library.get_tracklist(&id)?;
 	Ok(env.to_js_value(&tracklist)?)
 }
@@ -123,7 +122,7 @@ fn remove_child_id(library: &mut Library, parent_id: &String, child_id: &String)
 #[napi(js_name = "delete_track_list")]
 #[allow(dead_code)]
 pub fn delete_track_list(id: String) -> Result<()> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 	let parent_id = data.library.get_parent_id(&id).context("No parent found")?;
 
 	let mut ids = HashSet::new();
@@ -143,7 +142,7 @@ pub fn delete_track_list(id: String) -> Result<()> {
 #[napi(js_name = "add_tracks_to_playlist")]
 #[allow(dead_code)]
 pub fn add_tracks(playlist_id: String, track_ids: Vec<String>) -> Result<()> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 	let playlist = match data.library.get_tracklist_mut(&playlist_id)? {
 		TrackList::Playlist(playlist) => playlist,
 		TrackList::Folder(_) => bail!("Cannot add track to folder"),
@@ -157,7 +156,7 @@ pub fn add_tracks(playlist_id: String, track_ids: Vec<String>) -> Result<()> {
 #[napi(js_name = "playlist_filter_duplicates")]
 #[allow(dead_code)]
 pub fn filter_duplicates(playlist_id: TrackID, ids: Vec<String>) -> Result<Vec<TrackID>> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 	let mut track_ids: HashSet<String> = HashSet::from_iter(ids);
 	let playlist = match data.library.get_tracklist_mut(&playlist_id)? {
 		TrackList::Playlist(playlist) => playlist,
@@ -175,7 +174,7 @@ pub fn filter_duplicates(playlist_id: TrackID, ids: Vec<String>) -> Result<Vec<T
 #[napi(js_name = "get_track_playlist_ids")]
 #[allow(dead_code)]
 pub fn get_track_playlist_ids(track_id: TrackID) -> Result<Vec<TrackID>> {
-	let data = get_data();
+	let data = Data::get_blocking();
 	Ok(get_track_playlist_ids_in_library(&data.library, &track_id))
 }
 
@@ -203,7 +202,7 @@ pub fn get_track_playlist_ids_in_library(library: &Library, track_id: &str) -> V
 #[napi(js_name = "remove_from_playlist")]
 #[allow(dead_code)]
 pub fn remove_from_playlist(playlist_id: TrackID, item_ids: Vec<ItemId>) -> Result<()> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 	let playlist = match data.library.get_tracklist_mut(&playlist_id)? {
 		TrackList::Playlist(playlist) => playlist,
 		_ => bail!("Cannot remove track from non-playlist"),
@@ -249,7 +248,7 @@ pub fn delete_file(path: &PathBuf) -> Result<()> {
 #[napi(js_name = "delete_tracks_with_item_ids")]
 #[allow(dead_code)]
 pub fn delete_tracks_with_item_ids(item_ids: Vec<ItemId>) -> Result<()> {
-	let data = &mut *get_data();
+	let data = &mut *Data::get_blocking();
 	let library = &mut data.library;
 	let track_ids = get_track_ids_from_item_ids(&item_ids);
 	for track_id in &track_ids {
@@ -267,7 +266,7 @@ pub fn new_playlist(
 	is_folder: bool,
 	parent_id: String,
 ) -> Result<()> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 	let library = &mut data.library;
 
 	let list = match is_folder {
@@ -306,7 +305,7 @@ pub fn new_playlist(
 #[napi(js_name = "update_playlist")]
 #[allow(dead_code)]
 pub fn update_playlist(id: String, name: String, description: String) -> Result<()> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 
 	match data.library.trackLists.get_mut(&id) {
 		Some(TrackList::Special(_)) => bail!("Cannot edit special playlists"),
@@ -364,7 +363,7 @@ fn get_children_if_user_editable<'a>(
 #[napi(js_name = "move_playlist")]
 #[allow(dead_code)]
 pub fn move_playlist(id: String, from_id: String, to_id: String, to_index: u32) -> Result<()> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 
 	match data.library.trackLists.get(&id) {
 		Some(TrackList::Special(_)) => bail!("Cannot move special playlist"),
@@ -406,7 +405,7 @@ pub fn move_playlist(id: String, from_id: String, to_id: String, to_index: u32) 
 #[napi(js_name = "move_tracks")]
 #[allow(dead_code)]
 pub fn move_tracks(playlist_id: String, mut item_ids: Vec<ItemId>, to_index: u32) -> Result<()> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 	let playlist = match data.library.get_tracklist_mut(&playlist_id)? {
 		TrackList::Playlist(playlist) => playlist,
 		_ => bail!("Cannot rearrange tracks in non-playlist"),

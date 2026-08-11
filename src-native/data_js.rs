@@ -1,12 +1,7 @@
-use crate::data::{DATA, Data, app_log_dir, path_to_string};
+use crate::data::{Data, app_log_dir, path_to_string};
 use crate::library::Paths;
 use napi::Result;
 use std::fs;
-use tokio::sync::MutexGuard;
-
-pub fn get_data() -> MutexGuard<'static, Data> {
-	DATA.get().expect("No data initialised").blocking_lock()
-}
 
 #[napi(js_name = "load_data")]
 #[allow(dead_code)]
@@ -39,7 +34,7 @@ pub fn load_data(
 #[napi(js_name = "get_paths")]
 #[allow(dead_code)]
 pub fn get_paths() -> Paths {
-	let data = get_data();
+	let data = Data::get_blocking();
 	data.paths.clone()
 }
 #[napi(js_name = "get_logs_dir")]
@@ -54,7 +49,7 @@ pub fn get_logs_dir() -> Result<String> {
 #[napi(js_name = "save")]
 #[allow(dead_code)]
 pub fn save() -> Result<()> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 	data.save()?;
 	Ok(())
 }

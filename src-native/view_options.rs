@@ -1,4 +1,4 @@
-use crate::data_js::get_data;
+use crate::data::Data;
 use crate::library::Paths;
 use crate::path_to_json;
 use anyhow::{Context, Result};
@@ -42,7 +42,7 @@ impl ViewOptions {
 #[napi(js_name = "load_view_options")]
 #[allow(dead_code)]
 pub fn load_view_options() -> Result<ViewOptions> {
-	let data = get_data();
+	let data = Data::get_blocking();
 	Ok(ViewOptions::load(&data.paths))
 }
 #[napi(js_name = "save_view_options")]

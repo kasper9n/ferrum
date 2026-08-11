@@ -1,6 +1,5 @@
 #[cfg(feature = "napi-rs")]
-#[cfg(feature = "napi-rs")]
-use crate::data_js::get_data;
+use crate::data::Data;
 use crate::library_types::{ItemId, Library, SpecialTrackListName, TrackList, VersionedLibrary};
 use anyhow::{Context, Result, bail};
 use linked_hash_map::LinkedHashMap;
@@ -192,7 +191,7 @@ pub fn get_track_field_type(field: &str) -> Result<TrackField> {
 #[napi(js_name = "get_genres")]
 #[allow(dead_code)]
 pub fn get_genres() -> Vec<String> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 	let genres = data.library.get_genres();
 	genres.clone()
 }
@@ -201,7 +200,7 @@ pub fn get_genres() -> Vec<String> {
 #[napi(js_name = "get_artists")]
 #[allow(dead_code)]
 pub fn get_artists() -> Vec<String> {
-	let mut data = get_data();
+	let mut data = Data::get_blocking();
 	let genres = data.library.get_artists();
 	genres.clone()
 }

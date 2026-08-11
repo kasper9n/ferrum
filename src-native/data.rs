@@ -11,7 +11,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::Instant;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, MutexGuard};
 
 pub fn path_to_string<P: AsRef<Path>>(path: P) -> String {
 	path.as_ref()
@@ -19,15 +19,6 @@ pub fn path_to_string<P: AsRef<Path>>(path: P) -> String {
 		.expect("Invalid path str")
 		.to_string()
 }
-
-pub struct Data {
-	pub paths: Paths,
-	pub library: Library,
-	/// Current tag being edited
-	pub current_tag: Option<Tag>,
-}
-
-pub static DATA: OnceLock<Mutex<Data>> = OnceLock::new();
 
 pub fn app_log_dir() -> Result<PathBuf> {
 	#[cfg(target_os = "macos")]
@@ -46,7 +37,22 @@ pub fn app_log_dir() -> Result<PathBuf> {
 	}
 }
 
+pub struct Data {
+	pub paths: Paths,
+	pub library: Library,
+	/// Current tag being edited
+	pub current_tag: Option<Tag>,
+}
+
+pub static DATA: OnceLock<Mutex<Data>> = OnceLock::new();
+
 impl Data {
+	pub async fn get_async() -> MutexGuard<'static, Data> {
+		DATA.get().expect("No data initialised").lock().await
+	}
+	pub fn get_blocking() -> MutexGuard<'static, Data> {
+		DATA.get().expect("No data initialised").blocking_lock()
+	}
 	pub fn save(&mut self) -> Result<()> {
 		let mut now = Instant::now();
 		let formatter = serde_json::ser::PrettyFormatter::with_indent(b"	"); // tab
@@ -119,12 +125,8 @@ impl Data {
 			library: loaded_library,
 			current_tag: None,
 		};
-		match DATA.set(Mutex::new(data)) {
-			Ok(()) => (),
-			Err(_) => {
-				panic!("Failed to set DATA");
-			}
-		};
+		// if it fails, it was already set. the user might just have reloaded
+		let _result = DATA.set(Mutex::new(data));
 		return Ok(());
 	}
 }
