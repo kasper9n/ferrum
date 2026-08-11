@@ -1,11 +1,9 @@
-use crate::data::Data;
 use crate::data_js::get_data;
 use crate::library::Paths;
 use crate::path_to_json;
 use anyhow::{Context, Result};
 use atomicwrites::AtomicFile;
 use atomicwrites::OverwriteBehavior::AllowOverwrite;
-use napi::Env;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
@@ -43,8 +41,8 @@ impl ViewOptions {
 
 #[napi(js_name = "load_view_options")]
 #[allow(dead_code)]
-pub fn load_view_options(env: Env) -> Result<ViewOptions> {
-	let data: &Data = get_data(&env);
+pub fn load_view_options() -> Result<ViewOptions> {
+	let data = get_data();
 	Ok(ViewOptions::load(&data.paths))
 }
 #[napi(js_name = "save_view_options")]

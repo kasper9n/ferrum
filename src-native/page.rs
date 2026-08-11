@@ -1,12 +1,10 @@
 #[cfg(feature = "napi-rs")]
-use crate::data::Data;
-#[cfg(feature = "napi-rs")]
 use crate::data_js::get_data;
 use crate::filter::filter;
 use crate::library_types::{ItemId, Library, TrackList};
 use crate::sort::sort;
 #[cfg(feature = "napi-rs")]
-use napi::{Env, Result};
+use napi::Result;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -33,8 +31,8 @@ pub struct TracksPage {
 #[cfg(feature = "napi-rs")]
 #[cfg_attr(feature = "napi", napi(js_name = "get_tracks_page"))]
 #[allow(dead_code)]
-pub fn get_tracks_page(options: TracksPageOptions, env: Env) -> Result<TracksPage> {
-	let data: &mut Data = get_data(&env);
+pub fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
+	let data = get_data();
 	Ok(get_tracks_page_from_library(options, &data.library)?)
 }
 

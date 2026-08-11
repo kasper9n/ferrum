@@ -9,7 +9,9 @@ use serde::Serialize;
 use std::env;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 use std::time::Instant;
+use tokio::sync::Mutex;
 
 pub fn path_to_string<P: AsRef<Path>>(path: P) -> String {
 	path.as_ref()
@@ -24,6 +26,8 @@ pub struct Data {
 	/// Current tag being edited
 	pub current_tag: Option<Tag>,
 }
+
+pub static DATA: OnceLock<Mutex<Data>> = OnceLock::new();
 
 pub fn app_log_dir() -> Result<PathBuf> {
 	#[cfg(target_os = "macos")]
@@ -63,7 +67,7 @@ impl Data {
 		is_dev: bool,
 		local_data_path: Option<String>,
 		library_path: Option<String>,
-	) -> Result<Data> {
+	) -> Result<()> {
 		if is_dev {
 			println!("Starting in dev mode");
 		}
@@ -115,6 +119,12 @@ impl Data {
 			library: loaded_library,
 			current_tag: None,
 		};
-		return Ok(data);
+		match DATA.set(Mutex::new(data)) {
+			Ok(()) => (),
+			Err(_) => {
+				panic!("Failed to set DATA");
+			}
+		};
+		return Ok(());
 	}
 }

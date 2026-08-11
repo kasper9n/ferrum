@@ -1,14 +1,11 @@
-use crate::data::{Data, app_log_dir, path_to_string};
+use crate::data::{DATA, Data, app_log_dir, path_to_string};
 use crate::library::Paths;
-use napi::{Env, Result};
+use napi::Result;
 use std::fs;
+use tokio::sync::MutexGuard;
 
-pub fn get_data(env: &Env) -> &mut Data {
-	let data = env
-		.get_instance_data::<Data>()
-		.expect("Error getting data")
-		.expect("No data");
-	return data;
+pub fn get_data() -> MutexGuard<'static, Data> {
+	DATA.get().expect("No data initialised").blocking_lock()
 }
 
 #[napi(js_name = "load_data")]
@@ -17,7 +14,6 @@ pub fn load_data(
 	is_dev: bool,
 	local_data_path: Option<String>,
 	library_path: Option<String>,
-	env: Env,
 ) -> Result<()> {
 	std::panic::set_hook(Box::new(move |info| {
 		let backtrace = std::backtrace::Backtrace::force_capture();
@@ -36,15 +32,14 @@ pub fn load_data(
 		fs::write(&file_path, log_msg).expect("Could not save crash log");
 		println!("Crash message written to {}", file_path.to_string_lossy());
 	}));
-	let data = Data::load(is_dev, local_data_path, library_path)?;
-	env.set_instance_data(data, 0, |_ctx| {})?;
+	Data::load(is_dev, local_data_path, library_path)?;
 	return Ok(());
 }
 
 #[napi(js_name = "get_paths")]
 #[allow(dead_code)]
-pub fn get_paths(env: Env) -> Paths {
-	let data: &Data = get_data(&env);
+pub fn get_paths() -> Paths {
+	let data = get_data();
 	data.paths.clone()
 }
 #[napi(js_name = "get_logs_dir")]
@@ -58,8 +53,8 @@ pub fn get_logs_dir() -> Result<String> {
 
 #[napi(js_name = "save")]
 #[allow(dead_code)]
-pub fn save(env: Env) -> Result<()> {
-	let data: &mut Data = get_data(&env);
+pub fn save() -> Result<()> {
+	let mut data = get_data();
 	data.save()?;
 	Ok(())
 }

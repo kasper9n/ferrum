@@ -1,10 +1,8 @@
-use crate::data::Data;
 use crate::data_js::get_data;
 use crate::get_now_timestamp;
 use crate::library::Paths;
 use crate::library_types::{ItemId, MsSinceUnixEpoch, TRACK_ID_MAP, Track, TrackID};
 use anyhow::{Context, Result, bail};
-use napi::Env;
 use napi::bindgen_prelude::{ArrayBuffer, Buffer};
 use std::fs;
 use std::path::Path;
@@ -16,16 +14,10 @@ mod tag;
 
 pub use tag::Tag;
 
-fn id_to_track<'a>(env: &'a Env, id: &String) -> Result<&'a mut Track> {
-	let data: &mut Data = get_data(env);
-	let track = data.library.get_track_mut(id)?;
-	return Ok(track);
-}
-
 #[napi(js_name = "get_track")]
 #[allow(dead_code)]
-pub fn get_track(id: String, env: Env) -> Result<Track> {
-	let data: &mut Data = get_data(&env);
+pub fn get_track(id: String) -> Result<Track> {
+	let data = get_data();
 	let track = data.library.get_track(&id)?;
 	Ok(track.clone())
 }
@@ -38,8 +30,8 @@ pub struct KeyedTrack {
 
 #[napi(js_name = "get_track_by_item_id")]
 #[allow(dead_code)]
-pub fn get_track_by_item_id(item_id: ItemId, env: Env) -> Result<KeyedTrack> {
-	let data: &mut Data = get_data(&env);
+pub fn get_track_by_item_id(item_id: ItemId) -> Result<KeyedTrack> {
+	let data = get_data();
 	let id_map = TRACK_ID_MAP.read().unwrap();
 	let track_id = &id_map[item_id as usize];
 	let track = data.library.get_track(&track_id)?;
@@ -62,16 +54,17 @@ pub fn get_track_ids(item_ids: Vec<ItemId>) -> Vec<TrackID> {
 
 #[napi(js_name = "track_exists")]
 #[allow(dead_code)]
-pub fn track_exists(id: String, env: Env) -> bool {
-	let data: &mut Data = get_data(&env);
+pub fn track_exists(id: String) -> bool {
+	let data = get_data();
 	let tracks = &data.library.get_tracks();
 	tracks.contains_key(&id)
 }
 
 #[napi(js_name = "add_play")]
 #[allow(dead_code)]
-pub fn add_play(track_id: String, env: Env) -> Result<()> {
-	let track = id_to_track(&env, &track_id)?;
+pub fn add_play(track_id: String) -> Result<()> {
+	let mut data = get_data();
+	let track = data.library.get_track_mut(&track_id)?;
 	let timestamp = get_now_timestamp();
 	match &mut track.plays {
 		None => track.plays = Some(vec![timestamp]),
@@ -86,8 +79,9 @@ pub fn add_play(track_id: String, env: Env) -> Result<()> {
 
 #[napi(js_name = "add_skip")]
 #[allow(dead_code)]
-pub fn add_skip(track_id: String, env: Env) -> Result<()> {
-	let track = id_to_track(&env, &track_id)?;
+pub fn add_skip(track_id: String) -> Result<()> {
+	let mut data = get_data();
+	let track = data.library.get_track_mut(&track_id)?;
 	let timestamp = get_now_timestamp();
 	match &mut track.skips {
 		None => track.skips = Some(vec![timestamp]),
@@ -102,8 +96,8 @@ pub fn add_skip(track_id: String, env: Env) -> Result<()> {
 
 #[napi(js_name = "add_play_time")]
 #[allow(dead_code)]
-pub fn add_play_time(id: TrackID, start: MsSinceUnixEpoch, dur_ms: i64, env: Env) -> Result<()> {
-	let data: &mut Data = get_data(&env);
+pub fn add_play_time(id: TrackID, start: MsSinceUnixEpoch, dur_ms: i64) -> Result<()> {
+	let mut data = get_data();
 	let tracks = data.library.get_tracks();
 	tracks.get(&id).context("Track ID not found")?;
 	data.library.playTime.push((id, start, dur_ms));
@@ -150,8 +144,8 @@ pub fn generate_filename(paths: &Paths, artist: &str, title: &str, ext: &str) ->
 
 #[napi(js_name = "import_file")]
 #[allow(dead_code)]
-pub fn import_file(path: String, now: MsSinceUnixEpoch, env: Env) -> Result<()> {
-	let data: &mut Data = get_data(&env);
+pub fn import_file(path: String, now: MsSinceUnixEpoch) -> Result<()> {
+	let mut data = get_data();
 	let id = data.library.generate_id();
 	let track = import::import(&data, Path::new(&path), now)?;
 	data.library.insert_track(id, track);
@@ -160,10 +154,13 @@ pub fn import_file(path: String, now: MsSinceUnixEpoch, env: Env) -> Result<()> 
 
 #[napi(js_name = "load_tags")]
 #[allow(dead_code)]
-pub fn load_tags(track_id: String, env: Env) -> Result<()> {
-	let data: &mut Data = get_data(&env);
+pub fn load_tags(track_id: String) -> Result<()> {
+	let data = &mut *get_data();
 	data.current_tag = None;
-	let track = id_to_track(&env, &track_id).context("Could not load tags")?;
+	let track = data
+		.library
+		.get_track_mut(&track_id)
+		.context("Could not load tags")?;
 
 	let path = data.paths.get_track_file_path(&track.file);
 	let tag = Tag::read_from_path(&path).context("Could not load tags")?;
@@ -181,8 +178,8 @@ pub struct JsImage {
 
 #[napi(js_name = "get_image")]
 #[allow(dead_code)]
-pub fn get_image(index: u32, env: Env) -> Result<Option<JsImage>> {
-	let data: &Data = get_data(&env);
+pub fn get_image(index: u32) -> Result<Option<JsImage>> {
+	let data = get_data();
 
 	let tag = match &data.current_tag {
 		Some(tag) => tag,
@@ -207,8 +204,8 @@ pub fn get_image(index: u32, env: Env) -> Result<Option<JsImage>> {
 
 #[napi(js_name = "set_image")]
 #[allow(dead_code)]
-pub fn set_image(index: u32, path: String, env: Env) -> Result<()> {
-	let data: &mut Data = get_data(&env);
+pub fn set_image(index: u32, path: String) -> Result<()> {
+	let mut data = get_data();
 	let tag = match &mut data.current_tag {
 		Some(tag) => tag,
 		None => bail!("No tag loaded"),
@@ -220,8 +217,8 @@ pub fn set_image(index: u32, path: String, env: Env) -> Result<()> {
 
 #[napi(js_name = "set_image_data")]
 #[allow(dead_code)]
-pub fn set_image_data(index: u32, bytes: ArrayBuffer, env: Env) -> Result<()> {
-	let data: &mut Data = get_data(&env);
+pub fn set_image_data(index: u32, bytes: ArrayBuffer) -> Result<()> {
+	let mut data = get_data();
 	let tag = match &mut data.current_tag {
 		Some(tag) => tag,
 		None => bail!("No tag loaded"),
@@ -232,8 +229,8 @@ pub fn set_image_data(index: u32, bytes: ArrayBuffer, env: Env) -> Result<()> {
 
 #[napi(js_name = "remove_image")]
 #[allow(dead_code)]
-pub fn remove_image(index: u32, env: Env) -> () {
-	let data: &mut Data = get_data(&env);
+pub fn remove_image(index: u32) -> () {
+	let mut data = get_data();
 	match data.current_tag {
 		Some(ref mut tag) => {
 			tag.remove_image(index as usize);
@@ -244,9 +241,9 @@ pub fn remove_image(index: u32, env: Env) -> () {
 
 #[napi(js_name = "update_track_info")]
 #[allow(dead_code)]
-pub fn update_track_info(track_id: String, info: md::TrackMD, env: Env) -> Result<()> {
-	let data: &mut Data = get_data(&env);
-	let track = id_to_track(&env, &track_id)?;
+pub fn update_track_info(track_id: String, info: md::TrackMD) -> Result<()> {
+	let data = &mut *get_data();
+	let track = data.library.get_track_mut(&track_id)?;
 
 	let tag = match &mut data.current_tag {
 		Some(tag) => tag,

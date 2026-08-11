@@ -1,12 +1,9 @@
 #[cfg(feature = "napi-rs")]
-use crate::data::Data;
 #[cfg(feature = "napi-rs")]
 use crate::data_js::get_data;
 use crate::library_types::{ItemId, Library, SpecialTrackListName, TrackList, VersionedLibrary};
 use anyhow::{Context, Result, bail};
 use linked_hash_map::LinkedHashMap;
-#[cfg(feature = "napi-rs")]
-use napi::Env;
 use serde_json::{Value, json};
 use std::fs::File;
 #[cfg(feature = "napi-rs")]
@@ -194,8 +191,8 @@ pub fn get_track_field_type(field: &str) -> Result<TrackField> {
 #[cfg(feature = "napi-rs")]
 #[napi(js_name = "get_genres")]
 #[allow(dead_code)]
-pub fn get_genres(env: Env) -> Vec<String> {
-	let data: &mut Data = get_data(&env);
+pub fn get_genres() -> Vec<String> {
+	let mut data = get_data();
 	let genres = data.library.get_genres();
 	genres.clone()
 }
@@ -203,8 +200,8 @@ pub fn get_genres(env: Env) -> Vec<String> {
 #[cfg(feature = "napi-rs")]
 #[napi(js_name = "get_artists")]
 #[allow(dead_code)]
-pub fn get_artists(env: Env) -> Vec<String> {
-	let data: &mut Data = get_data(&env);
+pub fn get_artists() -> Vec<String> {
+	let mut data = get_data();
 	let genres = data.library.get_artists();
 	genres.clone()
 }
