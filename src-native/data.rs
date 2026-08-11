@@ -41,7 +41,7 @@ pub fn app_log_dir() -> Result<PathBuf> {
 pub struct Data {
 	pub paths: Paths,
 	pub library: Library,
-	pub library_sqlite: SqliteConnection,
+	pub db: SqliteConnection,
 	/// Current tag being edited
 	pub current_tag: Option<Tag>,
 }
@@ -126,7 +126,7 @@ impl Data {
 		let data = Data {
 			paths,
 			library: Library::new(),
-			library_sqlite,
+			db: library_sqlite,
 			current_tag: None,
 		};
 		// if it fails, it was already set. the user might just have reloaded
