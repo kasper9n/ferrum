@@ -41,7 +41,7 @@ pub fn update_track_info(
 	if !old_path.exists() {
 		bail!("File does not exist: {}", track.file);
 	}
-	let ext = old_path.extension().unwrap_or_default().to_string_lossy();
+	let ext = old_path.extension().unwrap_or_default().to_str().unwrap();
 
 	// name
 	match new_info.name.as_ref() {

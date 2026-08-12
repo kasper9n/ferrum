@@ -16,8 +16,8 @@ pub enum FileType {
 }
 impl FileType {
 	pub fn from_path(path: &Path) -> Result<Self> {
-		let ext = path.extension().unwrap_or_default().to_string_lossy();
-		match ext.as_ref() {
+		let ext = path.extension().unwrap_or_default().to_str().unwrap();
+		match ext {
 			"mp3" => Ok(FileType::Mp3),
 			"m4a" => Ok(FileType::M4a),
 			"opus" => Ok(FileType::Opus),

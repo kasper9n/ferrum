@@ -24,7 +24,7 @@ impl Tag {
 		if !path.exists() {
 			bail!("File does not exist: {}", path.to_string_lossy());
 		}
-		let ext = path.extension().unwrap_or_default().to_string_lossy();
+		let ext = path.extension().unwrap_or_default().to_str().unwrap();
 
 		let tag = match ext.as_ref() {
 			"mp3" | "m4a" | "opus" => {
