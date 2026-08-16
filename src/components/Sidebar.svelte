@@ -8,7 +8,7 @@
 <script lang="ts">
 	import SidebarItems, { type SidebarItemHandle } from './SidebarItems.svelte'
 	import Filter from './Filter.svelte'
-	import { is_mac, track_lists_details_map, move_playlist } from '$lib/data.svelte'
+	import { is_mac, track_lists_details, move_playlist } from '$lib/data.svelte'
 	import { ipc_listen, ipc_renderer } from '../lib/window'
 	import { writable } from 'svelte/store'
 	import { onDestroy, setContext, tick } from 'svelte'
@@ -53,7 +53,7 @@
 	}
 	function drop(e: DragEvent) {
 		if (e.currentTarget && e.dataTransfer?.types[0] === 'ferrum.playlist' && dragged.playlist) {
-			const root = $track_lists_details_map['root']
+			const root = track_lists_details.map['root']
 			if (!root.children) {
 				return
 			}
@@ -170,8 +170,8 @@
 				parent_id={null}
 				children={special_playlists_nav}
 				on_select_down={() => {
-					if ($track_lists_details_map.root.children && $track_lists_details_map.root.children[0]) {
-						const id = $track_lists_details_map.root.children[0]
+					if (track_lists_details.map.root.children && track_lists_details.map.root.children[0]) {
+						const id = track_lists_details.map.root.children[0]
 						goto(resolve('/playlist/[id]', { id }))
 					}
 				}}
@@ -179,8 +179,8 @@
 			<div class="spacer"></div>
 			<SidebarItems
 				parent_id="root"
-				children={($track_lists_details_map['root'].children || []).map(
-					(child_id) => $track_lists_details_map[child_id],
+				children={(track_lists_details.map['root'].children || []).map(
+					(child_id) => track_lists_details.map[child_id],
 				)}
 			/>
 		</nav>

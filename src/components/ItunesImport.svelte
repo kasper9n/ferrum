@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ItunesImport, track_lists_details_map, save, refreshers } from '$lib/data.svelte'
+	import { ItunesImport, track_lists_details, save, refreshers } from '$lib/data.svelte'
 	import { ipc_renderer } from '$lib/window'
 	import type { ImportStatus } from 'ferrum-addon'
 	import Button from './Button.svelte'
@@ -41,7 +41,7 @@
 		itunes_import.finish()
 		save()
 		refreshers.tracklist++
-		track_lists_details_map.refresh()
+		track_lists_details.refresh()
 		cancel()
 	}
 	async function submit() {

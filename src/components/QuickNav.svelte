@@ -3,7 +3,7 @@
 	import { check_shortcut } from '../lib/helpers'
 	import { ipc_listen } from '$lib/window'
 	import fuzzysort from 'fuzzysort'
-	import { track_lists_details_map } from '$lib/data.svelte'
+	import { track_lists_details } from '$lib/data.svelte'
 	import type { TrackListDetails } from 'ferrum-addon'
 	import Modal from './Modal.svelte'
 	import { special_playlists_nav } from './Sidebar.svelte'
@@ -17,7 +17,7 @@
 	let playlists: Result[] = $derived(show ? get_playlists() : [])
 	function get_playlists() {
 		const playlists: Result[] = [...special_playlists_nav]
-		for (const playlist of Object.values($track_lists_details_map)) {
+		for (const playlist of Object.values(track_lists_details.map)) {
 			if (playlist.kind === 'playlist' || playlist.kind === 'folder') {
 				playlists.push(playlist)
 			}

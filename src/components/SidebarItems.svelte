@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import {
-		track_lists_details_map,
+		track_lists_details,
 		add_tracks_to_playlist,
 		move_playlist,
 		view_options,
@@ -49,7 +49,7 @@
 	}
 
 	function has_showing_children(id: string) {
-		const list = $track_lists_details_map[id]
+		const list = track_lists_details.map[id]
 		return list.children && list.children.length > 0 && shown_folders.includes(id)
 	}
 
@@ -73,16 +73,16 @@
 	function select_first(item: Child) {
 		const child_id = item.children?.[0]
 		if (child_id) {
-			const id = $track_lists_details_map[child_id].id
+			const id = track_lists_details.map[child_id].id
 			goto(resolve('/playlist/[id]', { id }))
 		}
 	}
 	function select_last(in_id: string) {
-		const children = $track_lists_details_map[in_id].children
+		const children = track_lists_details.map[in_id].children
 		if (children && (has_showing_children(in_id) || in_id === 'root')) {
 			select_last(children[children.length - 1])
 		} else {
-			const id = $track_lists_details_map[in_id].id
+			const id = track_lists_details.map[in_id].id
 			goto(resolve('/playlist/[id]', { id }))
 		}
 	}
@@ -114,7 +114,7 @@
 			return
 		}
 
-		const selected_list = $track_lists_details_map[$current_playlist_id]
+		const selected_list = track_lists_details.map[$current_playlist_id]
 		if (check_shortcut(e, 'ArrowUp')) {
 			select_up(index)
 		} else if (check_shortcut(e, 'ArrowUp', { alt: true })) {
@@ -260,8 +260,8 @@
 			<Self
 				show={shown_folders.includes(child_list.id)}
 				parent_id={child_list.id}
-				children={($track_lists_details_map[child_list.id].children || []).map(
-					(child_id) => $track_lists_details_map[child_id],
+				children={(track_lists_details.map[child_list.id].children || []).map(
+					(child_id) => track_lists_details.map[child_id],
 				)}
 				level={level + 1}
 				prevent_drop={prevent_drop || dragged.playlist?.id === child_list.id}

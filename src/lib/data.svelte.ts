@@ -1,4 +1,4 @@
-import { get, writable } from 'svelte/store'
+import { get } from 'svelte/store'
 import { ipc_renderer } from '$lib/window'
 import type {
 	MsSinceUnixEpoch,
@@ -32,17 +32,12 @@ export function join_paths(...args: string[]) {
 	return args.join(paths.pathSeparator)
 }
 
-export const track_lists_details_map = (() => {
-	const initial = strict_call((addon) => addon.get_track_lists_details())
-
-	const { subscribe, set } = writable(initial)
-	return {
-		subscribe,
-		refresh() {
-			set(strict_call((addon) => addon.get_track_lists_details()))
-		},
-	}
-})()
+export const track_lists_details = $state({
+	map: strict_call((addon) => addon.get_track_lists_details()),
+	refresh() {
+		track_lists_details.map = strict_call((addon) => addon.get_track_lists_details())
+	},
+})
 export async function add_tracks_to_playlist(
 	playlist_id: TrackListID,
 	track_ids: TrackID[],
@@ -99,12 +94,12 @@ export type PlaylistInfo = {
 }
 export function new_playlist(info: PlaylistInfo) {
 	strict_call((addon) => addon.new_playlist(info.name, info.description, info.isFolder, info.id))
-	track_lists_details_map.refresh()
+	track_lists_details.refresh()
 	save()
 }
 export function update_playlist(id: string, name: string, description: string) {
 	strict_call((addon) => addon.update_playlist(id, name, description))
-	track_lists_details_map.refresh()
+	track_lists_details.refresh()
 	refreshers.tracklist++
 	save()
 }
@@ -115,7 +110,7 @@ export function move_playlist(
 	to_index: number,
 ) {
 	strict_call((addon) => addon.move_playlist(id, from_parent, to_parent, to_index))
-	track_lists_details_map.refresh()
+	track_lists_details.refresh()
 	save()
 }
 
@@ -176,7 +171,7 @@ export function delete_track_list(id: TrackListID) {
 	if (id === get(current_playlist_id)) {
 		goto(resolve('/playlist/root'))
 	}
-	track_lists_details_map.refresh()
+	track_lists_details.refresh()
 	save()
 }
 export function save() {
