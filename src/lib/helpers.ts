@@ -1,5 +1,6 @@
 import { type Updater, type Writable, writable } from 'svelte/store'
 import type { TrackListDetails } from 'ferrum-addon'
+import { goto } from '$app/navigation'
 
 export function get_duration(dur: number) {
 	dur = Math.round(dur)
@@ -146,4 +147,9 @@ export function prevent_default_self(e: Event) {
 	if (e.target === e.currentTarget) {
 		e.preventDefault()
 	}
+}
+
+export function mousedown_link(this: HTMLAnchorElement) {
+	// eslint-disable-next-line svelte/no-navigation-without-resolve
+	goto(this.href)
 }

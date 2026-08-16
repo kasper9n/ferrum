@@ -35,7 +35,7 @@
 	import { dragged } from '../lib/drag-drop'
 	import * as dragGhost from './DragGhost.svelte'
 	import { ipc_renderer } from '$lib/window'
-	import { check_shortcut } from '$lib/helpers'
+	import { check_shortcut, mousedown_link } from '$lib/helpers'
 	import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
 	import { tracklist_actions } from '$lib/page'
 	import { resolve } from '$app/paths'
@@ -207,9 +207,8 @@
 						drag_playlist_onto_index = null
 					}
 				}}
-				onmousedown={() => {
-					goto(resolve('/playlist/[id]', { id: child_list.id }))
-				}}
+				onmousedown={mousedown_link}
+				onclick={(e) => e.preventDefault()}
 				oncontextmenu={() => tracklist_context_menu(child_list.id, true)}
 			>
 				<!-- svelte-ignore a11y_interactive_supports_focus -->
@@ -284,9 +283,8 @@
 				draggable="true"
 				ondragstart={(e) => on_drag_start(e, child_list)}
 				class:active={resolve(`/playlist/[id]`, { id: child_list.id }) === page.url.pathname}
-				onmousedown={() => {
-					goto(resolve('/playlist/[id]', { id: child_list.id }))
-				}}
+				onmousedown={mousedown_link}
+				onclick={(e) => e.preventDefault()}
 				class:droppable={drag_track_onto_index === i}
 				class:droppable-above={drag_playlist_onto_index === i && drop_above}
 				class:droppable-below={drag_playlist_onto_index === i && !drop_above}
@@ -350,10 +348,8 @@
 				tabindex="-1"
 				class="item rounded-r-[5px]"
 				style:padding-left={14 * level + 'px'}
-				onmousedown={(e) => {
-					e.preventDefault()
-					goto(resolve('/playlist/[id]', { id: child_list.id }))
-				}}
+				onmousedown={mousedown_link}
+				onclick={(e) => e.preventDefault()}
 				class:active={resolve(`/playlist/[id]`, { id: child_list.id }) === page.url.pathname}
 			>
 				<div class="arrow"></div>
