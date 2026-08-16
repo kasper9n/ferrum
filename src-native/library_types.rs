@@ -205,12 +205,12 @@ impl Library {
 	pub fn get_track(&self, id: &TrackID) -> Result<&Track> {
 		self.get_tracks()
 			.get(id)
-			.context("Track with ID {} not found")
+			.with_context(|| format!("Track with ID {id} not found"))
 	}
 	pub fn get_track_mut(&mut self, id: &TrackID) -> Result<&mut Track> {
 		self.tracks
 			.get_mut(id)
-			.context("Track with ID {} not found")
+			.with_context(|| format!("Track with ID {id} not found"))
 	}
 	pub fn get_tracklist(&self, id: &str) -> Result<&TrackList> {
 		self.trackLists.get(id).context("Playlist ID not found")

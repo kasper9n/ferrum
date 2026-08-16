@@ -13,4 +13,9 @@ export default {
 			$electron: 'src/electron',
 		},
 	},
+	compilerOptions: {
+		experimental: {
+			async: true,
+		},
+	},
 }

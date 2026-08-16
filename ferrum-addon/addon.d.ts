@@ -66,7 +66,7 @@ export declare function get_track_lists_details(): Record<string, TrackListDetai
 
 export declare function get_track_playlist_ids(trackId: TrackID): Array<TrackID>
 
-export declare function get_tracks_page(options: TracksPageOptions): TracksPage
+export declare function get_tracks_page(options: TracksPageOptions): Promise<TracksPage>
 
 export declare function import_file(path: string, now: MsSinceUnixEpoch): void
 
@@ -258,7 +258,7 @@ export interface TrackMd {
 export interface TracksPage {
   playlistKind: string
   playlistName: string
-  playlistDescription?: string
+  playlistDescription: string
   playlistLength: number
   itemIds: Array<ItemId>
 }

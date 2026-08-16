@@ -67,11 +67,12 @@
 		groupAlbumTracks: $group_album_tracks,
 	})
 
-	let tracks_page = $derived.by(() => {
+	const tracks_page_promise = $derived.by(() => {
 		refreshers.tracklist
 		refreshers.tracks
 		return get_tracks_page(page_options)
 	})
+	const tracks_page = $derived(await tracks_page_promise)
 	$effect(() => {
 		$tracks_page_item_ids = tracks_page.itemIds
 	})
