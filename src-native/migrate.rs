@@ -53,9 +53,10 @@ pub async fn migrate_to_sqlite(paths: &Paths) -> Result<()> {
 	println!("Migrated to SQLite: {}ms", now.elapsed().as_millis());
 
 	// Move Library.json to Library.json.bak
-	let library_json_backup = library_dir.join("Library backup.json");
-	std::fs::rename(&paths.library_json, library_json_backup)
-		.context("Failed to rename Library.json to Library backup.json")?;
+	println!("TODO: Re-enable backing up Library.json");
+	// let library_json_backup = library_dir.join("Library backup.json");
+	// std::fs::rename(&paths.library_json, library_json_backup)
+	// 	.context("Failed to rename Library.json to Library backup.json")?;
 
 	Ok(())
 }

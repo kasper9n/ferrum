@@ -86,11 +86,6 @@ pub async fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
 		args.add(&options.playlist_id).unwrap();
 	}
 
-	if options.filter_query.trim() != "" {
-		where_clauses.push("tracks_fts MATCH ?");
-		args.add(&options.filter_query).unwrap();
-	}
-
 	let direction = match options.sort_desc {
 		true => "DESC",
 		false => "ASC",

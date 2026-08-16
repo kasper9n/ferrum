@@ -39,19 +39,6 @@ create table tracks (
 	volume            INTEGER NULL -- from -100 to 100
 );
 
-CREATE VIRTUAL TABLE tracks_fts USING fts5(
-	title,
-	artist,
-	composer,
-	genre,
-	comments,
-	grouping,
-	album_title,
-	album_artist,
-	content='tracks',
-	content_rowid='rowid'
-);
-
 CREATE TABLE plays (
 	date          INTEGER NOT NULL,
 	track_id      TEXT NOT NULL REFERENCES tracks(id),
