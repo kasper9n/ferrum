@@ -13,7 +13,7 @@
 	})
 
 	export function open_track_info(ids: TrackID[], index: number) {
-		if (get(modal_count) === 0 || track_info_state.instance !== null) {
+		if (modals.count === 0 || track_info_state.instance !== null) {
 			const id = ids[index]
 			const track = get_track(ids[index])
 			const result = load_tags(id)
@@ -75,8 +75,7 @@
 	import type { Track, TrackID } from 'ferrum-addon'
 	import { ipc_listen, ipc_renderer } from '$lib/window'
 	import { playing_id, reload } from '$lib/player'
-	import { get } from 'svelte/store'
-	import Modal, { modal_count } from './Modal.svelte'
+	import Modal, { modals } from './Modal.svelte'
 	import {
 		get_file_path,
 		get_genres,

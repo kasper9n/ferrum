@@ -1,7 +1,5 @@
 <script lang="ts" module>
-	import { writable } from 'svelte/store'
-
-	export const modal_count = writable(0)
+	export const modals = $state({ count: 0 })
 </script>
 
 <script lang="ts">
@@ -44,10 +42,10 @@
 		}
 	}
 	onMount(() => {
-		$modal_count += 1
+		modals.count += 1
 	})
 	onDestroy(() => {
-		$modal_count -= 1
+		modals.count -= 1
 	})
 
 	// Prevent clicks where the mousedown or mouseup happened on a child element. This could've

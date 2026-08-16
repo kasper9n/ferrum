@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { is_mac } from '$lib/data.svelte'
-	import { modal_count } from './Modal.svelte'
 	import { queue_visible } from '$lib/queue'
+	import { modals } from './Modal.svelte'
 
 	interface Props {
 		title: string
@@ -14,7 +14,7 @@
 <div class="relative px-5 pt-4 pb-5">
 	<div
 		class="absolute top-0 left-0 h-10 w-full"
-		class:dragbar={$modal_count === 0 && is_mac}
+		class:dragbar={modals.count === 0 && is_mac}
 		class:queue-visible={$queue_visible}
 	></div>
 	<h3 class="m-0 pb-0.5 text-[19px] leading-none font-medium">

@@ -22,7 +22,6 @@
 	import { play_pause, playing_track, time_record } from '$lib/player'
 	import DragGhost from '$components/DragGhost.svelte'
 	import ItunesImport from '$components/ItunesImport.svelte'
-	import { modal_count } from '$components/Modal.svelte'
 	import QuickNav from '$components/QuickNav.svelte'
 	import { check_shortcut } from '$lib/helpers'
 	import { tracklist_actions } from '$lib/page'
@@ -30,6 +29,7 @@
 	import Settings from '$components/Settings.svelte'
 	import Button from '$components/Button.svelte'
 	import Visualizer from '$lib/visualizer/Visualizer.svelte'
+	import { modals } from '$components/Modal.svelte'
 
 	let { children } = $props()
 
@@ -48,7 +48,7 @@
 	init_media_keys(false).then((result) => (media_keys_result = result))
 
 	async function open_import_dialog() {
-		if ($modal_count !== 0) {
+		if (modals.count !== 0) {
 			return
 		}
 		let result = await ipc_renderer.invoke('showOpenDialog', false, {
@@ -117,7 +117,7 @@
 	function keydown(e: KeyboardEvent) {
 		let el = e.target as HTMLAudioElement
 		const space_tags = ['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT']
-		if (el && !space_tags.includes(el.tagName) && $modal_count === 0) {
+		if (el && !space_tags.includes(el.tagName) && modals.count === 0) {
 			const prevent_el = el.closest('[data-prevent-space-play]')
 			if (!prevent_el && e.key === ' ') {
 				e.preventDefault()
@@ -129,7 +129,7 @@
 	let show_settings = $state(false)
 	onDestroy(
 		ipc_listen('show_settings', () => {
-			if ($modal_count === 0) {
+			if (modals.count === 0) {
 				show_settings = true
 			}
 		}),
@@ -138,7 +138,7 @@
 	let show_itunes_import = $state(false)
 	onDestroy(
 		ipc_listen('itunesImport', () => {
-			if ($modal_count === 0) {
+			if (modals.count === 0) {
 				show_itunes_import = true
 			}
 		}),
@@ -150,7 +150,7 @@
 	onDestroy(
 		ipc_listen('context.playlist.edit', (_, id) => {
 			const list = get_track_list(id)
-			if (list.type !== 'special' && $modal_count === 0) {
+			if (list.type !== 'special' && modals.count === 0) {
 				playlist_info = {
 					name: list.name,
 					description: list.description || '',
