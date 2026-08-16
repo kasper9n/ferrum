@@ -82,12 +82,12 @@ async fn insert_library_into_db(
 					file,
 					modified_at,
 					added_at,
-					name,
+					title,
 					artist,
 					imported_from,
 					original_id,
 					composer,
-					sort_name,
+					sort_title,
 					sort_artist,
 					sort_composer,
 					genre,
@@ -100,9 +100,9 @@ async fn insert_library_into_db(
 					disliked,
 					disabled,
 					compilation,
-					album_name,
+					album_title,
 					album_artist,
-					sort_album_name,
+					sort_album_title,
 					sort_album_artist,
 					track_num,
 					track_count,
@@ -231,7 +231,7 @@ async fn insert_library_into_db(
 					",
 				)
 				.bind(&special.id)
-				.bind("folder")
+				.bind("special")
 				.bind(special.name.to_string())
 				.bind("")
 				.bind(special.dateCreated)
@@ -246,7 +246,7 @@ async fn insert_library_into_db(
 				sqlx::query(
 					"
 						INSERT INTO track_lists
-							(id, kind, parent_id, item_index, name, description, liked, disliked,
+							(id, kind, parent_id, item_pos, name, description, liked, disliked,
 							imported_from, original_id, imported_at, created_at)
 						VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 					",
@@ -274,13 +274,13 @@ async fn insert_library_into_db(
 				sqlx::query(
 					"
 						INSERT INTO track_lists
-							(id, kind, parent_id, item_index, name, description, liked, disliked,
+							(id, kind, parent_id, item_pos, name, description, liked, disliked,
 							imported_from, original_id, imported_at, created_at)
 						VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 					",
 				)
 				.bind(&playlist.id)
-				.bind("folder")
+				.bind("playlist")
 				.bind(parent_id)
 				.bind(index)
 				.bind(&playlist.name)
@@ -300,7 +300,7 @@ async fn insert_library_into_db(
 					let i: i64 = i.try_into().unwrap();
 					assert!(i >= 0);
 					sqlx::query(
-						"INSERT INTO playlist_tracks (track_list_id, track_id, item_index) VALUES (?, ?, ?)",
+						"INSERT INTO playlist_tracks (track_list_id, track_id, item_pos) VALUES (?, ?, ?)",
 					)
 					.bind(&playlist.id)
 					.bind(track_id)

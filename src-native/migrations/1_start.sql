@@ -7,12 +7,12 @@ create table tracks (
 	file              TEXT NOT NULL,
 	modified_at       INTEGER NOT NULL, -- i64 ms since unix epoch
 	added_at          INTEGER NOT NULL, -- i64 ms since unix epoch
-	name              TEXT NOT NULL,
+	title             TEXT NOT NULL,
 	artist            TEXT NOT NULL,
 	imported_from     TEXT NULL,
 	original_id       TEXT NULL, -- Imported ID, like iTunes Persistent ID
 	composer          TEXT NULL,
-	sort_name         TEXT NULL,
+	sort_title        TEXT NULL,
 	sort_artist       TEXT NULL,
 	sort_composer     TEXT NULL,
 	genre             TEXT NULL,
@@ -25,9 +25,9 @@ create table tracks (
 	disliked          BOOLEAN NULL,
 	disabled          BOOLEAN NULL,
 	compilation       BOOLEAN NULL,
-	album_name        TEXT NULL,
+	album_title       TEXT NULL,
 	album_artist      TEXT NULL,
-	sort_album_name   TEXT NULL,
+	sort_album_title  TEXT NULL,
 	sort_album_artist TEXT NULL,
 	track_num         INTEGER NULL, -- u32
 	track_count       INTEGER NULL, -- u32
@@ -75,7 +75,7 @@ CREATE TABLE track_lists (
 	id            TEXT PRIMARY KEY NOT NULL,
 	kind          TEXT NOT NULL CHECK (kind IN ('playlist', 'folder', 'special')),
 	parent_id     TEXT NULL REFERENCES track_lists(id),
-	item_index    INTEGER NULL,
+	item_pos      INTEGER NULL,
 	name          TEXT NOT NULL,
 	description   TEXT NOT NULL,
 	liked         BOOLEAN NOT NULL DEFAULT 0,
@@ -89,8 +89,8 @@ CREATE TABLE track_lists (
 CREATE TABLE playlist_tracks (
 	track_list_id TEXT NOT NULL REFERENCES track_lists(id),
 	track_id      TEXT NOT NULL REFERENCES tracks(id),
-	item_index    INTEGER NOT NULL,
-	PRIMARY KEY (track_list_id, item_index)
+	item_id       INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+	item_pos      INTEGER NOT NULL
 );
 
 CREATE TABLE play_times (
