@@ -12,25 +12,25 @@
 		handleKey(e: KeyboardEvent): void
 	}
 
-	const shown_folders = writable(view_options.shownPlaylistFolders)
+	let shown_folders = $state(view_options.shownPlaylistFolders)
 
 	function show_folder(id: string) {
 		view_options.shownPlaylistFolders.push(id)
-		shown_folders.set(view_options.shownPlaylistFolders)
+		shown_folders = view_options.shownPlaylistFolders
 		save_view_options(view_options)
 	}
 	function hide_folder(id: string) {
 		view_options.shownPlaylistFolders = view_options.shownPlaylistFolders.filter(
 			(folder_id) => folder_id !== id,
 		)
-		shown_folders.set(view_options.shownPlaylistFolders)
+		shown_folders = view_options.shownPlaylistFolders
 		save_view_options(view_options)
 	}
 </script>
 
 <script lang="ts">
 	import type { TrackListDetails } from 'ferrum-addon'
-	import { type Writable, writable } from 'svelte/store'
+	import { type Writable } from 'svelte/store'
 	import { getContext } from 'svelte'
 	import { dragged } from '../lib/drag-drop'
 	import * as dragGhost from './DragGhost.svelte'
@@ -50,7 +50,7 @@
 
 	function has_showing_children(id: string) {
 		const list = $track_lists_details_map[id]
-		return list.children && list.children.length > 0 && $shown_folders.includes(id)
+		return list.children && list.children.length > 0 && shown_folders.includes(id)
 	}
 
 	interface Props {
@@ -124,7 +124,7 @@
 		} else if (check_shortcut(e, 'ArrowDown')) {
 			select_down(index)
 		} else if (check_shortcut(e, 'ArrowLeft')) {
-			if (selected_list.kind === 'folder' && $shown_folders.includes(selected_list.id)) {
+			if (selected_list.kind === 'folder' && shown_folders.includes(selected_list.id)) {
 				hide_folder(selected_list.id)
 			} else if (parent_id) {
 				goto(resolve('/playlist/[id]', { id: parent_id }))
@@ -187,7 +187,7 @@
 				class:active={resolve(`/playlist/[id]`, { id: child_list.id }) === page.url.pathname}
 				draggable="true"
 				ondragstart={(e) => on_drag_start(e, child_list)}
-				class:show={$shown_folders.includes(child_list.id)}
+				class:show={shown_folders.includes(child_list.id)}
 				class:droppable={drag_playlist_onto_index === i}
 				ondrop={(e) => {
 					if (
@@ -219,7 +219,7 @@
 					aria-label="Arrow button"
 					onmousedown={(e) => {
 						e.stopPropagation()
-						if ($shown_folders.includes(child_list.id)) {
+						if (shown_folders.includes(child_list.id)) {
 							hide_folder(child_list.id)
 						} else {
 							show_folder(child_list.id)
@@ -258,7 +258,7 @@
 				</div>
 			</a>
 			<Self
-				show={$shown_folders.includes(child_list.id)}
+				show={shown_folders.includes(child_list.id)}
 				parent_id={child_list.id}
 				children={($track_lists_details_map[child_list.id].children || []).map(
 					(child_id) => $track_lists_details_map[child_id],
