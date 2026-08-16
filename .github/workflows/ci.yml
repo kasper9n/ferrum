@@ -37,63 +37,63 @@ jobs:
       - run: npm run build:web
       - run: npm run electron-builder -- ${{ matrix.arg }} --publish never
       - run: npm run generate-update-json
-  build_android:
-    runs-on: ubuntu-latest
-    name: Android ${{ matrix.name }}
-    strategy:
-      matrix:
-        include:
-          - { name: arm64, arch: aarch64, tauri_target: aarch64 }
-          # - { name: x64, arch: x86_64, tauri_target: x86_64 }
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  # build_android:
+  #   runs-on: ubuntu-latest
+  #   name: Android ${{ matrix.name }}
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - { name: arm64, arch: aarch64, tauri_target: aarch64 }
+  #         # - { name: x64, arch: x86_64, tauri_target: x86_64 }
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: Rust setup
-        uses: dtolnay/rust-toolchain@stable
+  #     - name: Rust setup
+  #       uses: dtolnay/rust-toolchain@stable
 
-      - name: Node.js setup
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: '.node-version'
+  #     - name: Node.js setup
+  #       uses: actions/setup-node@v7
+  #       with:
+  #         node-version-file: '.node-version'
 
-      - name: JDK 17 Setup
-        uses: actions/setup-java@v5
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+  #     - name: JDK 17 Setup
+  #       uses: actions/setup-java@v5
+  #       with:
+  #         java-version: '17'
+  #         distribution: 'temurin'
 
-      - name: Android SDK Setup
-        uses: android-actions/setup-android@v3
+  #     - name: Android SDK Setup
+  #       uses: android-actions/setup-android@v3
 
-      - name: Android NDK Setup
-        uses: nttld/setup-ndk@v1
-        id: setup-ndk
-        with:
-          ndk-version: r26d
-          link-to-sdk: true
+  #     - name: Android NDK Setup
+  #       uses: nttld/setup-ndk@v1
+  #       id: setup-ndk
+  #       with:
+  #         ndk-version: r26d
+  #         link-to-sdk: true
 
-      - name: Install Android targets
-        run: rustup target add ${{ matrix.arch }}-linux-android
+  #     - name: Install Android targets
+  #       run: rustup target add ${{ matrix.arch }}-linux-android
 
-      - run: npm install
-        working-directory: mobile
+  #     - run: npm install
+  #       working-directory: mobile
 
-      - name: Android signing setup
-        working-directory: mobile/src-tauri/gen/android
-        run: |
-          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
-          echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
-          base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
-          echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
+  #     - name: Android signing setup
+  #       working-directory: mobile/src-tauri/gen/android
+  #       run: |
+  #         echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
+  #         echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
+  #         base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
+  #         echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
 
-      - name: Build
-        # uploadWorkflowArtifacts and mobile are not released
-        uses: tauri-apps/tauri-action@a1b01e690374452a209dd44f6de089dda9003d3d
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: mobile
-          uploadWorkflowArtifacts: true
-          mobile: android
-          args: --apk --split-per-abi --target ${{ matrix.tauri_target }} --config '{"version":"0.0.1"}'
+  #     - name: Build
+  #       # uploadWorkflowArtifacts and mobile are not released
+  #       uses: tauri-apps/tauri-action@a1b01e690374452a209dd44f6de089dda9003d3d
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         projectPath: mobile
+  #         uploadWorkflowArtifacts: true
+  #         mobile: android
+  #         args: --apk --split-per-abi --target ${{ matrix.tauri_target }} --config '{"version":"0.0.1"}'
