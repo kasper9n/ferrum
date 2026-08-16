@@ -8,7 +8,7 @@
 	onDestroy(
 		ipc_listen('filter', (e, text) => {
 			if (text) {
-				$filter = text
+				filter.text = text
 				filter_input?.select()
 			} else {
 				filter_input?.select()
@@ -29,8 +29,8 @@
 	bind:this={filter_input}
 	type="text"
 	class="search rounded-[5px] text-[13px] leading-none"
-	class:on={$filter}
-	bind:value={$filter}
+	class:on={filter.text}
+	bind:value={filter.text}
 	placeholder="Filter"
 />
 

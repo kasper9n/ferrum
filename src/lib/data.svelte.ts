@@ -228,7 +228,9 @@ export function save_view_options(options: ViewOptions) {
 	return call_sync((addon) => addon.save_view_options(view_options, paths.viewOptionsFile))
 }
 
-export const filter = writable('')
+export const filter = $state({
+	text: '',
+})
 
 export const refreshers = $state({
 	tracks: 0,

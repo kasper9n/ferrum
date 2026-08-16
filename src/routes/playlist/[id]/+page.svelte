@@ -61,7 +61,7 @@
 
 	const page_options = $derived({
 		playlistId: params.id,
-		filterQuery: $filter,
+		filterQuery: filter.text,
 		sortKey: $sort_key,
 		sortDesc: $sort_desc,
 		groupAlbumTracks: $group_album_tracks,
@@ -155,7 +155,7 @@
 		} else if (
 			check_shortcut(e, 'Backspace') &&
 			selection.items.size > 0 &&
-			$filter === '' &&
+			filter.text === '' &&
 			tracks_page.playlistKind === 'playlist'
 		) {
 			e.preventDefault()
@@ -211,7 +211,7 @@
 		if (
 			!$sort_desc ||
 			$sort_key !== 'index' ||
-			$filter ||
+			filter.text ||
 			tracks_page.playlistKind !== 'playlist'
 		) {
 			drag_to_index = null

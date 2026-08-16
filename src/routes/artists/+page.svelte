@@ -5,7 +5,7 @@
 
 	let all_artists = get_artists()
 	let snapshot_artists = $derived(fuzzysort.snapshot(all_artists))
-	let artists = $derived(fuzzysort.go($filter, snapshot_artists, { limit: 0 }))
+	let artists = $derived(fuzzysort.go(filter.text, snapshot_artists, { limit: 0 }))
 </script>
 
 <Header title="Artists" subtitle="{all_artists.length} artists" description={undefined} />
