@@ -152,12 +152,21 @@ export class VirtualGrid<I, R extends Record<string, unknown>> {
 		})
 	}
 
+	raw_columns: Column[] = []
 	columns: Column[] = $state([])
 	set_columns(columns: Column[]) {
+		this.raw_columns = columns
+		this.#apply_layout()
+	}
+	#apply_layout() {
+		const columns = this.raw_columns
+		if (!this.viewport) {
+			return
+		}
 		const old_columns = untrack(() => this.columns)
 		const total_fixed_width = columns.reduce((sum, col) => sum + (col.is_pct ? 0 : col.width), 0)
 		const total_percent_pct = columns.reduce((sum, col) => sum + (col.is_pct ? col.width : 0), 0)
-		const container_width = this.viewport?.clientWidth ?? total_fixed_width
+		const container_width = this.viewport.clientWidth
 		const total_percent_width = container_width - total_fixed_width
 		let offset = 0
 		const new_columns = columns.map((col) => {
@@ -204,7 +213,6 @@ export class VirtualGrid<I, R extends Record<string, unknown>> {
 
 			this.refresh(RefreshLevel.NewRows)
 		}
-		return new_columns
 	}
 
 	#render() {
@@ -301,9 +309,10 @@ export class VirtualGrid<I, R extends Record<string, unknown>> {
 		this.viewport = viewport
 
 		this.#update_viewport_size()
+		this.#apply_layout()
 
 		this.size_observer = new ResizeObserver(() => {
-			this.set_columns(this.columns)
+			this.#apply_layout()
 			this.#update_viewport_size()
 			this.refresh(RefreshLevel.NewRows)
 		})
