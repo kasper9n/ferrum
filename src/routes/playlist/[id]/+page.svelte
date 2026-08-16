@@ -22,10 +22,8 @@
 		filter,
 		move_tracks,
 		remove_from_playlist,
-		tracklist_updated,
 		get_default_sort_desc,
 		delete_tracks_with_item_ids,
-		tracks_updated,
 		get_tracks_page,
 		get_track_ids,
 		save_view_options,
@@ -33,6 +31,7 @@
 		view_options,
 		paths,
 		join_paths,
+		refreshers,
 	} from '$lib/data.svelte'
 	import { new_playback_instance, playing_id } from '$lib/player'
 	import { get_duration, format_date, check_mouse_shortcut, check_shortcut } from '$lib/helpers'
@@ -68,17 +67,11 @@
 		groupAlbumTracks: $group_album_tracks,
 	})
 
-	let tracks_page = $derived(get_tracks_page(page_options))
-	onDestroy(
-		tracklist_updated.subscribe(() => {
-			tracks_page = get_tracks_page(page_options)
-		}),
-	)
-	onDestroy(
-		tracks_updated.subscribe(() => {
-			tracks_page = get_tracks_page(page_options)
-		}),
-	)
+	let tracks_page = $derived.by(() => {
+		refreshers.tracklist
+		refreshers.tracks
+		return get_tracks_page(page_options)
+	})
 	$effect(() => {
 		$tracks_page_item_ids = tracks_page.itemIds
 	})

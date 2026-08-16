@@ -73,18 +73,18 @@ export async function add_tracks_to_playlist(
 	}
 	if (track_ids.length >= 1) {
 		strict_call((addon) => addon.add_tracks_to_playlist(playlist_id, track_ids))
-		tracklist_updated.emit()
+		refreshers.tracklist++
 		save()
 	}
 }
 export function remove_from_playlist(playlist_id: TrackListID, item_ids: ItemId[]) {
 	strict_call((addon) => addon.remove_from_playlist(playlist_id, item_ids))
-	tracklist_updated.emit()
+	refreshers.tracklist++
 	save()
 }
 export function delete_tracks_with_item_ids(item_ids: ItemId[]) {
 	return call_sync((addon) => addon.delete_tracks_with_item_ids(item_ids)).on_success(() => {
-		tracklist_updated.emit()
+		refreshers.tracklist++
 		queue.removeDeleted()
 		save()
 	})
@@ -105,7 +105,7 @@ export function new_playlist(info: PlaylistInfo) {
 export function update_playlist(id: string, name: string, description: string) {
 	strict_call((addon) => addon.update_playlist(id, name, description))
 	track_lists_details_map.refresh()
-	tracklist_updated.emit()
+	refreshers.tracklist++
 	save()
 }
 export function move_playlist(
@@ -142,7 +142,7 @@ export async function import_tracks(paths: string[]) {
 			}
 		}
 	}
-	tracklist_updated.emit()
+	refreshers.tracklist++
 	save()
 }
 
@@ -184,13 +184,13 @@ export function save() {
 }
 export function add_play(id: TrackID) {
 	return call_sync((addon) => addon.add_play(id)).on_success(() => {
-		tracklist_updated.emit()
+		refreshers.tracklist++
 		save()
 	})
 }
 export function add_skip(id: TrackID) {
 	return call_sync((addon) => addon.add_skip(id)).on_success(() => {
-		tracklist_updated.emit()
+		refreshers.tracklist++
 		save()
 	})
 }
@@ -204,7 +204,7 @@ export function read_cover_async(file_path: string, index: number) {
 }
 export function update_track_info(id: TrackID, md: TrackMd) {
 	strict_call((addon) => addon.update_track_info(id, md))
-	tracks_updated.emit()
+	refreshers.tracks++
 	save()
 }
 export function load_tags(id: TrackID) {
@@ -230,18 +230,10 @@ export function save_view_options(options: ViewOptions) {
 
 export const filter = writable('')
 
-function create_refresh_store() {
-	const store = writable(0)
-	return {
-		subscribe: store.subscribe,
-		emit() {
-			store.update((n) => n + 1)
-		},
-	}
-}
-
-export const tracks_updated = create_refresh_store()
-export const tracklist_updated = create_refresh_store()
+export const refreshers = $state({
+	tracks: 0,
+	tracklist: 0,
+})
 
 export function get_artists() {
 	return strict_call((addon) => addon.get_artists())
@@ -251,7 +243,7 @@ export function get_genres() {
 }
 export function move_tracks(playlist_id: TrackListID, indexes: ItemId[], to_index: number) {
 	return call_sync((addon) => addon.move_tracks(playlist_id, indexes, to_index)).on_success(() => {
-		tracklist_updated.emit()
+		refreshers.tracklist++
 		save()
 	})
 }

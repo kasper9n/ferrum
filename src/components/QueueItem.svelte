@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { get_track, join_paths, paths, tracks_updated } from '$lib/data.svelte'
-	import { onDestroy } from 'svelte'
+	import { get_track, join_paths, paths, refreshers } from '$lib/data.svelte'
 
 	interface Props {
 		id: string
@@ -8,12 +7,10 @@
 
 	let { id }: Props = $props()
 
-	let track = $derived(get_track(id))
-	onDestroy(
-		tracks_updated.subscribe(() => {
-			track = get_track(id)
-		}),
-	)
+	let track = $derived.by(() => {
+		refreshers.tracks
+		return get_track(id)
+	})
 
 	let src = $derived(
 		'app://trackimg?path=' +
