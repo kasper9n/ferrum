@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { filter, get_artists } from '$lib/data'
+	import { filter, get_artists } from '$lib/data.svelte'
 	import fuzzysort from 'fuzzysort'
 	import Header from '$components/Header.svelte'
 

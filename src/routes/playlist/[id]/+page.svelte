@@ -33,7 +33,7 @@
 		view_options,
 		paths,
 		join_paths,
-	} from '$lib/data'
+	} from '$lib/data.svelte'
 	import { new_playback_instance, playing_id } from '$lib/player'
 	import { get_duration, format_date, check_mouse_shortcut, check_shortcut } from '$lib/helpers'
 	import { tracklist_actions } from '$lib/page'

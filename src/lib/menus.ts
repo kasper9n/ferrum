@@ -5,7 +5,7 @@ import {
 	get_track_playlist_ids,
 	paths,
 	track_lists_details_map,
-} from '$lib/data'
+} from '$lib/data.svelte'
 import { flatten_child_lists } from '$lib/helpers'
 import { ipc_renderer } from '$lib/window'
 import type { TrackID } from 'ferrum-addon'

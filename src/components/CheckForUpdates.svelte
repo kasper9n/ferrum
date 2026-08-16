@@ -2,7 +2,7 @@
 	import { ipc_renderer } from '$lib/window'
 	import Modal from './Modal.svelte'
 	import Button from './Button.svelte'
-	import { is_dev, save_view_options, view_options } from '$lib/data'
+	import { is_dev, save_view_options, view_options } from '$lib/data.svelte'
 	import { check_shortcut } from '$lib/helpers'
 
 	let latest_update: Awaited<ReturnType<typeof check>> | null = $state(null)

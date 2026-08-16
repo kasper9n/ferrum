@@ -8,7 +8,7 @@
 <script lang="ts">
 	import SidebarItems, { type SidebarItemHandle } from './SidebarItems.svelte'
 	import Filter from './Filter.svelte'
-	import { is_mac, track_lists_details_map, move_playlist } from '$lib/data'
+	import { is_mac, track_lists_details_map, move_playlist } from '$lib/data.svelte'
 	import { ipc_listen, ipc_renderer } from '../lib/window'
 	import { writable } from 'svelte/store'
 	import { onDestroy, setContext, tick } from 'svelte'

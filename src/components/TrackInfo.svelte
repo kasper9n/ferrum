@@ -87,7 +87,7 @@
 		set_image,
 		set_image_data,
 		update_track_info,
-	} from '$lib/data'
+	} from '$lib/data.svelte'
 	import { tick } from 'svelte'
 
 	const genres = get_genres()

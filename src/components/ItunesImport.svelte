@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ItunesImport, tracklist_updated, track_lists_details_map, save } from '$lib/data'
+	import { ItunesImport, tracklist_updated, track_lists_details_map, save } from '$lib/data.svelte'
 	import { ipc_renderer } from '$lib/window'
 	import type { ImportStatus } from 'ferrum-addon'
 	import Button from './Button.svelte'

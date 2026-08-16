@@ -10,7 +10,7 @@
 	import { onDestroy } from 'svelte'
 	import QueueItemComponent from './QueueItem.svelte'
 	import { dragged } from '$lib/drag-drop'
-	import { get_track } from '$lib/data'
+	import { get_track } from '$lib/data.svelte'
 	import * as dragGhost from './DragGhost.svelte'
 	import { ipc_listen, ipc_renderer } from '$lib/window'
 	import { check_shortcut, prevent_default } from '$lib/helpers'

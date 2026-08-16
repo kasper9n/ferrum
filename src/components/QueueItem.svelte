@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { get_track, join_paths, paths, tracks_updated } from '$lib/data'
+	import { get_track, join_paths, paths, tracks_updated } from '$lib/data.svelte'
 	import { onDestroy } from 'svelte'
 
 	interface Props {

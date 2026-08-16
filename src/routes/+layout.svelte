@@ -18,7 +18,7 @@
 		import_tracks,
 		get_file_path,
 		type PlaylistInfo,
-	} from '$lib/data'
+	} from '$lib/data.svelte'
 	import { play_pause, playing_track, time_record } from '$lib/player'
 	import DragGhost from '$components/DragGhost.svelte'
 	import ItunesImport from '$components/ItunesImport.svelte'

@@ -14,7 +14,7 @@
 	import { get_duration, prevent_default } from '../lib/helpers'
 	import { queue_visible, queue, shuffle, repeat } from '../lib/queue'
 	import { lyrics_state, toggle_lyrics_visibility } from '$lib/lyrics.svelte'
-	import { get_track, is_dev } from '$lib/data'
+	import { get_track, is_dev } from '$lib/data.svelte'
 	import { dragged } from '$lib/drag-drop'
 	import * as dragGhost from './DragGhost.svelte'
 	import Slider from './Slider.svelte'

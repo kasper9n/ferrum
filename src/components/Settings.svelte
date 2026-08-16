@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Modal from './Modal.svelte'
 	import Button from './Button.svelte'
-	import { save_view_options, view_options } from '$lib/data'
+	import { save_view_options, view_options } from '$lib/data.svelte'
 
 	interface Props {
 		on_close: () => void

@@ -5,7 +5,7 @@
 		move_playlist,
 		view_options,
 		save_view_options,
-	} from '$lib/data'
+	} from '$lib/data.svelte'
 	import Self from './SidebarItems.svelte'
 
 	export type SidebarItemHandle = {

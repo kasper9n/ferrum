@@ -239,6 +239,7 @@ function create_refresh_store() {
 		},
 	}
 }
+
 export const tracks_updated = create_refresh_store()
 export const tracklist_updated = create_refresh_store()
 
