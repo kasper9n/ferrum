@@ -1,10 +1,9 @@
 use crate::library::{Paths, load_library_json, open_library};
 use crate::library_types::Library;
 use crate::tracks::Tag;
-use anyhow::Context;
+use anyhow::{Context, Result};
 use atomicwrites::{AllowOverwrite, AtomicFile};
 use dirs_next;
-use napi::Result;
 use serde::Serialize;
 use sqlx::SqliteConnection;
 use std::env;
@@ -71,7 +70,7 @@ impl Data {
 		println!("Write: {}ms", now.elapsed().as_millis());
 		Ok(())
 	}
-	pub fn load(
+	pub async fn load(
 		is_dev: bool,
 		local_data_path: Option<String>,
 		library_path: Option<String>,
@@ -121,7 +120,7 @@ impl Data {
 			logs_dir: path_to_string(app_log_dir()?),
 		};
 
-		let library_sqlite = open_library(&paths)?;
+		let library_sqlite = open_library(&paths).await?;
 
 		let loaded_library_json =
 			load_library_json(&library_dir.join("Library.json"))?.unwrap_or(Library::new());

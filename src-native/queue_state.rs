@@ -6,7 +6,7 @@ use std::fs;
 use std::io::Write;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct QueueItemState {
 	#[serde(rename = "qId")]
 	#[napi(js_name = "qId")]
@@ -17,7 +17,7 @@ pub struct QueueItemState {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct QueueCurrentState {
 	pub item: QueueItemState,
 	#[napi(js_name = "from_auto_queue")]
@@ -25,7 +25,7 @@ pub struct QueueCurrentState {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct QueueState {
 	#[serde(default)]
 	pub past: Vec<QueueItemState>,

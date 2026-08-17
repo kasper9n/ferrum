@@ -13,7 +13,7 @@ use std::path::PathBuf;
 #[cfg(target_os = "macos")]
 use trash::macos::TrashContextExtMacos;
 
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct TrackListDetails {
 	pub id: String,
 	pub name: String,

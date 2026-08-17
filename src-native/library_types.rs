@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 
 use crate::get_now_timestamp;
-#[cfg(feature = "napi-rs")]
+#[cfg(feature = "napi")]
 use crate::library::Paths;
-#[cfg(feature = "napi-rs")]
+#[cfg(feature = "napi")]
 use crate::playlists::{delete_file, remove_from_all_playlists};
 use anyhow::{Context, Result, bail};
 use linked_hash_map::{Entry, LinkedHashMap};
@@ -141,7 +141,7 @@ impl Library {
 		track_id_map.push(id.clone());
 		self.track_item_ids.insert(id, item_id);
 	}
-	#[cfg(feature = "napi-rs")]
+	#[cfg(feature = "napi")]
 	pub fn delete_track_and_file(&mut self, id: &TrackID, paths: &Paths) -> Result<()> {
 		let file_path = {
 			let track = self.get_track(id)?;

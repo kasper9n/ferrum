@@ -1,7 +1,8 @@
 use crate::data::{Data, app_log_dir, path_to_string};
 use crate::library::Paths;
-use napi::Result;
+use anyhow::{Context, Result};
 use std::fs;
+use tokio::runtime::Runtime;
 
 #[napi(js_name = "load_data")]
 #[allow(dead_code)]
@@ -27,7 +28,10 @@ pub fn load_data(
 		fs::write(&file_path, log_msg).expect("Could not save crash log");
 		println!("Crash message written to {}", file_path.to_string_lossy());
 	}));
-	Data::load(is_dev, local_data_path, library_path)?;
+	let rt = Runtime::new().context("Error creating tokio runtime")?;
+
+	rt.block_on(Data::load(is_dev, local_data_path, library_path))?;
+
 	return Ok(());
 }
 

@@ -1,26 +1,19 @@
-#[cfg(feature = "napi-rs")]
+#[cfg(feature = "napi")]
 use crate::data::Data;
 use crate::library_types::{ItemId, Library, SpecialTrackListName, TrackList, VersionedLibrary};
-#[cfg(feature = "napi-rs")]
 use crate::migrate::migrate_to_sqlite;
 use anyhow::{Context, Result, bail};
 use linked_hash_map::LinkedHashMap;
 use serde_json::{Value, json};
-#[cfg(feature = "napi-rs")]
 use sqlx::{ConnectOptions, SqliteConnection, sqlite::SqliteConnectOptions};
 use std::fs::File;
 use std::io::{ErrorKind, Read, Seek, SeekFrom};
 use std::path::PathBuf;
-#[cfg(feature = "napi-rs")]
 use std::time::Instant;
-#[cfg(feature = "napi-rs")]
 use std::{fs::create_dir_all, path::Path};
-#[cfg(feature = "napi-rs")]
-use tokio::runtime::Runtime;
 
-#[cfg(feature = "napi-rs")]
 #[derive(Clone)]
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct Paths {
 	pub path_separator: String,
 	pub library_dir: String,
@@ -34,7 +27,6 @@ pub struct Paths {
 	pub queue_file: String,
 	pub logs_dir: String,
 }
-#[cfg(feature = "napi-rs")]
 impl Paths {
 	fn ensure_dirs_exists(&self) -> Result<()> {
 		create_dir_all(&self.library_dir)?;
@@ -106,8 +98,7 @@ fn parse_old_versionless_library_json(library_file: &mut File) -> Result<Version
 	Ok(versioned_library)
 }
 
-#[cfg(feature = "napi-rs")]
-pub fn open_library(paths: &Paths) -> Result<SqliteConnection> {
+pub async fn open_library(paths: &Paths) -> Result<SqliteConnection> {
 	let now = Instant::now();
 
 	paths
@@ -117,21 +108,19 @@ pub fn open_library(paths: &Paths) -> Result<SqliteConnection> {
 
 	let library_sqlite = &paths.library_sqlite;
 
-	let rt = Runtime::new().context("Error creating tokio runtime")?;
-
 	let exists = Path::new(&library_sqlite).exists();
 	if !exists {
-		rt.block_on(migrate_to_sqlite(paths))?;
+		migrate_to_sqlite(paths).await?;
 	}
-	let mut connection = rt
-		.block_on(
-			SqliteConnectOptions::new()
-				.filename(&paths.library_sqlite)
-				.connect(),
-		)
+	let mut connection = SqliteConnectOptions::new()
+		.filename(&paths.library_sqlite)
+		.connect()
+		.await
 		.context("Error connecting to library database")?;
 
-	rt.block_on(sqlx::migrate!("./src-native/migrations").run(&mut connection))
+	sqlx::migrate!("./src-native/migrations")
+		.run(&mut connection)
+		.await
 		.map_err(|e| anyhow::anyhow!("{:?}", e))
 		.context("Could not run database migrations")?;
 
@@ -149,7 +138,7 @@ pub enum TrackField {
 	Bool,
 }
 
-#[cfg(feature = "napi-rs")]
+#[cfg(feature = "napi")]
 #[napi(js_name = "get_default_sort_desc")]
 #[allow(dead_code)]
 pub fn get_default_sort_desc(field: String) -> Result<bool> {
@@ -208,7 +197,7 @@ pub fn get_track_field_type(field: &str) -> Result<TrackField> {
 	return Ok(field);
 }
 
-#[cfg(feature = "napi-rs")]
+#[cfg(feature = "napi")]
 #[napi(js_name = "get_genres")]
 #[allow(dead_code)]
 pub fn get_genres() -> Vec<String> {
@@ -217,7 +206,7 @@ pub fn get_genres() -> Vec<String> {
 	genres.clone()
 }
 
-#[cfg(feature = "napi-rs")]
+#[cfg(feature = "napi")]
 #[napi(js_name = "get_artists")]
 #[allow(dead_code)]
 pub fn get_artists() -> Vec<String> {

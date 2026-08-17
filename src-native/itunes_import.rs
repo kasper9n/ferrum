@@ -568,7 +568,7 @@ fn import_playlist(
 	id
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct ImportStatus {
 	pub errors: Vec<String>,
 	pub tracks_count: i64,

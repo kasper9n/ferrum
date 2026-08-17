@@ -1,15 +1,12 @@
-#[cfg(feature = "napi-rs")]
 use crate::data::Data;
-use crate::db::{TrackListID, TrackListKind};
+use crate::db::TrackListKind;
 use crate::library::Paths;
-#[cfg(feature = "napi-rs")]
 use crate::library_types::new_item_ids_from_track_ids;
 use crate::library_types::{ItemId, SpecialTrackListName};
 use anyhow::Result;
 use futures_util::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use specta::Type;
-#[cfg(feature = "napi-rs")]
 use sqlx::Connection;
 use sqlx::Row;
 use std::path::Path;
@@ -481,7 +478,7 @@ fn search_tantivy(
 	};
 
 	let order = if sort_desc { Order::Desc } else { Order::Asc };
-	let limit = searcher.num_docs() as usize;
+	let limit = searcher.num_docs().try_into().unwrap();
 
 	let top_docs = TopDocs::with_limit(limit);
 	println!("prepare search took {:?}", start_time.elapsed());
@@ -585,9 +582,13 @@ fn search_tantivy(
 	Ok(track_ids)
 }
 
-#[cfg(feature = "napi-rs")]
+#[cfg(feature = "napi")]
 #[cfg_attr(feature = "napi", napi(js_name = "get_tracks_page"))]
 #[allow(dead_code)]
+pub async fn get_tracks_page_js(options: TracksPageOptions) -> Result<TracksPage> {
+	get_tracks_page(options).await
+}
+
 pub async fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
 	let mut data = Data::get_async().await;
 	let paths = data.paths.clone();
@@ -641,4 +642,34 @@ pub async fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
 		item_ids,
 	};
 	Ok(tracks_page)
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::{
+		data::Data,
+		library_types::SpecialTrackListName,
+		page::{TracksPageOptions, get_tracks_page},
+	};
+	use std::path::PathBuf;
+
+	#[tokio::test]
+	async fn test_get_tracks_page() -> anyhow::Result<()> {
+		let library_path = PathBuf::from("./src-native/appdata/Library big");
+		Data::load(true, None, Some(library_path.to_string_lossy().to_string()))
+			.await
+			.unwrap();
+		let result = get_tracks_page(TracksPageOptions {
+			playlist_id: SpecialTrackListName::Root.get_id().to_string(),
+			sort_key: "name".to_string(),
+			sort_desc: false,
+			filter_query: "".to_string(),
+			group_album_tracks: false,
+		})
+		.await?;
+
+		println!("result: {:#?}", result.item_ids.len());
+
+		Ok(())
+	}
 }

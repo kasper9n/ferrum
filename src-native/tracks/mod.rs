@@ -3,6 +3,7 @@ use crate::get_now_timestamp;
 use crate::library::Paths;
 use crate::library_types::{ItemId, MsSinceUnixEpoch, TRACK_ID_MAP, Track, TrackID};
 use anyhow::{Context, Result, bail};
+#[cfg(feature = "napi")]
 use napi::bindgen_prelude::{ArrayBuffer, Buffer};
 use std::fs;
 use std::path::Path;
@@ -14,7 +15,8 @@ mod tag;
 
 pub use tag::Tag;
 
-#[napi(js_name = "get_track")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "get_track"))]
 #[allow(dead_code)]
 pub fn get_track(id: String) -> Result<Track> {
 	let data = Data::get_blocking();
@@ -22,13 +24,14 @@ pub fn get_track(id: String) -> Result<Track> {
 	Ok(track.clone())
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct KeyedTrack {
 	pub id: TrackID,
 	pub track: Track,
 }
 
-#[napi(js_name = "get_track_by_item_id")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "get_track_by_item_id"))]
 #[allow(dead_code)]
 pub fn get_track_by_item_id(item_id: ItemId) -> Result<KeyedTrack> {
 	let data = Data::get_blocking();
@@ -41,7 +44,8 @@ pub fn get_track_by_item_id(item_id: ItemId) -> Result<KeyedTrack> {
 	})
 }
 
-#[napi(js_name = "get_track_ids")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "get_track_ids"))]
 #[allow(dead_code)]
 pub fn get_track_ids(item_ids: Vec<ItemId>) -> Vec<TrackID> {
 	let id_map = TRACK_ID_MAP.read().unwrap();
@@ -52,7 +56,8 @@ pub fn get_track_ids(item_ids: Vec<ItemId>) -> Vec<TrackID> {
 	track_ids.collect()
 }
 
-#[napi(js_name = "track_exists")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "track_exists"))]
 #[allow(dead_code)]
 pub fn track_exists(id: String) -> bool {
 	let data = Data::get_blocking();
@@ -60,7 +65,8 @@ pub fn track_exists(id: String) -> bool {
 	tracks.contains_key(&id)
 }
 
-#[napi(js_name = "add_play")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "add_play"))]
 #[allow(dead_code)]
 pub fn add_play(track_id: String) -> Result<()> {
 	let mut data = Data::get_blocking();
@@ -77,7 +83,8 @@ pub fn add_play(track_id: String) -> Result<()> {
 	Ok(())
 }
 
-#[napi(js_name = "add_skip")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "add_skip"))]
 #[allow(dead_code)]
 pub fn add_skip(track_id: String) -> Result<()> {
 	let mut data = Data::get_blocking();
@@ -94,7 +101,8 @@ pub fn add_skip(track_id: String) -> Result<()> {
 	Ok(())
 }
 
-#[napi(js_name = "add_play_time")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "add_play_time"))]
 #[allow(dead_code)]
 pub fn add_play_time(id: TrackID, start: MsSinceUnixEpoch, dur_ms: i64) -> Result<()> {
 	let mut data = Data::get_blocking();
@@ -142,7 +150,8 @@ pub fn generate_filename(paths: &Paths, artist: &str, title: &str, ext: &str) ->
 	return filename;
 }
 
-#[napi(js_name = "import_file")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "import_file"))]
 #[allow(dead_code)]
 pub fn import_file(path: String, now: MsSinceUnixEpoch) -> Result<()> {
 	let mut data = Data::get_blocking();
@@ -152,7 +161,8 @@ pub fn import_file(path: String, now: MsSinceUnixEpoch) -> Result<()> {
 	Ok(())
 }
 
-#[napi(js_name = "load_tags")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "load_tags"))]
 #[allow(dead_code)]
 pub fn load_tags(track_id: String) -> Result<()> {
 	let data = &mut *Data::get_blocking();
@@ -168,7 +178,8 @@ pub fn load_tags(track_id: String) -> Result<()> {
 	Ok(())
 }
 
-#[napi(object)]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct JsImage {
 	pub index: i64,
 	pub total_images: i64,
@@ -176,7 +187,8 @@ pub struct JsImage {
 	pub data: Buffer,
 }
 
-#[napi(js_name = "get_image")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "get_image"))]
 #[allow(dead_code)]
 pub fn get_image(index: u32) -> Result<Option<JsImage>> {
 	let data = Data::get_blocking();
@@ -202,7 +214,8 @@ pub fn get_image(index: u32) -> Result<Option<JsImage>> {
 	Ok(Some(js_image))
 }
 
-#[napi(js_name = "set_image")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "set_image"))]
 #[allow(dead_code)]
 pub fn set_image(index: u32, path: String) -> Result<()> {
 	let mut data = Data::get_blocking();
@@ -215,7 +228,8 @@ pub fn set_image(index: u32, path: String) -> Result<()> {
 	Ok(())
 }
 
-#[napi(js_name = "set_image_data")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "set_image_data"))]
 #[allow(dead_code)]
 pub fn set_image_data(index: u32, bytes: ArrayBuffer) -> Result<()> {
 	let mut data = Data::get_blocking();
@@ -227,7 +241,8 @@ pub fn set_image_data(index: u32, bytes: ArrayBuffer) -> Result<()> {
 	Ok(())
 }
 
-#[napi(js_name = "remove_image")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "remove_image"))]
 #[allow(dead_code)]
 pub fn remove_image(index: u32) -> () {
 	let mut data = Data::get_blocking();
@@ -239,7 +254,8 @@ pub fn remove_image(index: u32) -> () {
 	};
 }
 
-#[napi(js_name = "update_track_info")]
+#[cfg(feature = "napi-rs")]
+#[cfg_attr(feature = "napi", napi(js_name = "update_track_info"))]
 #[allow(dead_code)]
 pub fn update_track_info(track_id: String, info: md::TrackMD) -> Result<()> {
 	let data = &mut *Data::get_blocking();

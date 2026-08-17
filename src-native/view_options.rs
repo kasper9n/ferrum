@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct ViewOptions {
 	pub shown_playlist_folders: Vec<String>,
 	/// Empty is treated as default

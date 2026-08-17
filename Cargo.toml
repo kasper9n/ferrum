@@ -39,7 +39,7 @@ alphanumeric-sort = "1.5"
 linked-hash-map = { version = "0.5", features = ["serde_impl"] }
 atomicwrites = "0.4"
 plist = "1.5"
-tokio = { version = "1.28", features = ["macros"] }
+tokio = { version = "1.28", features = ["macros", "rt-multi-thread", "sync"] }
 time = { version = "0.3", features = ["serde", "serde-well-known"] }
 url = "2.4"
 unicode-normalization = "0.1"
