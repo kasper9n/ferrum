@@ -156,8 +156,8 @@ async fn insert_library_into_db(
 		.bind(track.discNum)
 		.bind(track.discCount)
 		.bind(track.dateImported)
-		.bind(track.playCount)
-		.bind(track.skipCount)
+		.bind(track.playCount.unwrap_or(0))
+		.bind(track.skipCount.unwrap_or(0))
 		.bind(track.volume)
 		.execute(&mut *tx)
 		.await

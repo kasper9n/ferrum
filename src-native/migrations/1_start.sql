@@ -34,8 +34,8 @@ create table tracks (
 	disc_num          INTEGER NULL, -- u32
 	disc_count        INTEGER NULL, -- u32
 	imported_at       INTEGER NULL,
-	play_count        INTEGER NULL, -- u32
-	skip_count        INTEGER NULL, -- u32
+	play_count        INTEGER NOT NULL, -- u32
+	skip_count        INTEGER NOT NULL, -- u32
 	volume            INTEGER NULL -- from -100 to 100
 );
 
