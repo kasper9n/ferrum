@@ -223,7 +223,7 @@ async fn insert_library_into_db(
 	for (list_id, tracklist) in &library.trackLists {
 		match tracklist {
 			TrackList::Special(special) => {
-				let name = special.name.to_string();
+				let name = special.name.get_name_str();
 				sqlx::query(
 					"
 						INSERT INTO track_lists
@@ -233,7 +233,7 @@ async fn insert_library_into_db(
 				)
 				.bind(&special.id)
 				.bind("special")
-				.bind(special.name.to_string())
+				.bind(special.name.get_name_str())
 				.bind("")
 				.bind(special.dateCreated)
 				.execute(&mut *tx)
@@ -621,10 +621,10 @@ mod old_library {
 	pub enum SpecialTrackListName {
 		Root,
 	}
-	impl ToString for SpecialTrackListName {
-		fn to_string(&self) -> String {
+	impl SpecialTrackListName {
+		pub fn get_name_str(&self) -> &str {
 			match self {
-				SpecialTrackListName::Root => "Root".to_owned(),
+				SpecialTrackListName::Root => "root",
 			}
 		}
 	}

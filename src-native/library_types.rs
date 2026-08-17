@@ -109,7 +109,7 @@ impl Library {
 	pub fn new() -> Self {
 		let mut track_lists = LinkedHashMap::new();
 		let root = Special {
-			id: "root".to_string(),
+			id: SpecialTrackListName::Root.get_id().to_string(),
 			name: SpecialTrackListName::Root,
 			dateCreated: get_now_timestamp(),
 			children: Vec::new(),
@@ -219,7 +219,7 @@ impl Library {
 		self.trackLists.get_mut(id).context("Playlist ID not found")
 	}
 	pub fn get_root_tracklist_mut(&mut self) -> Result<&mut Special> {
-		let tracklist = self.trackLists.get_mut("root");
+		let tracklist = self.trackLists.get_mut(SpecialTrackListName::Root.get_id());
 		match tracklist {
 			Some(TrackList::Special(special)) => match special.name {
 				SpecialTrackListName::Root => Ok(special),
@@ -542,10 +542,15 @@ pub struct Special {
 pub enum SpecialTrackListName {
 	Root,
 }
-impl ToString for SpecialTrackListName {
-	fn to_string(&self) -> String {
+impl SpecialTrackListName {
+	pub fn get_id(&self) -> &str {
 		match self {
-			SpecialTrackListName::Root => "Root".to_owned(),
+			SpecialTrackListName::Root => "root",
+		}
+	}
+	pub fn get_name_str(&self) -> &str {
+		match self {
+			SpecialTrackListName::Root => "root",
 		}
 	}
 }

@@ -40,7 +40,7 @@ pub fn get_track_lists_details() -> HashMap<String, TrackListDetails> {
 						TrackList::Playlist(_) => "playlist".to_string(),
 					},
 					name: match tracklist {
-						TrackList::Special(tracklist) => tracklist.name.to_string(),
+						TrackList::Special(tracklist) => tracklist.name.get_name_str().to_string(),
 						TrackList::Folder(tracklist) => tracklist.name.clone(),
 						TrackList::Playlist(tracklist) => tracklist.name.clone(),
 					},
