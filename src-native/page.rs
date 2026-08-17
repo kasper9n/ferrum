@@ -1,17 +1,17 @@
 #[cfg(feature = "napi-rs")]
 use crate::data::Data;
-use crate::db::TrackListKind;
+use crate::db::{TrackListID, TrackListKind};
 use crate::library::Paths;
 #[cfg(feature = "napi-rs")]
 use crate::library_types::new_item_ids_from_track_ids;
 use crate::library_types::{ItemId, SpecialTrackListName};
 use anyhow::Result;
 use futures_util::TryStreamExt;
-use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 #[cfg(feature = "napi-rs")]
 use sqlx::Connection;
+use sqlx::Row;
 use std::path::Path;
 use std::time::Instant;
 use tantivy::collector::{Collector, TopDocs};
@@ -212,7 +212,7 @@ struct PlaylistTrackRow {
 	year: Option<i64>,
 }
 
-fn add_opt_text(document: &mut TantivyDocument, field: Field, value: &Option<String>) {
+fn add_opt_text(document: &mut TantivyDocument, field: Field, value: &Option<&str>) {
 	if let Some(value) = value {
 		document.add_text(field, value);
 	}
@@ -230,8 +230,6 @@ fn add_opt_f64(document: &mut TantivyDocument, field: Field, value: Option<f64>)
 	}
 }
 
-const BATCH_SIZE: usize = 500;
-
 // Builds an in-memory Tantivy index and fills it with every playlist_tracks
 // row (tagged with its own playlist) plus every track (tagged with each
 // "special" track list id, i.e. root).
@@ -248,71 +246,83 @@ async fn build_tantivy_index(
 	index.tokenizers().register("subword", tokenizer);
 	let mut writer: IndexWriter = index.writer(50_000_000)?;
 
+	let start_time = Instant::now();
 	let t = Instant::now();
 
-	let mut all_tracks = sqlx::query_as::<_, AllTrackRow>(
+	let all_tracks: Vec<_> = sqlx::query(
 		"SELECT id, title, artist, composer, genre, comments, grouping, album_title,
 			album_artist, added_at, duration_s, bpm, play_count, skip_count, year
 		FROM tracks
 		ORDER BY added_at ASC",
 	)
-	.fetch(&mut **tx);
+	.fetch_all(&mut **tx)
+	.await?;
+	println!("  select all_tracks {:?}", t.elapsed());
+	let t = Instant::now();
 
-	while let Some(first) = all_tracks.try_next().await? {
-		let mut batch = Vec::with_capacity(BATCH_SIZE);
-		batch.push(first);
+	let mut docs = Vec::with_capacity(all_tracks.len());
+	for (i, row) in all_tracks.into_iter().enumerate() {
+		let id: &str = row.try_get(0).unwrap();
+		let title: &str = row.try_get(1).unwrap();
+		let artist: &str = row.try_get(2).unwrap();
+		let composer: Option<&str> = row.try_get(3).unwrap();
+		let genre: Option<&str> = row.try_get(4).unwrap();
+		let comments: Option<&str> = row.try_get(5).unwrap();
+		let grouping: Option<&str> = row.try_get(6).unwrap();
+		let album_title: Option<&str> = row.try_get(7).unwrap();
+		let album_artist: Option<&str> = row.try_get(8).unwrap();
+		let added_at: i64 = row.try_get(9).unwrap();
+		let duration_s: f64 = row.try_get(10).unwrap();
+		let bpm: Option<f64> = row.try_get(11).unwrap();
+		let play_count: u64 = row.try_get(12).unwrap();
+		let skip_count: u64 = row.try_get(13).unwrap();
+		let year: Option<i64> = row.try_get(14).unwrap();
 
-		while batch.len() < BATCH_SIZE {
-			match all_tracks.try_next().await? {
-				Some(row) => batch.push(row),
-				None => break,
-			}
-		}
+		let mut doc = TantivyDocument::default();
+		doc.add_text(fields.track_id, &id);
+		doc.add_text(fields.playlist_id, SpecialTrackListName::Root.get_id());
+		doc.add_u64(fields.playlist_pos, i.try_into().unwrap());
 
-		batch
-			.into_par_iter()
-			.enumerate()
-			.try_for_each(|(i, row)| -> Result<()> {
-				let mut doc = TantivyDocument::default();
-				doc.add_text(fields.track_id, &row.id);
-				doc.add_text(fields.playlist_id, SpecialTrackListName::Root.get_id());
-				doc.add_u64(fields.playlist_pos, i.try_into().unwrap());
+		// Search fields
+		doc.add_text(fields.title, &title);
+		doc.add_text(fields.artist, &artist);
+		add_opt_text(&mut doc, fields.composer, &composer);
+		add_opt_text(&mut doc, fields.genre, &genre);
+		add_opt_text(&mut doc, fields.comments, &comments);
+		add_opt_text(&mut doc, fields.grouping, &grouping);
+		add_opt_text(&mut doc, fields.album_title, &album_title);
+		add_opt_text(&mut doc, fields.album_artist, &album_artist);
 
-				// Search fields
-				doc.add_text(fields.title, &row.title);
-				doc.add_text(fields.artist, &row.artist);
-				add_opt_text(&mut doc, fields.composer, &row.composer);
-				add_opt_text(&mut doc, fields.genre, &row.genre);
-				add_opt_text(&mut doc, fields.comments, &row.comments);
-				add_opt_text(&mut doc, fields.grouping, &row.grouping);
-				add_opt_text(&mut doc, fields.album_title, &row.album_title);
-				add_opt_text(&mut doc, fields.album_artist, &row.album_artist);
+		// Sort fields (mirror the text values)
+		doc.add_text(fields.title_sort, &title);
+		doc.add_text(fields.artist_sort, &artist);
+		add_opt_text(&mut doc, fields.composer_sort, &composer);
+		add_opt_text(&mut doc, fields.genre_sort, &genre);
+		add_opt_text(&mut doc, fields.comments_sort, &comments);
+		add_opt_text(&mut doc, fields.grouping_sort, &grouping);
+		add_opt_text(&mut doc, fields.album_title_sort, &album_title);
+		add_opt_text(&mut doc, fields.album_artist_sort, &album_artist);
 
-				// Sort fields (mirror the text values)
-				doc.add_text(fields.title_sort, &row.title);
-				doc.add_text(fields.artist_sort, &row.artist);
-				add_opt_text(&mut doc, fields.composer_sort, &row.composer);
-				add_opt_text(&mut doc, fields.genre_sort, &row.genre);
-				add_opt_text(&mut doc, fields.comments_sort, &row.comments);
-				add_opt_text(&mut doc, fields.grouping_sort, &row.grouping);
-				add_opt_text(&mut doc, fields.album_title_sort, &row.album_title);
-				add_opt_text(&mut doc, fields.album_artist_sort, &row.album_artist);
+		// Numeric sorts
+		doc.add_i64(fields.added_at, added_at);
+		doc.add_f64(fields.duration_s, duration_s);
+		add_opt_f64(&mut doc, fields.bpm, bpm);
+		doc.add_u64(fields.play_count, play_count);
+		doc.add_u64(fields.skip_count, skip_count);
+		add_opt_i64(&mut doc, fields.year, year);
 
-				// Numeric sorts
-				doc.add_i64(fields.added_at, row.added_at);
-				doc.add_f64(fields.duration_s, row.duration_s);
-				add_opt_f64(&mut doc, fields.bpm, row.bpm);
-				doc.add_u64(fields.play_count, row.play_count);
-				doc.add_u64(fields.skip_count, row.skip_count);
-				add_opt_i64(&mut doc, fields.year, row.year);
-
-				writer.add_document(doc)?;
-				Ok(())
-			})?;
+		docs.push(doc);
 	}
-	drop(all_tracks);
+	println!("  create docs {:?}", t.elapsed());
+	let t = Instant::now();
 
-	let mut playlist_tracks = sqlx::query_as::<_, PlaylistTrackRow>(
+	for doc in docs {
+		writer.add_document(doc)?;
+	}
+	println!("  add docs {:?}", t.elapsed());
+	let t = Instant::now();
+
+	let mut playlist_tracks = sqlx::query(
 		"SELECT
 				playlist_tracks.track_list_id,
 				playlist_tracks.item_pos,
@@ -335,62 +345,68 @@ async fn build_tantivy_index(
 		JOIN tracks ON tracks.id = playlist_tracks.track_id",
 	)
 	.fetch(&mut **tx);
+	println!("  select playlist_tracks {:?}", t.elapsed());
 
-	while let Some(first) = playlist_tracks.try_next().await? {
-		let mut batch = Vec::with_capacity(BATCH_SIZE);
-		batch.push(first);
+	while let Some(row) = playlist_tracks.try_next().await? {
+		let track_list_id: &str = row.try_get(0).unwrap();
+		let item_pos: u64 = row.try_get(1).unwrap();
+		let id: &str = row.try_get(2).unwrap();
+		let title: &str = row.try_get(3).unwrap();
+		let artist: &str = row.try_get(4).unwrap();
+		let composer: Option<&str> = row.try_get(5).unwrap();
+		let genre: Option<&str> = row.try_get(6).unwrap();
+		let comments: Option<&str> = row.try_get(7).unwrap();
+		let grouping: Option<&str> = row.try_get(8).unwrap();
+		let album_title: Option<&str> = row.try_get(9).unwrap();
+		let album_artist: Option<&str> = row.try_get(10).unwrap();
+		let added_at: i64 = row.try_get(11).unwrap();
+		let duration_s: f64 = row.try_get(12).unwrap();
+		let bpm: Option<f64> = row.try_get(13).unwrap();
+		let play_count: u64 = row.try_get(14).unwrap();
+		let skip_count: u64 = row.try_get(15).unwrap();
+		let year: Option<i64> = row.try_get(16).unwrap();
 
-		while batch.len() < BATCH_SIZE {
-			match playlist_tracks.try_next().await? {
-				Some(row) => batch.push(row),
-				None => break,
-			}
-		}
+		let mut doc = TantivyDocument::default();
+		doc.add_text(fields.track_id, &id);
+		doc.add_text(fields.playlist_id, &track_list_id);
+		doc.add_u64(fields.playlist_pos, item_pos);
 
-		batch.into_par_iter().try_for_each(|row| -> Result<()> {
-			let mut doc = TantivyDocument::default();
-			doc.add_text(fields.track_id, &row.id);
-			doc.add_text(fields.playlist_id, &row.track_list_id);
-			doc.add_u64(fields.playlist_pos, row.item_pos);
+		// Search fields
+		doc.add_text(fields.title, &title);
+		doc.add_text(fields.artist, &artist);
+		add_opt_text(&mut doc, fields.composer, &composer);
+		add_opt_text(&mut doc, fields.genre, &genre);
+		add_opt_text(&mut doc, fields.comments, &comments);
+		add_opt_text(&mut doc, fields.grouping, &grouping);
+		add_opt_text(&mut doc, fields.album_title, &album_title);
+		add_opt_text(&mut doc, fields.album_artist, &album_artist);
 
-			// Search fields
-			doc.add_text(fields.title, &row.title);
-			doc.add_text(fields.artist, &row.artist);
-			add_opt_text(&mut doc, fields.composer, &row.composer);
-			add_opt_text(&mut doc, fields.genre, &row.genre);
-			add_opt_text(&mut doc, fields.comments, &row.comments);
-			add_opt_text(&mut doc, fields.grouping, &row.grouping);
-			add_opt_text(&mut doc, fields.album_title, &row.album_title);
-			add_opt_text(&mut doc, fields.album_artist, &row.album_artist);
+		// Sort fields (mirror the text values)
+		doc.add_text(fields.title_sort, &title);
+		doc.add_text(fields.artist_sort, &artist);
+		add_opt_text(&mut doc, fields.composer_sort, &composer);
+		add_opt_text(&mut doc, fields.genre_sort, &genre);
+		add_opt_text(&mut doc, fields.comments_sort, &comments);
+		add_opt_text(&mut doc, fields.grouping_sort, &grouping);
+		add_opt_text(&mut doc, fields.album_title_sort, &album_title);
+		add_opt_text(&mut doc, fields.album_artist_sort, &album_artist);
 
-			// Sort fields (mirror the text values)
-			doc.add_text(fields.title_sort, &row.title);
-			doc.add_text(fields.artist_sort, &row.artist);
-			add_opt_text(&mut doc, fields.composer_sort, &row.composer);
-			add_opt_text(&mut doc, fields.genre_sort, &row.genre);
-			add_opt_text(&mut doc, fields.comments_sort, &row.comments);
-			add_opt_text(&mut doc, fields.grouping_sort, &row.grouping);
-			add_opt_text(&mut doc, fields.album_title_sort, &row.album_title);
-			add_opt_text(&mut doc, fields.album_artist_sort, &row.album_artist);
+		// Numeric sorts
+		doc.add_i64(fields.added_at, added_at);
+		doc.add_f64(fields.duration_s, duration_s);
+		add_opt_f64(&mut doc, fields.bpm, bpm);
+		doc.add_u64(fields.play_count, play_count);
+		doc.add_u64(fields.skip_count, skip_count);
+		add_opt_i64(&mut doc, fields.year, year);
 
-			// Numeric sorts
-			doc.add_i64(fields.added_at, row.added_at);
-			doc.add_f64(fields.duration_s, row.duration_s);
-			add_opt_f64(&mut doc, fields.bpm, row.bpm);
-			doc.add_u64(fields.play_count, row.play_count);
-			doc.add_u64(fields.skip_count, row.skip_count);
-			add_opt_i64(&mut doc, fields.year, row.year);
-
-			writer.add_document(doc)?;
-			Ok(())
-		})?;
+		writer.add_document(doc)?;
 	}
 
-	println!("  select+docbuild {:?}", t.elapsed());
+	println!("  select all tracks {:?}", start_time.elapsed());
 
-	let t = Instant::now();
+	let start = Instant::now();
 	writer.commit()?;
-	println!("  commit {:?}", t.elapsed());
+	println!("  commit {:?}", start.elapsed());
 	Ok((index, fields))
 }
 
@@ -608,16 +624,9 @@ pub async fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
 	)?;
 	println!("search_tantivity() took {:?}", start_timex.elapsed(),);
 
-	let start_timex = std::time::Instant::now();
 	tx.commit().await?;
-	println!("tx.commit() took {:?}", start_timex.elapsed(),);
 
-	let start_timex = std::time::Instant::now();
 	let item_ids = new_item_ids_from_track_ids(&track_ids);
-	println!(
-		"new_item_ids_from_track_ids took {:?}",
-		start_timex.elapsed(),
-	);
 
 	println!(
 		"get_tracks_page took {:?}, {} results",
