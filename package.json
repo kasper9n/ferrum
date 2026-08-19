@@ -76,6 +76,7 @@
 		"@eslint/compat": "^2.1.0",
 		"@eslint/js": "^10.0.1",
 		"@napi-rs/cli": "^3.8.2",
+		"@reddojs/svelte": "^0.0.8",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.70.2",
 		"@tailwindcss/vite": "^4.3.3",

@@ -3,6 +3,7 @@
 ## Next
 - Remove macOS 10.15 support
 - Update many dependencies
+- Fix undo/redo in the filter textbox only changing one character at a time
 - Fix "electron.app.hide is not a function" error when closing app window on Windows/Linux
 
 ## 1.1.0 - 2026 Aug 8
