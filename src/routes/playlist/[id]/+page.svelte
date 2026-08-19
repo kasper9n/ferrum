@@ -19,7 +19,6 @@
 
 <script lang="ts">
 	import {
-		filter,
 		move_tracks,
 		remove_from_playlist,
 		get_default_sort_desc,
@@ -51,6 +50,7 @@
 	} from '$lib/menus'
 	import type { SelectedTracksAction } from '$electron/typed_ipc'
 	import { RefreshLevel, VirtualGrid, type Column } from '$lib/virtual-grid.svelte'
+	import { filter } from '$components/Filter.svelte'
 
 	let tracklist_element: HTMLDivElement | undefined = $state()
 
@@ -59,18 +59,16 @@
 		$current_playlist_id = params.id
 	})
 
-	const page_options = $derived({
-		playlistId: params.id,
-		filterQuery: filter.text,
-		sortKey: $sort_key,
-		sortDesc: $sort_desc,
-		groupAlbumTracks: $group_album_tracks,
-	})
-
 	let tracks_page = $derived.by(() => {
 		refreshers.tracklist
 		refreshers.tracks
-		return get_tracks_page(page_options)
+		return get_tracks_page({
+			playlistId: params.id,
+			filterTerms: filter.terms,
+			sortKey: $sort_key,
+			sortDesc: $sort_desc,
+			groupAlbumTracks: $group_album_tracks,
+		})
 	})
 	$effect(() => {
 		$tracks_page_item_ids = tracks_page.itemIds

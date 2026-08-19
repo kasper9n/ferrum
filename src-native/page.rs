@@ -1,6 +1,6 @@
 #[cfg(feature = "napi-rs")]
 use crate::data::Data;
-use crate::filter::filter;
+use crate::filter::{FilterTerm, filter};
 use crate::library_types::{ItemId, Library, TrackList};
 use crate::sort::sort;
 use anyhow::Result;
@@ -13,7 +13,7 @@ pub struct TracksPageOptions {
 	pub playlist_id: String,
 	pub sort_key: String,
 	pub sort_desc: bool,
-	pub filter_query: String,
+	pub filter_terms: Vec<FilterTerm>,
 	pub group_album_tracks: bool,
 }
 
@@ -42,7 +42,7 @@ pub fn get_tracks_page_from_library(
 	let tracklist = library.get_tracklist(&options.playlist_id)?;
 	let item_ids = sort(options.clone(), &library)?;
 	let tracklist_length = item_ids.len();
-	let item_ids = filter(item_ids, options.filter_query, &library);
+	let item_ids = filter(item_ids, options.filter_terms, &library);
 	let track_page = match tracklist {
 		TrackList::Playlist(playlist) => TracksPage {
 			playlist_kind: tracklist.kind().to_string(),
