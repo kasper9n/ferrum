@@ -294,12 +294,5 @@
 			outline: 2px solid var(--accent-1);
 			outline-offset: -1px;
 		}
-		&:not(:placeholder-shown) {
-			background-color: hsla(160, 65%, 60%, 0.15);
-			border: 1px solid hsl(160, 50%, 60%, 0.2);
-			&:focus {
-				outline: 2px solid hsl(160, 60%, 40%);
-			}
-		}
 	}
 </style>
