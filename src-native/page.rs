@@ -1,7 +1,9 @@
 use crate::data::Data;
 use crate::db::TrackListKind;
-use crate::library_types::ItemId;
+use crate::filter::{FilterTerm, filter};
 use crate::library_types::new_item_ids_from_track_ids;
+use crate::library_types::{ItemId, Library, TrackList};
+use crate::sort::sort;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -13,7 +15,7 @@ pub struct TracksPageOptions {
 	pub playlist_id: String,
 	pub sort_key: String,
 	pub sort_desc: bool,
-	pub filter_query: String,
+	pub filter_terms: Vec<FilterTerm>,
 	pub group_album_tracks: bool,
 }
 
@@ -104,7 +106,6 @@ pub async fn get_tracks_page_js(options: TracksPageOptions) -> Result<TracksPage
 
 pub async fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
 	let mut data = Data::get_async().await;
-	let paths = data.paths.clone();
 	let mut tx = data.db.begin().await?;
 
 	let start_time = std::time::Instant::now();
@@ -117,7 +118,7 @@ pub async fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
 	.fetch_one(&mut *tx)
 	.await?;
 
-	let filter_query = options.filter_query.trim();
+	// todo: sort, filter
 
 	tx.commit().await?;
 
@@ -160,7 +161,7 @@ mod tests {
 			playlist_id: SpecialTrackListName::Root.get_id().to_string(),
 			sort_key: "name".to_string(),
 			sort_desc: false,
-			filter_query: "".to_string(),
+			filter_terms: vec![],
 			group_album_tracks: false,
 		})
 		.await?;
