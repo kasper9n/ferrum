@@ -155,6 +155,16 @@
 
 	let before: Snapshot | undefined
 
+	// The last state represented by the history.
+	// Do NOT obtain the "before" state from the DOM in the effect,
+	// because Svelte may already have updated the DOM.
+	let prev_known_state: Snapshot = {
+		value: filter.text,
+		start: 0,
+		end: 0,
+		direction: 'none',
+	}
+
 	function snapshot(): Snapshot {
 		const input = filter_input!
 		return {
@@ -167,10 +177,36 @@
 
 	function restore(s: Snapshot) {
 		const input = filter_input!
-		input.value = s.value
+
 		filter.text = s.value
+		prev_known_state = s
+		input.value = s.value
 		input.setSelectionRange(s.start, s.end, s.direction)
 	}
+
+	// Detect external updates to filter.text
+	$effect(() => {
+		const value = filter.text
+
+		if (value === prev_known_state.value) return
+
+		// DOM already got updated at this point, so use the saved previous state
+		const previous = prev_known_state
+
+		const after: Snapshot = {
+			value,
+			start: value.length,
+			end: value.length,
+			direction: 'none',
+		}
+
+		prev_known_state = after
+		execute({
+			key: undefined,
+			do: () => restore(after),
+			undo: () => restore(previous),
+		})
+	})
 
 	function beforeinput(e: InputEvent) {
 		if (e.inputType === 'historyUndo') {
@@ -206,6 +242,7 @@
 			key = undefined
 		}
 
+		prev_known_state = after
 		execute({
 			key,
 			do: () => restore(after),
