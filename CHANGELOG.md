@@ -5,6 +5,7 @@
 - Add exact filtering with double quotes, like `"the one"`
 - Show filter syntax guide on empty page
 - Add syntax highlighting for filters like `album:"mirai sekai"`
+- Add `artist:` filtering for titles without brackets, like `Supercell feat. Veela`
 - Remove the active filter highlight
 - Fix undo/redo in the filter textbox only changing one character at a time
 - Fix "electron.app.hide is not a function" error when closing app window on Windows/Linux

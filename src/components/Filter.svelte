@@ -33,9 +33,6 @@
 		skips: 10 satisfies Field.Skips,
 		bpm: 11 satisfies Field.Bpm,
 	}
-	function parse_field(text: string) {
-		return fields[text.toLowerCase()]
-	}
 
 	type FilterTermDetailed = FilterTerm & {
 		field_text?: string
@@ -84,10 +81,11 @@
 			}
 
 			const field_text = text.slice(word_start, i)
-			const field = parse_field(field_text)
+			const field = fields[field_text.toLowerCase()]
+			console.log(field, field_text)
 
 			// field:value
-			if (field && text[i] === ':') {
+			if (field !== undefined && text[i] === ':') {
 				i++
 
 				if (text[i] === '"') {
@@ -280,7 +278,7 @@
 			aria-hidden="true"
 		>
 			{#each filter.terms as term}
-				{#if term.field}
+				{#if term.field !== undefined}
 					{term.field_text}:<span class="highlight">{term.literal_text ?? term.literal}</span>
 				{:else}
 					{term.literal_text ?? term.literal}

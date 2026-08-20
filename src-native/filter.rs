@@ -79,20 +79,57 @@ fn strip_suffix_ignore_case<'a>(text: &'a str, suffix: &str) -> Option<&'a str> 
 	}
 }
 
-fn feat_artists_match(track_name: &str, target: &str) -> bool {
+fn find_ignore_case(haystack: &str, needle: &str) -> Option<usize> {
+	let needle_len = needle.len();
+	if needle_len == 0 || needle_len > haystack.len() {
+		return None;
+	}
+	for start in 0..=(haystack.len() - needle_len) {
+		if !haystack.is_char_boundary(start) {
+			continue;
+		}
+		let end = start + needle_len;
+		if !haystack.is_char_boundary(end) {
+			continue;
+		}
+		if haystack[start..end].eq_ignore_ascii_case(needle) {
+			return Some(start);
+		}
+	}
+	None
+}
+
+fn artists_in_title_match(track_name: &str, target: &str) -> bool {
+	let prefixes = ["feat.", "feat ", "ft.", "ft ", "featuring "];
+	let suffixes = [" remix", " flip", " bootleg", " edit"];
+
+	// Look for unbracketed artists, like `Moonlight feat. Aloma Steele`
+	for prefix in prefixes {
+		if let Some(pos) = find_ignore_case(track_name, prefix) {
+			let after = &track_name[pos + prefix.len()..];
+			// Stop at bracket
+			let end = after.find(['(', '[']).unwrap_or(after.len());
+			let artist_text = after[..end].trim();
+			if find_match(artist_text, target) {
+				return true;
+			}
+		}
+	}
+
+	// Look inside brackets
 	for (open, close) in &[('(', ')'), ('[', ']')] {
 		let mut rest = track_name;
 		while let Some(start) = rest.find(*open) {
 			if let Some(end) = rest[start..].find(*close) {
 				let inside = &rest[start + 1..start + end];
-				for prefix in ["feat.", "feat ", "ft.", "ft ", "featuring "] {
+				for prefix in prefixes {
 					let artist_text = strip_prefix_ignore_case(inside, prefix);
 					if let Some(artist_text) = artist_text {
 						return find_match(artist_text, target);
 					}
 				}
-				for prefix in [" remix", " flip", " bootleg", " edit"] {
-					let artist_text = strip_suffix_ignore_case(inside, prefix);
+				for suffix in suffixes {
+					let artist_text = strip_suffix_ignore_case(inside, suffix);
 					if let Some(artist_text) = artist_text {
 						return find_match(artist_text, target);
 					}
@@ -129,7 +166,7 @@ fn filter_term(ids: Vec<ItemId>, term: FilterTerm, library: &Library) -> Vec<Ite
 				Field::Title => find_match(&track.name, &term.literal),
 				Field::Artist => {
 					find_match(&track.artist, &term.literal)
-						|| feat_artists_match(&track.name, &term.literal)
+						|| artists_in_title_match(&track.name, &term.literal)
 				}
 				Field::Album => find_match_opt(&track.albumName, &term.literal),
 				Field::AlbumArtist => find_match_opt(&track.albumArtist, &term.literal),
