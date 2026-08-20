@@ -58,6 +58,23 @@
 				continue
 			}
 
+			// "exact match" (end quote not necessary)
+			if (text[i] === '"') {
+				i++
+				const value_start = i
+
+				while (i < text.length && text[i] !== '"') i++
+
+				const literal = text.slice(value_start, i)
+				if (text[i] === '"') i++
+				terms.push({
+					literal_text: '"' + text.slice(value_start, i),
+					literal,
+				})
+				console.log('terms', terms)
+				continue
+			}
+
 			if (text[i] === ':') {
 				// Word starting with ':' cannot be a field
 				while (i < text.length && !is_whitespace(text[i])) i++
@@ -229,7 +246,7 @@
 				{#if term.field}
 					{term.field_text}:<span class="highlight">{term.literal_text ?? term.literal}</span>
 				{:else}
-					{term.literal}
+					{term.literal_text ?? term.literal}
 				{/if}
 			{/each}
 		</div>

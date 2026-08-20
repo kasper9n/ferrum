@@ -2,7 +2,8 @@
 
 ## Next
 - Remove macOS 10.15 support
-- Add syntax highlighting to filter textbox, for example with `album:"mirai sekai"`
+- Add exact filtering with double quotes, like `"the one"`
+- Add syntax highlighting for filters like `album:"mirai sekai"`
 - Remove the active filter highlight
 - Fix undo/redo in the filter textbox only changing one character at a time
 - Fix "electron.app.hide is not a function" error when closing app window on Windows/Linux
