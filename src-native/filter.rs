@@ -99,9 +99,22 @@ fn find_ignore_case(haystack: &str, needle: &str) -> Option<usize> {
 	None
 }
 
-fn artists_in_title_match(track_name: &str, target: &str) -> bool {
-	let prefixes = ["feat.", "feat ", "ft.", "ft ", "featuring "];
-	let suffixes = [" remix", " flip", " bootleg", " edit"];
+fn feat_artists_match(track_name: &str, target: &str) -> bool {
+	let prefixes = [
+		"feat.",
+		"feat ",
+		"ft.",
+		"ft ",
+		"featuring ",
+		"w/",
+		"prod. by ",
+		"prod by ",
+		"prod.",
+		"prod ",
+	];
+	let suffixes = [
+		" remix", " flip", " bootleg", " edit", " cover", " rework", " refix", " vip", " mashup",
+	];
 
 	// Look for unbracketed artists, like `Moonlight feat. Aloma Steele`
 	for prefix in prefixes {
@@ -122,7 +135,7 @@ fn artists_in_title_match(track_name: &str, target: &str) -> bool {
 		while let Some(start) = rest.find(*open) {
 			if let Some(end) = rest[start..].find(*close) {
 				let inside = &rest[start + 1..start + end];
-				for prefix in prefixes {
+				for prefix in ["feat.", "feat ", "ft.", "ft ", "featuring "] {
 					let artist_text = strip_prefix_ignore_case(inside, prefix);
 					if let Some(artist_text) = artist_text {
 						return find_match(artist_text, target);
@@ -166,7 +179,7 @@ fn filter_term(ids: Vec<ItemId>, term: FilterTerm, library: &Library) -> Vec<Ite
 				Field::Title => find_match(&track.name, &term.literal),
 				Field::Artist => {
 					find_match(&track.artist, &term.literal)
-						|| artists_in_title_match(&track.name, &term.literal)
+						|| feat_artists_match(&track.name, &term.literal)
 				}
 				Field::Album => find_match_opt(&track.albumName, &term.literal),
 				Field::AlbumArtist => find_match_opt(&track.albumArtist, &term.literal),
