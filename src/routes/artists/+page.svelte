@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { filter, get_artists } from '$lib/data.svelte'
+	import { get_artists } from '$lib/data.svelte'
 	import fuzzysort from 'fuzzysort'
 	import Header from '$components/Header.svelte'
+	import { filter } from '$components/Filter.svelte'
 
 	let all_artists = get_artists()
 	let snapshot_artists = $derived(fuzzysort.snapshot(all_artists))

@@ -19,7 +19,6 @@
 
 <script lang="ts">
 	import {
-		filter,
 		move_tracks,
 		remove_from_playlist,
 		get_default_sort_desc,
@@ -51,6 +50,7 @@
 	} from '$lib/menus'
 	import type { SelectedTracksAction } from '$electron/typed_ipc'
 	import { RefreshLevel, VirtualGrid, type Column } from '$lib/virtual-grid.svelte'
+	import { filter } from '$components/Filter.svelte'
 
 	let tracklist_element: HTMLDivElement | undefined = $state()
 
@@ -59,18 +59,16 @@
 		$current_playlist_id = params.id
 	})
 
-	const page_options = $derived({
-		playlistId: params.id,
-		filterQuery: filter.text,
-		sortKey: $sort_key,
-		sortDesc: $sort_desc,
-		groupAlbumTracks: $group_album_tracks,
-	})
-
-	const tracks_page_promise = $derived.by(() => {
+	let tracks_page_promise = $derived.by(() => {
 		refreshers.tracklist
 		refreshers.tracks
-		return get_tracks_page(page_options)
+		return get_tracks_page({
+			playlistId: params.id,
+			filterTerms: filter.terms,
+			sortKey: $sort_key,
+			sortDesc: $sort_desc,
+			groupAlbumTracks: $group_album_tracks,
+		})
 	})
 	const tracks_page = $derived(await tracks_page_promise)
 	$effect(() => {
@@ -660,10 +658,40 @@
 		<div {@attach virtual_grid.attach()}>
 			<div class="drag-line" class:hidden={drag_to_index === null} bind:this={drag_line}></div>
 		</div>
+		{#if tracks_page.itemIds.length === 0}
+			<div class="filter-guide absolute inset-0 flex items-center justify-center">
+				<div class="w-full max-w-lg px-6 py-10 text-center">
+					<div class="text-base font-medium">Filter syntax</div>
+
+					<div class="mt-5 space-y-2 text-left text-sm">
+						<div class="rounded-md bg-gray-300/5 px-3 py-2.5">
+							<span>"the one"</span>
+						</div>
+						<div class="rounded-md bg-gray-300/5 px-3 py-2.5">
+							<span>artist:apashe</span>
+						</div>
+						<div class="rounded-md bg-gray-300/5 px-3 py-2.5">
+							<span>album:"7 minutes dead"</span>
+						</div>
+					</div>
+					<div class="mt-4 text-sm text-white/50">
+						Results include words with extra punctuation and accents.
+						<br />
+						So <span>FOOL</span> matches <span>F.O.O.L</span>, but <span>F.O.Ó.L</span> does not
+						match
+						<span>FOOL</span>.
+					</div>
+				</div>
+			</div>
+		{/if}
 	</div>
 </div>
 
 <style lang="sass">
+	.filter-guide span
+		background-color: hsla(var(--hue), 20%, 42%, 0.3)
+		padding: 2px 4px
+		border-radius: 3px
 	.tracklist :global
 		.odd
 			background-color: hsla(0, 0%, 90%, 0.06)

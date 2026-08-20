@@ -27,6 +27,26 @@ export declare function delete_track_list(id: string): void
 
 export declare function delete_tracks_with_item_ids(itemIds: Array<ItemId>): void
 
+export declare const enum Field {
+  Title = 0,
+  Artist = 1,
+  Album = 2,
+  AlbumArtist = 3,
+  Comments = 4,
+  Genre = 5,
+  Composer = 6,
+  Group = 7,
+  Year = 8,
+  Plays = 9,
+  Skips = 10,
+  Bpm = 11
+}
+
+export interface FilterTerm {
+  field?: Field
+  literal: string
+}
+
 export interface Folder {
   id: TrackListID
   name: string
@@ -267,7 +287,7 @@ export interface TracksPageOptions {
   playlistId: string
   sortKey: string
   sortDesc: boolean
-  filterQuery: string
+  filterTerms: Array<FilterTerm>
   groupAlbumTracks: boolean
 }
 
