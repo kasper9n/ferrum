@@ -206,6 +206,8 @@
 		})
 	})
 
+	let history_group_id = 0
+
 	function beforeinput(e: InputEvent) {
 		if (e.inputType === 'historyUndo') {
 			e.preventDefault()
@@ -215,6 +217,14 @@
 			redo()
 		} else {
 			before = snapshot()
+
+			const selection_changed =
+				before.start !== prev_known_state.start ||
+				before.end !== prev_known_state.end ||
+				before.direction !== prev_known_state.direction
+			if (selection_changed) {
+				history_group_id++
+			}
 		}
 	}
 
@@ -235,8 +245,12 @@
 					}
 				: previous
 
-		let key: string | undefined = event.inputType
-		if (key !== 'insertText' && key !== 'deleteContentBackward' && key !== 'deleteContentForward') {
+		let key: string | undefined = `${event.inputType} ${history_group_id}`
+		if (
+			event.inputType !== 'insertText' &&
+			event.inputType !== 'deleteContentBackward' &&
+			event.inputType !== 'deleteContentForward'
+		) {
 			key = undefined
 		}
 
@@ -295,7 +309,10 @@
 			onbeforeinputcapture={beforeinput}
 			oninput={input}
 			onkeydown={(e) => {
-				if (check_shortcut(e, 'z', { cmd_or_ctrl: true, shift: true })) {
+				if (check_shortcut(e, 'z', { cmd_or_ctrl: true })) {
+					undo()
+					e.preventDefault()
+				} else if (check_shortcut(e, 'z', { cmd_or_ctrl: true, shift: true })) {
 					redo()
 					e.preventDefault()
 				}
