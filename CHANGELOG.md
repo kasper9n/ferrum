@@ -2,6 +2,7 @@
 
 ## Next
 - Fix undo in the filter textbox not stopping at selection/cursor changes
+- Improve error messages
 
 ## 1.2.0 - 2026 Aug 31
 - Remove macOS 10.15 support
