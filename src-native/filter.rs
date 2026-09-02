@@ -1,7 +1,12 @@
-use crate::library_types::{ItemId, Library, TRACK_ID_MAP};
+use crate::{
+	data::Data,
+	library_types::{ItemId, Library, TRACK_ID_MAP},
+};
+use anyhow::{Context, Result};
 use rayon::prelude::*;
 use serde::Deserialize;
 use specta::Type;
+use sqlx::Connection;
 use std::str::Chars;
 use std::time::Instant;
 use unicode_normalization::{Recompositions, UnicodeNormalization};
@@ -234,6 +239,24 @@ pub enum Field {
 	Bpm,
 }
 
+#[derive(Clone, Debug, Deserialize, Type)]
+#[cfg_attr(feature = "napi", napi)]
+pub enum NgramField {
+	Title = 0,
+	Artist = 1,
+	Album = 2,
+	AlbumArtist = 3,
+	Composer = 6,
+	Comments = 4,
+	Genre = 5,
+	Group = 7,
+}
+impl NgramField {
+	pub fn as_id(&self) -> u8 {
+		self.clone() as u8
+	}
+}
+
 #[derive(Default, Clone, Debug, Deserialize, Type)]
 #[cfg_attr(feature = "napi", napi(object))]
 pub struct FilterTerm {
@@ -241,9 +264,121 @@ pub struct FilterTerm {
 	pub literal: String,
 }
 impl FilterTerm {
-	fn is_whitespace(&self) -> bool {
+	pub fn is_whitespace(&self) -> bool {
 		self.field.is_none() && self.literal == ""
 	}
+}
+
+#[derive(sqlx::FromRow)]
+struct QueuedTrack {
+	queue_id: i64,
+	track_id: i64,
+	title: String,
+	artist: String,
+	album_title: Option<String>,
+	album_artist: Option<String>,
+	composer: Option<String>,
+	comments: Option<String>,
+	genre: Option<String>,
+	grouping: Option<String>,
+}
+
+pub async fn insert_queued_track_ngrams() -> Result<()> {
+	let start_time = Instant::now();
+
+	let mut data = Data::get_async().await;
+	// todo: maybe use tx for x individual tracks at a time
+	let mut tx = data.db.begin().await?;
+
+	// todo: bulk insert
+
+	// todo: add all fields
+	let tracks: Vec<QueuedTrack> = sqlx::query_as(
+		"
+		SELECT
+			q.id AS queue_id,
+			t.id AS track_id,
+			t.title,
+			t.artist,
+			t.album_title,
+			t.album_artist,
+			t.comments,
+			t.genre,
+			t.composer,
+			t.grouping
+		FROM search_queue q
+		JOIN tracks t ON t.id = q.track_id
+		ORDER BY q.id ASC
+		",
+	)
+	.fetch_all(&mut *tx)
+	.await
+	.context("Failed to fetch search_queue tracks")?;
+
+	let last_queue_id = match tracks.last() {
+		Some(track) => track.queue_id,
+		None => {
+			tx.commit().await?;
+			return Ok(());
+		}
+	};
+
+	for track in &tracks {
+		sqlx::query("DELETE FROM search_ngrams WHERE track_id = ?")
+			.bind(&track.track_id)
+			.execute(&mut *tx)
+			.await?;
+
+		let fields = [
+			(NgramField::Title, Some(track.title.as_str())),
+			(NgramField::Artist, Some(track.artist.as_str())),
+			(NgramField::Album, track.album_title.as_deref()),
+			(NgramField::AlbumArtist, track.album_artist.as_deref()),
+			(NgramField::Comments, track.comments.as_deref()),
+			(NgramField::Genre, track.genre.as_deref()),
+			(NgramField::Composer, track.composer.as_deref()),
+			(NgramField::Group, track.grouping.as_deref()),
+		];
+
+		for (field, text) in fields {
+			let Some(text) = text else {
+				continue;
+			};
+
+			// todo: add normalise ngrams too using .to_lowercase().nfc()
+
+			let chars: Vec<char> = text.to_lowercase().chars().collect();
+
+			for n in 1..=3 {
+				for window in chars.windows(n) {
+					// todo: deduplicate rows before inserting
+					let ngram: String = window.iter().collect();
+
+					sqlx::query(
+						"INSERT OR IGNORE INTO search_ngrams
+							(track_id, field, ngram, is_normalised)
+						VALUES (?, ?, ?, FALSE)",
+					)
+					.bind(&track.track_id)
+					.bind(field.as_id())
+					.bind(ngram)
+					.execute(&mut *tx)
+					.await?;
+				}
+			}
+		}
+	}
+
+	sqlx::query("DELETE FROM search_queue WHERE id <= ?")
+		.bind(last_queue_id)
+		.execute(&mut *tx)
+		.await?;
+
+	tx.commit().await?;
+
+	println!("Indexing took {}ms", start_time.elapsed().as_millis());
+
+	Ok(())
 }
 
 pub fn filter(mut item_ids: Vec<ItemId>, terms: Vec<FilterTerm>, library: &Library) -> Vec<ItemId> {

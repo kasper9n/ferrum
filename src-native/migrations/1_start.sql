@@ -40,6 +40,47 @@ create table tracks (
 	volume            INTEGER NULL -- from -100 to 100
 );
 
+CREATE TRIGGER search_queue_after_track_insert AFTER INSERT ON tracks BEGIN
+	INSERT OR IGNORE INTO search_queue (track_id) VALUES (NEW.id);
+END;
+
+CREATE TRIGGER search_queue_after_track_update AFTER UPDATE OF
+	title,
+	artist,
+	album_title,
+	album_artist,
+	comments,
+	genre,
+	composer,
+	grouping
+ON tracks BEGIN
+	INSERT OR IGNORE INTO search_queue (track_id) VALUES (NEW.id);
+END;
+
+CREATE TRIGGER search_queue_after_track_delete AFTER DELETE ON tracks BEGIN
+	DELETE FROM search_ngrams WHERE track_id = OLD.id;
+	DELETE FROM search_queue WHERE track_id = OLD.id;
+END;
+
+CREATE TABLE search_ngrams (
+	ngram         TEXT NOT NULL,
+	-- field IDs are defined by the Fields enum in filter.rs
+	field         INTEGER NOT NULL,
+	is_normalised BOOLEAN NOT NULL,
+	track_id      INTEGER NOT NULL REFERENCES tracks(id),
+	-- `ngram` first, because we always filter for it.
+	-- if we do filter for `is_normalised`, we're doing an exact search. exact searches often return few results anyway (for example when searching é), so we can put `field` first.
+	PRIMARY KEY (ngram, field, is_normalised, track_id)
+) WITHOUT ROWID;
+
+-- needed to purge a track's ngrams cheaply on reindex/delete
+CREATE INDEX search_ngrams_by_track ON search_ngrams (track_id, field);
+
+CREATE TABLE search_queue (
+	id       INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+	track_id INTEGER NOT NULL UNIQUE REFERENCES tracks(id)
+);
+
 CREATE TABLE plays (
 	date          INTEGER NOT NULL,
 	track_id      INTEGER NOT NULL REFERENCES tracks(id),

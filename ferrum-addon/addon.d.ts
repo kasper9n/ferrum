@@ -122,6 +122,17 @@ export declare function move_tracks(playlistId: string, itemIds: Array<ItemId>, 
 
 export declare function new_playlist(name: string, description: string, isFolder: boolean, parentId: string): void
 
+export declare const enum NgramField {
+  Title = 0,
+  Artist = 1,
+  Album = 2,
+  AlbumArtist = 3,
+  Composer = 6,
+  Comments = 4,
+  Genre = 5,
+  Group = 7
+}
+
 export interface Paths {
   pathSeparator: string
   libraryDir: string

@@ -1,13 +1,11 @@
 use crate::data::Data;
 use crate::db::TrackListKind;
-use crate::filter::{FilterTerm, filter};
-use crate::library_types::new_item_ids_from_track_ids;
-use crate::library_types::{ItemId, Library, TrackList};
-use crate::sort::sort;
-use anyhow::Result;
+use crate::filter::{FilterTerm, insert_queued_track_ngrams};
+use crate::library_types::{ItemId, new_item_ids_from_track_ids};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use sqlx::Connection;
+use sqlx::{AssertSqlSafe, Connection};
 
 #[cfg_attr(feature = "napi", napi(object))]
 #[derive(Deserialize, Clone, Type)]
@@ -104,11 +102,37 @@ pub async fn get_tracks_page_js(options: TracksPageOptions) -> Result<TracksPage
 	get_tracks_page(options).await
 }
 
+// enum FilterArg {
+// 	Text(String),
+// 	Integer(i64),
+// 	Real(f64),
+// }
+
+// fn add_text_filter(sql: &mut String, args: &mut Vec<FilterArg>, field: i32, literal: &str) {
+// 	sql.push_str(
+// 		" AND EXISTS (
+// 			SELECT 1
+// 			FROM search_ngrams sn
+// 			WHERE sn.track_id = t.id
+// 			  AND sn.field = ?
+// 			  AND sn.ngram = ?
+// 		)",
+// 	);
+
+// 	args.push(FilterArg::Integer(field as i64));
+// 	args.push(FilterArg::Text(literal.to_owned()));
+// }
+
 pub async fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
+	{
+		insert_queued_track_ngrams().await?;
+	}
+
 	let mut data = Data::get_async().await;
 	let mut tx = data.db.begin().await?;
 
 	let start_time = std::time::Instant::now();
+
 	let track_list: TrackListPage = sqlx::query_as(
 		"SELECT kind, name, description
 		FROM track_lists
@@ -118,28 +142,124 @@ pub async fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
 	.fetch_one(&mut *tx)
 	.await?;
 
-	// todo: sort, filter
+	let sql = String::from(
+		"
+		WITH term1 AS (
+			SELECT track_id
+			FROM search_ngrams
+			WHERE ngram IN ('dev', 'evo', 'vot', 'oti', 'tio', 'ion')
+				AND field IN (0, 1, 2)
+			 	AND is_normalised = 0
+			GROUP BY track_id, field
+			HAVING COUNT(DISTINCT ngram) = 6
+		),
+		term2 AS (
+			SELECT track_id
+			FROM search_ngrams
+			WHERE ngram IN ('tri', 'ris', 'ist', 'sta', 'tam')
+				AND field IN (0, 1, 2)
+			 	AND is_normalised = 0
+			GROUP BY track_id, field
+			HAVING COUNT(DISTINCT ngram) = 5
+		)
+		SELECT track_id FROM term1
+		INTERSECT
+		SELECT track_id FROM term2;
+		",
+	);
+	// let mut sql = String::from(
+	// 	"SELECT pt.track_id
+	// 	FROM playlist_tracks pt
+	// 	JOIN tracks t ON t.id = pt.track_id
+	// 	WHERE pt.track_list_id = ?",
+	// );
+	// let mut where_clauses = Vec::new();
+	let mut args = sqlx::sqlite::SqliteArguments::default();
 
-	tx.commit().await?;
+	// for term in options.filter_terms.iter().filter(|t| !t.is_whitespace()) {
+	// 	match term.field {
+	// 		// Some(Field::Title) => add_text_filter(&mut sql, &mut args, 0, &term.literal),
+	// 		// Some(Field::Artist) => add_text_filter(&mut sql, &mut args, 1, &term.literal),
+	// 		// Some(Field::Album) => add_text_filter(&mut sql, &mut args, 2, &term.literal),
+	// 		// Some(Field::AlbumArtist) => add_text_filter(&mut sql, &mut args, 3, &term.literal),
+	// 		// Some(Field::Comments) => add_text_filter(&mut sql, &mut args, 4, &term.literal),
+	// 		// Some(Field::Genre) => add_text_filter(&mut sql, &mut args, 5, &term.literal),
+	// 		// Some(Field::Composer) => add_text_filter(&mut sql, &mut args, 6, &term.literal),
+	// 		// Some(Field::Group) => add_text_filter(&mut sql, &mut args, 7, &term.literal),
+	// 		None => {
+	// 			where_clauses.push(
+	// 				"EXISTS (
+	// 					SELECT 1
+	// 					FROM search_ngrams sn
+	// 					WHERE sn.track_id = t.id
+	// 					  AND sn.field BETWEEN 0 AND 7
+	// 					  AND sn.ngram = ?
+	// 				)",
+	// 			);
+	// 			args.add(&term.literal);
+	// 		}
+	// 		_ => todo!(),
+	// 	}
+	// }
 
-	let track_ids = vec![];
+	// sql.push_str(" ORDER BY ");
 
-	// todo: remove
-	let item_ids = new_item_ids_from_track_ids(&track_ids);
+	// if options.group_album_tracks {
+	// 	sql.push_str(
+	// 		"t.album_artist COLLATE NOCASE,
+	// 		 t.album_title COLLATE NOCASE,
+	// 		 t.disc_num,
+	// 		 t.track_num,
+	// 		 ",
+	// 	);
+	// }
+
+	// let sort_column = match options.sort_key.as_str() {
+	// 	"title" => "t.title",
+	// 	"artist" => "t.artist",
+	// 	"album" => "t.album_title",
+	// 	"album_artist" => "t.album_artist",
+	// 	"comments" => "t.comments",
+	// 	"genre" => "t.genre",
+	// 	"composer" => "t.composer",
+	// 	"group" => "t.grouping",
+	// 	_ => "pt.item_pos",
+	// };
+
+	// sql.push_str(sort_column);
+	// sql.push_str(if options.sort_desc { " DESC" } else { " ASC" });
+
+	// // Stable ordering.
+	// sql.push_str(", pt.item_pos ASC");
+
+	let track_ids: Vec<i64> = sqlx::query_scalar_with(AssertSqlSafe(sql), args)
+		.fetch_all(&mut *tx)
+		.await
+		.context("Failed to select page track_ids")?;
 
 	println!(
 		"get_tracks_page took {:?}, {} results",
 		start_time.elapsed(),
 		track_ids.len()
 	);
-	let tracks_page = TracksPage {
+
+	let text_ids: Vec<String> = sqlx::query_scalar(
+		"SELECT text_id FROM tracks WHERE id IN (SELECT value FROM json_each(?))",
+	)
+	.bind(serde_json::to_string(&track_ids)?)
+	.fetch_all(&mut *tx)
+	.await?;
+	let item_ids = new_item_ids_from_track_ids(&text_ids);
+
+	tx.commit().await?;
+
+	Ok(TracksPage {
 		playlist_kind: track_list.kind.to_string(),
 		playlist_name: track_list.name,
 		playlist_description: track_list.description,
 		playlist_length: track_ids.len().try_into().unwrap(),
 		item_ids,
-	};
-	Ok(tracks_page)
+	})
 }
 
 #[cfg(test)]
