@@ -1,5 +1,6 @@
 create table tracks (
-	id                TEXT PRIMARY KEY NOT NULL,
+	id                INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+	text_id           TEXT UNIQUE NOT NULL,
 	filesize          INTEGER NOT NULL, -- i64
 	duration_s        REAL NOT NULL, -- f64
 	bitrate           REAL NOT NULL, -- f64
@@ -41,9 +42,9 @@ create table tracks (
 
 CREATE TABLE plays (
 	date          INTEGER NOT NULL,
-	track_id      TEXT NOT NULL REFERENCES tracks(id),
-	-- iTunes imports had duplicate play timestamps for some tracks, so we allow
-	-- duplicate timestamps. iTunes plays are in plays_imported, except the most recent play.
+	track_id      INTEGER NOT NULL REFERENCES tracks(id),
+	-- iTunes imports had non-unique play timestamps for some tracks, so we allow
+	-- non-unique timestamps. iTunes plays are in plays_imported, except the most recent play.
 	PRIMARY KEY (date, track_id)
 );
 
@@ -51,13 +52,13 @@ CREATE TABLE plays_imported (
 	date_range_from INTEGER NOT NULL,
 	date_range_to   INTEGER NOT NULL,
 	count           INTEGER NOT NULL,
-	track_id        TEXT NOT NULL REFERENCES tracks(id),
+	track_id        INTEGER NOT NULL REFERENCES tracks(id),
 	PRIMARY KEY (date_range_from, track_id)
 );
 
 CREATE TABLE skips (
 	date          INTEGER NOT NULL,
-	track_id      TEXT NOT NULL REFERENCES tracks(id),
+	track_id      INTEGER NOT NULL REFERENCES tracks(id),
 	-- iTunes imports had duplicate play timestamps for some tracks, so we allow
 	-- duplicate timestamps. iTunes plays are in plays_imported, except the most recent play.
 	PRIMARY KEY (date, track_id)
@@ -67,7 +68,7 @@ CREATE TABLE skips_imported (
 	date_range_from INTEGER NOT NULL,
 	date_range_to   INTEGER NOT NULL,
 	count           INTEGER NOT NULL,
-	track_id        TEXT NOT NULL REFERENCES tracks(id),
+	track_id        INTEGER NOT NULL REFERENCES tracks(id),
 	PRIMARY KEY (date_range_from, track_id)
 );
 
@@ -88,7 +89,7 @@ CREATE TABLE track_lists (
 
 CREATE TABLE playlist_tracks (
 	track_list_id TEXT NOT NULL REFERENCES track_lists(id),
-	track_id      TEXT NOT NULL REFERENCES tracks(id),
+	track_id      INTEGER NOT NULL REFERENCES tracks(id),
 	item_id       INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	item_pos      INTEGER NOT NULL
 );
@@ -96,5 +97,5 @@ CREATE TABLE playlist_tracks (
 CREATE TABLE play_times (
 	started_at INTEGER PRIMARY KEY NOT NULL,
 	duration   INTEGER NOT NULL,
-	track_id   TEXT NOT NULL REFERENCES tracks(id)
+	track_id   INTEGER NOT NULL REFERENCES tracks(id)
 );

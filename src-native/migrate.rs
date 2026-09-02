@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use sqlx::{
 	ConnectOptions, Connection, Sqlite, migrate::MigrateDatabase, sqlite::SqliteConnectOptions,
 };
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
 use tempfile::TempDir;
@@ -71,11 +72,17 @@ async fn insert_library_into_db(
 		.execute(&mut *tx)
 		.await?;
 
-	for (track_id, track) in &library.tracks {
+	let mut new_ids: HashMap<&str, u32> = HashMap::new();
+
+	for (i, (text_id, track)) in library.tracks.iter().enumerate() {
+		let track_id: u32 = i.try_into().unwrap();
+		let removed = new_ids.insert(text_id, track_id);
+		assert!(removed.is_none());
 		sqlx::query(
 			"
 				INSERT INTO tracks (
 					id,
+					text_id,
 					filesize,
 					duration_s,
 					bitrate,
@@ -117,11 +124,12 @@ async fn insert_library_into_db(
 					?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
 					?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
 					?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-					?, ?, ?, ?, ?, ?, ?, ?
+					?, ?, ?, ?, ?, ?, ?, ?, ?
 				)
 			",
 		)
 		.bind(&track_id)
+		.bind(&text_id)
 		.bind(track.size)
 		.bind(track.duration)
 		.bind(track.bitrate)
@@ -297,9 +305,9 @@ async fn insert_library_into_db(
 				.with_context(|| format!("Failed to insert playlist {}", playlist.name))?;
 
 				// playlist_tracks rows
-				for (i, track_id) in playlist.tracks.iter().enumerate() {
-					let i: i64 = i.try_into().unwrap();
-					assert!(i >= 0);
+				for (i, text_id) in playlist.tracks.iter().enumerate() {
+					let track_id = new_ids.get(text_id.as_str()).unwrap();
+					let i: u32 = i.try_into().unwrap();
 					sqlx::query(
 						"INSERT INTO playlist_tracks (track_list_id, track_id, item_pos) VALUES (?, ?, ?)",
 					)
