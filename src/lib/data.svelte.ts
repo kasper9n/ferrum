@@ -11,7 +11,7 @@ import type {
 } from 'ferrum-addon'
 import { init_queue_persistence, queue } from './queue'
 import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
-import { call_sync, get_error_message, strict_call } from './error'
+import { call_sync, error_to_string, strict_call } from './error'
 import { goto } from '$app/navigation'
 import { resolve } from '$app/paths'
 
@@ -121,14 +121,14 @@ export async function import_tracks(paths: string[]) {
 		const is_last = i === paths.length - 1
 		try {
 			inner_addon.import_file(path, now)
-		} catch (err) {
+		} catch (raw_err) {
 			if (skip_all_errors) {
 				continue
 			}
 			const result = await ipc_renderer.invoke('showMessageBox', false, {
 				type: 'error',
 				message: 'Error importing track ' + path,
-				detail: get_error_message(err),
+				detail: error_to_string(raw_err),
 				buttons: !is_last ? ['OK', 'Skip all errors'] : ['OK'],
 				defaultId: 0,
 			})

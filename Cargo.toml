@@ -23,7 +23,7 @@ default = ["napi-rs"]
 napi-rs = ["napi", "napi-derive"]
 
 [dependencies]
-napi = { version = "3.3", features = [
+napi = { version = "3.12.2", features = [
 	"serde-json",
 	"napi6",
 	"async",
@@ -60,3 +60,7 @@ specta = { version = "=2.0.0-rc.22", features = ["derive"] }
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 trash = "5.1"
+
+[patch.crates-io]
+# keep anyhow error causes in js: https://github.com/napi-rs/napi-rs/pull/3477
+napi = { git = "https://github.com/kasper9n/napi-rs", rev = "d027f3ee53e65f99a32907dfa7bb21001ebff70d" }

@@ -1,38 +1,51 @@
 import { ipc_renderer } from './window'
 
-export function get_error_message(err: unknown): string {
-	if (typeof err === 'object' && err !== null) {
-		const obj = err as { [key: string]: unknown }
-		if (obj.message) {
-			return String(obj.message)
-		} else if (obj.code) {
-			return 'Code: ' + String(obj.message)
-		}
-	} else if (typeof err === 'string') {
-		return err
-	}
-	return 'No reason or code provided'
-}
-function get_error_stack(err: unknown): string {
-	if (typeof err === 'object' && err !== null) {
-		const obj = err as { [key: string]: unknown }
-		if (obj.stack) {
-			return String(obj.stack)
-		}
-	}
-	return ''
-}
 export function error_popup(err: unknown, crash = false) {
 	ipc_renderer.invoke(
 		'showMessageBox',
 		false,
 		{
 			type: 'error',
-			message: get_error_message(err),
-			detail: get_error_stack(err),
+			message: parse_error(err).message,
+			detail: error_to_string(err),
 		},
 		crash,
 	)
+}
+
+function parse_error(raw_err: unknown): Error {
+	let error: Error
+	if (raw_err instanceof Error) {
+		error = raw_err
+	} else {
+		error = new Error('Unexpected error: ' + String(raw_err))
+	}
+	return error
+}
+
+export function error_to_string(raw_err: unknown): string {
+	const error = parse_error(raw_err)
+	const causes: string[] = []
+
+	let cause = error.cause
+	while (cause) {
+		const cause_error = parse_error(cause)
+		causes.push(cause_error.message)
+		cause = cause_error.cause
+	}
+
+	let result = error.message
+
+	if (causes.length) {
+		result += '\n\nCaused by:'
+
+		for (const [i, cause] of causes.entries()) {
+			const prefix = causes.length > 1 ? `${i}: ` : ''
+			result += `\n    ${prefix}${cause}`
+		}
+	}
+
+	return result
 }
 
 // Crashes on error
@@ -42,7 +55,8 @@ export function strict_call<T>(cb: (addon: typeof window.addon) => T): T {
 
 		// Handle async errors
 		if (result instanceof Promise) {
-			return result.catch((error) => {
+			return result.catch((raw_err) => {
+				const error = parse_error(raw_err)
 				error_popup(error, true)
 				throw error
 			}) as T
@@ -51,12 +65,7 @@ export function strict_call<T>(cb: (addon: typeof window.addon) => T): T {
 		// Handle synchronous result
 		return result
 	} catch (raw_err) {
-		let error: Error
-		if (raw_err instanceof Error) {
-			error = raw_err
-		} else {
-			error = new Error('Unexpected error: ' + String(raw_err))
-		}
+		const error = parse_error(raw_err)
 		// Handle synchronous errors
 		error_popup(error, true)
 		throw error
@@ -77,12 +86,7 @@ export function call_sync<T>(cb: (addon: typeof window.addon) => T): Result<T> {
 			const result = { data, error: null }
 			return result
 		} catch (raw_err) {
-			let error: Error
-			if (raw_err instanceof Error) {
-				error = raw_err
-			} else {
-				error = new Error('Unexpected error: ' + String(raw_err))
-			}
+			const error = parse_error(raw_err)
 			error_popup(error)
 
 			const result = { data: null, error }
