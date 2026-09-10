@@ -21,8 +21,7 @@ use std::time::Instant;
 pub struct LatestLibrary<'a> {
 	pub tracks: Cow<'a, LinkedHashMap<TrackID, Track>>,
 	pub trackLists: Cow<'a, TrackLists>,
-	pub v1PlayTime: Cow<'a, Vec<PlayTime>>,
-	pub playTime: Cow<'a, Vec<PlayTime>>,
+	pub playTimes: Cow<'a, Vec<PlayTime>>,
 }
 
 #[derive(Clone, Debug)]
@@ -32,11 +31,7 @@ pub struct Library {
 	/// LinkedHashMap so sort order isn't random
 	track_item_ids: LinkedHashMap<TrackID, ItemId>,
 	pub trackLists: TrackLists,
-	/// v1 playtime has two issues:
-	/// - some durations are double counted (or triple, etc.)
-	/// - timestamps aren't updated after pausing
-	pub v1PlayTime: Vec<PlayTime>,
-	pub playTime: Vec<PlayTime>,
+	pub playTimes: Vec<PlayTime>,
 	pub artists: Option<Vec<String>>,
 	pub genres: Option<Vec<String>>,
 }
@@ -46,8 +41,7 @@ impl Library {
 			tracks: LinkedHashMap::new(),
 			track_item_ids: LinkedHashMap::new(),
 			trackLists: file.trackLists.into_owned(),
-			v1PlayTime: file.v1PlayTime.into_owned(),
-			playTime: file.playTime.into_owned(),
+			playTimes: file.playTimes.into_owned(),
 			artists: None,
 			genres: None,
 		};
@@ -60,8 +54,7 @@ impl Library {
 		LatestLibraryFile::V3(LatestLibrary {
 			tracks: Cow::Borrowed(&self.tracks),
 			trackLists: Cow::Borrowed(&self.trackLists),
-			v1PlayTime: Cow::Borrowed(&self.v1PlayTime),
-			playTime: Cow::Borrowed(&self.playTime),
+			playTimes: Cow::Borrowed(&self.playTimes),
 		})
 	}
 }
@@ -79,8 +72,7 @@ impl Library {
 			tracks: LinkedHashMap::new(),
 			track_item_ids: LinkedHashMap::new(),
 			trackLists: track_lists,
-			v1PlayTime: Vec::new(),
-			playTime: Vec::new(),
+			playTimes: Vec::new(),
 			artists: None,
 			genres: None,
 		}

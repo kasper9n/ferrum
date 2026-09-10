@@ -100,7 +100,7 @@ pub fn add_play_time(id: TrackID, start: MsSinceUnixEpoch, dur_ms: i64) -> Resul
 	let mut data = Data::get_blocking();
 	let tracks = data.library.get_tracks();
 	tracks.get(&id).context("Track ID not found")?;
-	data.library.playTime.push((id, start, dur_ms));
+	data.library.playTimes.push((id, start, dur_ms));
 	Ok(())
 }
 

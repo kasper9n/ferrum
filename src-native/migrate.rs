@@ -116,8 +116,8 @@ mod v2 {
 			latest::LatestLibrary {
 				tracks: Cow::Owned(self.tracks),
 				trackLists: Cow::Owned(self.trackLists),
-				v1PlayTime: Cow::Owned(self.v1PlayTime),
-				playTime: Cow::Owned(self.playTime),
+				// Playtimes were incorrect and overwritten after relaunch, so nothing to keep
+				playTimes: Cow::Owned(Vec::new()),
 			}
 		}
 	}
