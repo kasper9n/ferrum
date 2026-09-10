@@ -57,7 +57,7 @@ impl Library {
 		library
 	}
 	pub fn to_file(&'_ self) -> LatestLibraryFile<'_> {
-		LatestLibraryFile::V2(LatestLibrary {
+		LatestLibraryFile::V3(LatestLibrary {
 			tracks: Cow::Borrowed(&self.tracks),
 			trackLists: Cow::Borrowed(&self.trackLists),
 			v1PlayTime: Cow::Borrowed(&self.v1PlayTime),
