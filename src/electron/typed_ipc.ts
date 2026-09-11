@@ -9,7 +9,7 @@ import type {
 	MenuItemConstructorOptions,
 } from 'electron'
 import { ipcMain as electronIpcMain } from 'electron'
-import type { TrackID } from 'ferrum-addon'
+import type { TrackID, TrackListID } from 'ferrum-addon'
 import type { UpdateJson } from './update'
 
 type InputMap = {
@@ -134,8 +134,8 @@ type Events = {
 	'Select Next List': () => void
 	'Select Previous List': () => void
 
-	'context.playlist.edit': (id: TrackID) => void
-	'context.playlist.delete': (id: TrackID) => void
+	'context.playlist.edit': (id: TrackListID) => void
+	'context.playlist.delete': (id: TrackListID) => void
 	'context.Remove from Queue': () => void
 	'context.Get Info': (allIds: TrackID[], selectedIndex: number) => void
 	'context.Remove from Playlist': (selectedIndexes: number[]) => void

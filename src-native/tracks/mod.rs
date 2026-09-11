@@ -16,9 +16,9 @@ pub use tag::Tag;
 
 #[napi(js_name = "get_track")]
 #[allow(dead_code)]
-pub fn get_track(id: String) -> Result<Track> {
+pub fn get_track(track_id: TrackID) -> Result<Track> {
 	let data = Data::get_blocking();
-	let track = data.library.get_track(&id)?;
+	let track = data.library.get_track(&track_id)?;
 	Ok(track.clone())
 }
 
@@ -54,7 +54,7 @@ pub fn get_track_ids(item_ids: Vec<ItemId>) -> Vec<TrackID> {
 
 #[napi(js_name = "track_exists")]
 #[allow(dead_code)]
-pub fn track_exists(id: String) -> bool {
+pub fn track_exists(id: TrackID) -> bool {
 	let data = Data::get_blocking();
 	let tracks = &data.library.get_tracks();
 	tracks.contains_key(&id)
@@ -62,7 +62,7 @@ pub fn track_exists(id: String) -> bool {
 
 #[napi(js_name = "add_play")]
 #[allow(dead_code)]
-pub fn add_play(track_id: String) -> Result<()> {
+pub fn add_play(track_id: TrackID) -> Result<()> {
 	let mut data = Data::get_blocking();
 	let track = data.library.get_track_mut(&track_id)?;
 	let timestamp = get_now_timestamp();
@@ -79,7 +79,7 @@ pub fn add_play(track_id: String) -> Result<()> {
 
 #[napi(js_name = "add_skip")]
 #[allow(dead_code)]
-pub fn add_skip(track_id: String) -> Result<()> {
+pub fn add_skip(track_id: TrackID) -> Result<()> {
 	let mut data = Data::get_blocking();
 	let track = data.library.get_track_mut(&track_id)?;
 	let timestamp = get_now_timestamp();
@@ -146,15 +146,15 @@ pub fn generate_filename(paths: &Paths, artist: &str, title: &str, ext: &str) ->
 #[allow(dead_code)]
 pub fn import_file(path: String, now: MsSinceUnixEpoch) -> Result<()> {
 	let mut data = Data::get_blocking();
-	let id = data.library.generate_id();
 	let track = import::import(&data, Path::new(&path), now)?;
-	data.library.insert_track(id, track);
+	let track_id = data.library.generate_next_track_id();
+	data.library.insert_track(track_id, track);
 	Ok(())
 }
 
 #[napi(js_name = "load_tags")]
 #[allow(dead_code)]
-pub fn load_tags(track_id: String) -> Result<()> {
+pub fn load_tags(track_id: TrackID) -> Result<()> {
 	let data = &mut *Data::get_blocking();
 	data.current_tag = None;
 	let track = data
@@ -241,7 +241,7 @@ pub fn remove_image(index: u32) -> () {
 
 #[napi(js_name = "update_track_info")]
 #[allow(dead_code)]
-pub fn update_track_info(track_id: String, info: md::TrackMD) -> Result<()> {
+pub fn update_track_info(track_id: TrackID, info: md::TrackMD) -> Result<()> {
 	let data = &mut *Data::get_blocking();
 	let track = data.library.get_track_mut(&track_id)?;
 

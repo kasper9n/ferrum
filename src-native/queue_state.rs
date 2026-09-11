@@ -1,3 +1,4 @@
+use crate::library_types::TrackID;
 use anyhow::{Context, Result};
 use atomicwrites::AtomicFile;
 use atomicwrites::OverwriteBehavior::AllowOverwrite;
@@ -6,39 +7,39 @@ use std::fs;
 use std::io::Write;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct QueueItemState {
 	#[serde(rename = "qId")]
-	#[napi(js_name = "qId")]
+	#[cfg_attr(feature = "napi", napi(js_name = "qId"))]
 	pub q_id: i64,
-	pub id: String,
-	#[napi(js_name = "non_shuffle_pos")]
+	pub id: TrackID,
+	#[cfg_attr(feature = "napi", napi(js_name = "non_shuffle_pos"))]
 	pub non_shuffle_pos: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct QueueCurrentState {
 	pub item: QueueItemState,
-	#[napi(js_name = "from_auto_queue")]
+	#[cfg_attr(feature = "napi", napi(js_name = "from_auto_queue"))]
 	pub from_auto_queue: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct QueueState {
 	#[serde(default)]
 	pub past: Vec<QueueItemState>,
 	#[serde(default)]
 	pub current: Option<QueueCurrentState>,
 	#[serde(default)]
-	#[napi(js_name = "user_queue")]
+	#[cfg_attr(feature = "napi", napi(js_name = "user_queue"))]
 	pub user_queue: Vec<QueueItemState>,
 	#[serde(default)]
-	#[napi(js_name = "auto_queue")]
+	#[cfg_attr(feature = "napi", napi(js_name = "auto_queue"))]
 	pub auto_queue: Vec<QueueItemState>,
 	#[serde(default)]
-	#[napi(js_name = "last_qid")]
+	#[cfg_attr(feature = "napi", napi(js_name = "last_qid"))]
 	pub last_qid: i64,
 	#[serde(default)]
 	pub shuffle: bool,
@@ -49,15 +50,15 @@ pub struct QueueState {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 enum DiskAutoQueueItem {
-	Id(String),
-	IdAndPos((String, u32)),
+	Id(TrackID),
+	IdAndPos((TrackID, u32)),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 struct DiskQueueState(
-	Vec<String>,            // past
-	Option<String>,         // current
-	Vec<String>,            // user_queue
+	Vec<TrackID>,           // past
+	Option<TrackID>,        // current
+	Vec<TrackID>,           // user_queue
 	Vec<DiskAutoQueueItem>, // auto_queue
 	bool,                   // shuffle
 	bool,                   // repeat
@@ -97,7 +98,7 @@ impl From<DiskQueueState> for QueueState {
 		let DiskQueueState(past_ids, current_id, user_ids, auto_items, shuffle, repeat) = value;
 
 		let mut next_qid: i64 = -1;
-		let mut new_item = |id: String, non_shuffle_pos: Option<u32>| {
+		let mut new_item = |id: TrackID, non_shuffle_pos: Option<u32>| {
 			next_qid += 1;
 			QueueItemState {
 				q_id: next_qid,
@@ -160,13 +161,13 @@ impl QueueState {
 	}
 }
 
-#[napi(js_name = "load_queue_state")]
+#[cfg_attr(feature = "napi", napi(js_name = "load_queue_state"))]
 #[allow(dead_code)]
 pub fn load_queue_state(file_path: String) -> Option<QueueState> {
 	QueueState::load(&file_path)
 }
 
-#[napi(js_name = "save_queue_state")]
+#[cfg_attr(feature = "napi", napi(js_name = "save_queue_state"))]
 #[allow(dead_code)]
 pub async fn save_queue_state(queue_state: QueueState, file_path: String) -> Result<()> {
 	queue_state.save(&file_path)?;

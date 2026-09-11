@@ -1,24 +1,14 @@
 use crate::library::{Paths, load_library};
 use crate::library_types::Library;
 use crate::tracks::Tag;
+use crate::{path_to_string, save_overwrite, serialize_json_pretty};
 use anyhow::Context;
-use atomicwrites::{AllowOverwrite, AtomicFile};
 use dirs_next;
 use napi::Result;
-use serde::Serialize;
 use std::env;
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::OnceLock;
-use std::time::Instant;
 use tokio::sync::{Mutex, MutexGuard};
-
-pub fn path_to_string<P: AsRef<Path>>(path: P) -> String {
-	path.as_ref()
-		.to_str()
-		.expect("Invalid path str")
-		.to_string()
-}
 
 pub fn app_log_dir() -> Result<PathBuf> {
 	#[cfg(target_os = "macos")]
@@ -54,19 +44,8 @@ impl Data {
 		DATA.get().expect("No data initialised").blocking_lock()
 	}
 	pub fn save(&mut self) -> Result<()> {
-		let mut now = Instant::now();
-		let formatter = serde_json::ser::PrettyFormatter::with_indent(b"	"); // tab
-
-		let mut json = Vec::new();
-		let mut ser = serde_json::Serializer::with_formatter(&mut json, formatter);
-		self.library.to_file().serialize(&mut ser)?;
-		println!("Stringify: {}ms", now.elapsed().as_millis());
-
-		now = Instant::now();
-		let file_path = &self.paths.library_json;
-		let af = AtomicFile::new(file_path, AllowOverwrite);
-		af.write(|f| f.write_all(&json)).context("Error saving")?;
-		println!("Write: {}ms", now.elapsed().as_millis());
+		let bytes = serialize_json_pretty(&self.library.to_file())?;
+		save_overwrite(bytes, &self.paths.library_json)?;
 		Ok(())
 	}
 	pub fn load(

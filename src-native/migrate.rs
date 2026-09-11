@@ -1,11 +1,14 @@
 #![allow(non_snake_case)]
 
+use crate::library::Paths;
 pub(self) use crate::library_types as latest;
 use crate::library_types::LatestLibrary;
+use crate::{save_overwrite, serialize_json_pretty};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::{fs::File, io::Read};
+use std::fs::File;
+use std::io::Read;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "version", deny_unknown_fields)]
@@ -25,13 +28,21 @@ pub enum LatestLibraryFile<'a> {
 	#[serde(rename = "3")]
 	V3(LatestLibrary<'a>),
 }
-
-pub fn upgrade<'a>(versioned_library: LibraryFile<'a>) -> LatestLibrary<'a> {
-	match versioned_library {
-		LibraryFile::V1(v1) => v1.upgrade().upgrade(),
-		LibraryFile::V2(v2) => v2.upgrade(),
-		LibraryFile::V3(v3) => v3,
+impl LatestLibraryFile<'_> {
+	pub fn save(&self, paths: &Paths) -> Result<()> {
+		let bytes = serialize_json_pretty(&self)?;
+		save_overwrite(bytes, &paths.library_json)?;
+		Ok(())
 	}
+}
+
+pub fn upgrade<'a>(versioned_library: LibraryFile<'a>, paths: &Paths) -> Result<LatestLibrary<'a>> {
+	let latest = match versioned_library {
+		LibraryFile::V1(v1) => v1.upgrade().upgrade(paths)?,
+		LibraryFile::V2(v2) => v2.upgrade(paths)?,
+		LibraryFile::V3(v3) => v3,
+	};
+	Ok(latest)
 }
 
 pub fn parse_old_version_library_json(library_file: &mut File) -> Result<LibraryFile<'_>> {
@@ -91,17 +102,53 @@ mod v1 {
 	pub type MsSinceUnixEpoch = i64;
 	/// Should be 0-100
 	// pub type PercentInteger = u8;
-	pub type TrackLists = LinkedHashMap<TrackListID, latest::TrackList>;
+	pub type TrackLists = LinkedHashMap<TrackListID, TrackList>;
 
 	/// (track id, start time, duration)
 	pub type PlayTime = (TrackID, MsSinceUnixEpoch, i64);
+
+	#[derive(Deserialize, Clone, Debug)]
+	#[serde(tag = "type")]
+	pub enum TrackList {
+		#[serde(rename = "playlist")]
+		Playlist(Playlist),
+		#[serde(rename = "folder")]
+		Folder(latest::Folder),
+		#[serde(rename = "special")]
+		Special(latest::Special),
+	}
+
+	#[derive(Deserialize, Clone, Debug)]
+	pub struct Playlist {
+		pub id: TrackListID,
+		pub name: String,
+		#[serde(default, skip_serializing_if = "Option::is_none")]
+		pub description: Option<String>,
+		#[serde(default, skip_serializing_if = "is_false")]
+		pub liked: bool,
+		#[serde(default, skip_serializing_if = "is_false")]
+		pub disliked: bool,
+		#[serde(default, skip_serializing_if = "Option::is_none")]
+		pub importedFrom: Option<String>,
+		#[serde(default, skip_serializing_if = "Option::is_none")]
+		pub originalId: Option<String>,
+		#[serde(default, skip_serializing_if = "Option::is_none")]
+		pub dateImported: Option<MsSinceUnixEpoch>,
+		#[serde(default, skip_serializing_if = "Option::is_none")]
+		pub dateCreated: Option<MsSinceUnixEpoch>,
+		pub tracks: Vec<TrackID>,
+	}
 }
 
 mod v2 {
-	use crate::migrate::{latest, v1};
+	use crate::library::Paths;
+	use crate::library_types::new_item_ids_from_track_ids;
+	use crate::migrate::{self, latest, queue_state_v0_and_v1, v1};
+	use anyhow::Result;
 	use linked_hash_map::LinkedHashMap;
 	use serde::Deserialize;
 	use std::borrow::Cow;
+	use std::collections::HashMap;
 
 	#[derive(Deserialize, Clone, Debug)]
 	#[serde(deny_unknown_fields)]
@@ -112,13 +159,273 @@ mod v2 {
 		pub playTime: Vec<v1::PlayTime>,
 	}
 	impl Library {
-		pub fn upgrade<'a>(self) -> latest::LatestLibrary<'a> {
-			latest::LatestLibrary {
-				tracks: Cow::Owned(self.tracks),
-				trackLists: Cow::Owned(self.trackLists),
-				// Playtimes were incorrect and overwritten after relaunch, so nothing to keep
+		pub fn upgrade<'a>(self, paths: &Paths) -> Result<latest::LatestLibrary<'a>> {
+			let mut new_ids: HashMap<v1::TrackID, latest::TrackID> = HashMap::new();
+			let mut temp_library = latest::Library::new();
+			// Make sure IDs are generated first
+			let tracks = self
+				.tracks
+				.into_iter()
+				.map(|(id, track)| {
+					let new_id = temp_library.generate_next_track_id();
+					let removed = new_ids.insert(id, new_id);
+					assert!(removed.is_none());
+					(new_id, track)
+				})
+				.collect();
+			let track_lists = self
+				.trackLists
+				.into_iter()
+				.map(|(id, list)| {
+					let list = match list {
+						v1::TrackList::Playlist(playlist) => {
+							latest::TrackList::Playlist(latest::Playlist {
+								id: playlist.id,
+								name: playlist.name,
+								description: playlist.description,
+								liked: playlist.liked,
+								disliked: playlist.disliked,
+								importedFrom: playlist.importedFrom,
+								originalId: playlist.originalId,
+								dateImported: playlist.dateImported,
+								dateCreated: playlist.dateCreated,
+								tracks: new_item_ids_from_track_ids(
+									&playlist
+										.tracks
+										.into_iter()
+										.map(|id| new_ids[&id])
+										.collect::<Vec<_>>(),
+								),
+							})
+						}
+						v1::TrackList::Folder(folder) => latest::TrackList::Folder(folder),
+						v1::TrackList::Special(special) => latest::TrackList::Special(special),
+					};
+					(id, list)
+				})
+				.collect();
+
+			let library = latest::LatestLibrary {
+				tracks: Cow::Owned(tracks),
+				trackLists: Cow::Owned(track_lists),
+				// Playtimes were incorrect and overwritten every relaunch, so nothing to keep
 				playTimes: Cow::Owned(Vec::new()),
+			};
+			let library_file = migrate::LatestLibraryFile::V3(library);
+			library_file.save(paths)?;
+			queue_state_v0_and_v1::upgrade_file(&paths.queue_file, &new_ids);
+
+			let library = match library_file {
+				migrate::LatestLibraryFile::V3(library) => library,
+			};
+			Ok(library)
+		}
+	}
+}
+
+/// These formats had string track IDs
+pub mod queue_state_v0_and_v1 {
+	use crate::library_types::TrackID;
+
+	use crate::queue_state as latest;
+	use serde::Deserialize;
+	use std::{collections::HashMap, fs};
+
+	#[derive(Deserialize, Debug, Clone, Default)]
+	pub struct QueueItemState {
+		#[serde(rename = "qId")]
+		pub q_id: i64,
+		pub id: String,
+		pub non_shuffle_pos: Option<u32>,
+	}
+
+	#[derive(Deserialize, Debug, Clone, Default)]
+	pub struct QueueCurrentState {
+		pub item: QueueItemState,
+		pub from_auto_queue: bool,
+	}
+
+	#[derive(Deserialize, Debug, Clone, Default)]
+	pub struct QueueState {
+		#[serde(default)]
+		pub past: Vec<QueueItemState>,
+		#[serde(default)]
+		pub current: Option<QueueCurrentState>,
+		#[serde(default)]
+		pub user_queue: Vec<QueueItemState>,
+		#[serde(default)]
+		pub auto_queue: Vec<QueueItemState>,
+		#[serde(default)]
+		pub last_qid: i64,
+		#[serde(default)]
+		pub shuffle: bool,
+		#[serde(default)]
+		pub repeat: bool,
+	}
+
+	#[derive(Deserialize, Debug, Clone)]
+	#[serde(untagged)]
+	enum DiskAutoQueueItem {
+		Id(String),
+		IdAndPos((String, u32)),
+	}
+
+	#[derive(Deserialize, Debug, Clone, Default)]
+	struct DiskQueueState(
+		Vec<String>,            // past
+		Option<String>,         // current
+		Vec<String>,            // user_queue
+		Vec<DiskAutoQueueItem>, // auto_queue
+		bool,                   // shuffle
+		bool,                   // repeat
+	);
+
+	impl From<&QueueState> for DiskQueueState {
+		fn from(value: &QueueState) -> Self {
+			DiskQueueState(
+				value.past.iter().map(|item| item.id.clone()).collect(),
+				value
+					.current
+					.as_ref()
+					.map(|current| current.item.id.clone()),
+				value
+					.user_queue
+					.iter()
+					.map(|item| item.id.clone())
+					.collect(),
+				value
+					.auto_queue
+					.iter()
+					.map(|item| match item.non_shuffle_pos {
+						Some(non_shuffle_pos) => {
+							DiskAutoQueueItem::IdAndPos((item.id.clone(), non_shuffle_pos))
+						}
+						None => DiskAutoQueueItem::Id(item.id.clone()),
+					})
+					.collect(),
+				value.shuffle,
+				value.repeat,
+			)
+		}
+	}
+
+	impl From<DiskQueueState> for QueueState {
+		fn from(value: DiskQueueState) -> Self {
+			let DiskQueueState(past_ids, current_id, user_ids, auto_items, shuffle, repeat) = value;
+
+			let mut next_qid: i64 = -1;
+			let mut new_item = |id: String, non_shuffle_pos: Option<u32>| {
+				next_qid += 1;
+				QueueItemState {
+					q_id: next_qid,
+					id,
+					non_shuffle_pos,
+				}
+			};
+
+			let past = past_ids
+				.into_iter()
+				.map(|id| new_item(id, None))
+				.collect::<Vec<_>>();
+			let current = current_id.map(|id| QueueCurrentState {
+				item: new_item(id, None),
+				from_auto_queue: false,
+			});
+			let user_queue = user_ids
+				.into_iter()
+				.map(|id| new_item(id, None))
+				.collect::<Vec<_>>();
+			let auto_queue = auto_items
+				.into_iter()
+				.map(|item| match item {
+					DiskAutoQueueItem::Id(id) => new_item(id, None),
+					DiskAutoQueueItem::IdAndPos((id, non_shuffle_pos)) => {
+						new_item(id, Some(non_shuffle_pos))
+					}
+				})
+				.collect::<Vec<_>>();
+
+			QueueState {
+				past,
+				current,
+				user_queue,
+				auto_queue,
+				last_qid: next_qid,
+				shuffle,
+				repeat,
 			}
 		}
+	}
+
+	#[derive(Deserialize, Debug, Clone)]
+	#[serde(untagged)]
+	enum LegacyDiskQueueState {
+		V0(QueueState),
+		V1(DiskQueueState),
+	}
+
+	pub fn upgrade_file(
+		file_path: &str,
+		new_track_id_map: &HashMap<String, TrackID>,
+	) -> Option<()> {
+		let bytes = fs::read(file_path).ok()?;
+		let queue_state = match serde_cbor::from_slice::<LegacyDiskQueueState>(&bytes) {
+			Ok(LegacyDiskQueueState::V0(qs)) => qs,
+			Ok(LegacyDiskQueueState::V1(qs)) => qs.into(),
+			Err(_) => return None,
+		};
+		let new_queue_state = latest::QueueState {
+			past: queue_state
+				.past
+				.into_iter()
+				.filter_map(|item| {
+					Some(latest::QueueItemState {
+						q_id: item.q_id,
+						id: *new_track_id_map.get(&item.id)?,
+						non_shuffle_pos: item.non_shuffle_pos,
+					})
+				})
+				.collect(),
+			current: queue_state
+				.current
+				.map(|item| {
+					Some(latest::QueueCurrentState {
+						item: latest::QueueItemState {
+							q_id: item.item.q_id,
+							id: *new_track_id_map.get(&item.item.id)?,
+							non_shuffle_pos: item.item.non_shuffle_pos,
+						},
+						from_auto_queue: item.from_auto_queue,
+					})
+				})
+				.flatten(),
+			user_queue: queue_state
+				.user_queue
+				.into_iter()
+				.filter_map(|item| {
+					Some(latest::QueueItemState {
+						q_id: item.q_id,
+						id: *new_track_id_map.get(&item.id)?,
+						non_shuffle_pos: item.non_shuffle_pos,
+					})
+				})
+				.collect(),
+			auto_queue: queue_state
+				.auto_queue
+				.into_iter()
+				.filter_map(|item| {
+					Some(latest::QueueItemState {
+						q_id: item.q_id,
+						id: *new_track_id_map.get(&item.id)?,
+						non_shuffle_pos: item.non_shuffle_pos,
+					})
+				})
+				.collect(),
+			last_qid: queue_state.last_qid,
+			shuffle: queue_state.shuffle,
+			repeat: queue_state.repeat,
+		};
+		new_queue_state.save(file_path).ok()?;
+		Some(())
 	}
 }

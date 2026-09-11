@@ -1,22 +1,19 @@
 #[cfg(feature = "napi-rs")]
 use crate::data::Data;
 use crate::{
-	library_types::{ItemId, Library, SpecialTrackListName, TrackList},
+	library_types::{ItemId, Library, SpecialTrackListName, TrackList, TrackListID},
 	migrate::{self, LibraryFile, parse_old_version_library_json},
 };
 use anyhow::{Context, Result, bail};
 use linked_hash_map::LinkedHashMap;
 use std::fs::File;
-#[cfg(feature = "napi-rs")]
 use std::fs::create_dir_all;
 use std::io::{ErrorKind, Read, Seek, SeekFrom};
-#[cfg(feature = "napi-rs")]
 use std::path::PathBuf;
 use std::time::Instant;
 
-#[cfg(feature = "napi-rs")]
 #[derive(Clone)]
-#[napi(object)]
+#[cfg_attr(feature = "napi", napi(object))]
 pub struct Paths {
 	pub path_separator: String,
 	pub library_dir: String,
@@ -29,9 +26,8 @@ pub struct Paths {
 	pub queue_file: String,
 	pub logs_dir: String,
 }
-#[cfg(feature = "napi-rs")]
 impl Paths {
-	fn ensure_dirs_exists(&self) -> Result<()> {
+	pub fn ensure_dirs_exists(&self) -> Result<()> {
 		create_dir_all(&self.library_dir)?;
 		create_dir_all(&self.tracks_dir)?;
 		create_dir_all(&self.cache_dir)?;
@@ -51,13 +47,13 @@ pub fn load_library(paths: &Paths) -> Result<Library> {
 		.context("Error ensuring folder exists")?;
 	println!("Loading library at path: {}", paths.library_dir);
 
-	load_library_from_file(&paths.library_json)
+	load_library_from_file(&paths)
 }
 
-pub fn load_library_from_file(library_json: &str) -> Result<Library> {
+pub fn load_library_from_file(paths: &Paths) -> Result<Library> {
 	let t = Instant::now();
 
-	let mut library_file = match File::open(&library_json) {
+	let mut library_file = match File::open(&paths.library_json) {
 		Ok(file) => file,
 		Err(err) => match err.kind() {
 			ErrorKind::NotFound => return Ok(Library::new()),
@@ -89,7 +85,7 @@ pub fn load_library_from_file(library_json: &str) -> Result<Library> {
 	};
 	let t = Instant::now();
 
-	let latest_library = migrate::upgrade(versioned_library);
+	let latest_library = migrate::upgrade(versioned_library, paths)?;
 	let library = Library::init_library(latest_library);
 	println!("Initialized library: {}ms", t.elapsed().as_millis());
 	Ok(library)
@@ -182,7 +178,7 @@ pub fn get_artists() -> Vec<String> {
 	genres.clone()
 }
 
-pub fn get_tracklist_item_ids(library: &Library, playlist_id: &str) -> Result<Vec<ItemId>> {
+pub fn get_tracklist_item_ids(library: &Library, playlist_id: &TrackListID) -> Result<Vec<ItemId>> {
 	match library.get_tracklist(playlist_id)? {
 		TrackList::Playlist(playlist) => Ok(playlist.tracks.clone()),
 		TrackList::Folder(folder) => {

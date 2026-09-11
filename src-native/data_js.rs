@@ -1,5 +1,6 @@
-use crate::data::{Data, app_log_dir, path_to_string};
+use crate::data::{Data, app_log_dir};
 use crate::library::Paths;
+use crate::path_to_string;
 use napi::Result;
 use std::fs;
 

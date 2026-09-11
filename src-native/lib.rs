@@ -1,13 +1,18 @@
-#[cfg(feature = "napi-rs")]
 use anyhow::{Context, Result};
+use atomicwrites::{AtomicFile, OverwriteBehavior::AllowOverwrite};
 use mimalloc::MiMalloc;
+use serde::Serialize;
 #[cfg(feature = "napi-rs")]
 use serde::de::DeserializeOwned;
 #[cfg(feature = "napi-rs")]
 use std::fs::File;
 #[cfg(feature = "napi-rs")]
 use std::io::BufReader;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+	io::Write,
+	path::Path,
+	time::{Instant, SystemTime, UNIX_EPOCH},
+};
 
 // Alloactor recommended by simd_json
 #[global_allocator]
@@ -30,7 +35,6 @@ pub mod migrate;
 pub mod page;
 #[cfg(feature = "napi-rs")]
 pub mod playlists;
-#[cfg(feature = "napi-rs")]
 mod queue_state;
 pub mod sort;
 #[cfg(feature = "napi-rs")]
@@ -72,4 +76,29 @@ where
 	let reader = BufReader::new(file);
 	let json = serde_json::from_reader(reader).context("Error parsing file")?;
 	Ok(json)
+}
+
+pub fn path_to_string<P: AsRef<Path>>(path: P) -> String {
+	path.as_ref()
+		.to_str()
+		.expect("Invalid path str")
+		.to_string()
+}
+
+pub fn serialize_json_pretty<S: Serialize>(value: &S) -> Result<Vec<u8>> {
+	let now = Instant::now();
+	let formatter = serde_json::ser::PrettyFormatter::with_indent(b"	"); // tab
+	let mut json = Vec::new();
+	let mut ser = serde_json::Serializer::with_formatter(&mut json, formatter);
+	value.serialize(&mut ser)?;
+	println!("Stringify: {}ms", now.elapsed().as_millis());
+	Ok(json)
+}
+
+pub fn save_overwrite(bytes: Vec<u8>, file_path: &String) -> Result<()> {
+	let now = Instant::now();
+	let af = AtomicFile::new(file_path, AllowOverwrite);
+	af.write(|f| f.write_all(&bytes)).context("Error saving")?;
+	println!("Write: {}ms", now.elapsed().as_millis());
+	Ok(())
 }

@@ -3,6 +3,7 @@ use crate::data::Data;
 use crate::filter::{FilterTerm, filter};
 use crate::library_types::{ItemId, Library, TrackList};
 use crate::sort::sort;
+#[cfg(feature = "napi-rs")]
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use specta::Type;
