@@ -2,7 +2,8 @@ use crate::data::Data;
 use crate::get_now_timestamp;
 use crate::library::Paths;
 use crate::library_types::{
-	CountObject, Folder, Library, Playlist, Track, TrackList, new_item_ids_from_track_ids,
+	CountObject, Folder, Library, Playlist, Track, TrackID, TrackList, TrackListID,
+	new_item_ids_from_track_ids,
 };
 use crate::tracks::generate_filename;
 use crate::tracks::import::{FileType, read_file_metadata};
@@ -503,8 +504,8 @@ fn import_playlist(
 	library: &mut Library,
 	start_time: i64,
 	errors: &mut Vec<String>,
-	xml_track_id_map: &HashMap<String, String>,
-) -> String {
+	xml_track_id_map: &HashMap<String, TrackID>,
+) -> TrackListID {
 	let tracklist;
 	let xml_playlist = &infos[i].xml_playlist;
 	let id = library.generate_id();
@@ -634,7 +635,7 @@ async fn import_itunes(itunes_import: &ItunesImport, path: String) -> Result<Imp
 	let mut xml = xml_lib.deserialize_props()?;
 
 	// iTunes ID -> Ferrum ID
-	let mut xml_track_id_map = HashMap::<String, String>::new();
+	let mut xml_track_id_map = HashMap::<String, TrackID>::new();
 
 	// We import the tracks that are in the "Music" playlist since xml.tracks
 	// contains podcasts, etc.
@@ -659,14 +660,14 @@ async fn import_itunes(itunes_import: &ItunesImport, path: String) -> Result<Imp
 
 		match parse_track(xml_track, start_time, &itunes_import.paths) {
 			Ok((xml_track_path, track)) => {
-				let generated_id = library.generate_id();
+				let generated_track_id = library.generate_next_track_id();
 				// immediately insert into library so new generated ids are unique
 				itunes_track_paths.insert(xml_track_path, track.file.clone());
-				library.insert_track(generated_id.clone(), track);
+				library.insert_track(generated_track_id.clone(), track);
 				if xml_track_id_map.contains_key(&xml_id) {
 					errors.push(format!("Duplicate track ids \"{}\": artist_title", xml_id));
 				}
-				xml_track_id_map.insert(xml_id, generated_id);
+				xml_track_id_map.insert(xml_id, generated_track_id);
 			}
 			Err(e) => {
 				errors.push(format!("[{artist_title}] Skipped track: {e}"));

@@ -1,5 +1,7 @@
+import type { TrackID } from 'ferrum-addon'
+
 type DraggedTracks = {
-	ids: string[]
+	ids: TrackID[]
 	playlist_indexes?: number[]
 	queue_indexes?: number[]
 }

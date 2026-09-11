@@ -1,4 +1,4 @@
-import type { TrackID } from 'ferrum-addon'
+import type { QueueItemState, TrackID } from 'ferrum-addon'
 import { get, writable } from 'svelte/store'
 import { getter_writable } from './helpers'
 import { ipc_renderer } from './window'
@@ -33,7 +33,7 @@ export type Queue = {
 		item: QueueItem
 		from_auto_queue: boolean
 	} | null
-	user_queue: QueueItem[]
+	user_queue: QueueItemState[]
 	auto_queue: QueueItem[]
 }
 export const queue = (() => {

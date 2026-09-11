@@ -1,18 +1,17 @@
-use anyhow::Result;
-use anyhow::bail;
-use ferrum::library_types::TRACK_ID_MAP;
-use ferrum::library_types::{Library, Track, TrackList, TrackListID};
+use anyhow::{Context, Result, bail};
+use ferrum::library::Paths;
+use ferrum::library_types::{Library, TRACK_ID_MAP, Track, TrackList, TrackListID};
 use ferrum::migrate::{self, LibraryFile};
-use ferrum::page::TracksPage;
-use ferrum::page::TracksPageOptions;
-use ferrum::page::get_tracks_page_from_library;
+use ferrum::page::{TracksPage, TracksPageOptions, get_tracks_page_from_library};
+use ferrum::path_to_string;
 use serde::Serialize;
 use specta::Type;
 use std::collections::HashMap;
+use std::env;
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Instant;
-use tauri::AppHandle;
-use tauri::Manager;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_specta::Builder;
 
@@ -66,7 +65,7 @@ async fn open_file_persistent_android(app: AppHandle) -> Result<Option<String>, 
 	Ok(Some(selected_file.uri.to_string()))
 }
 
-fn load_library_from_file(library_json: &str) -> anyhow::Result<Library> {
+fn load_library_from_file(library_json: &str, paths: &Paths) -> anyhow::Result<Library> {
 	let now = Instant::now();
 
 	let mut json_bytes = library_json.as_bytes().to_vec();
@@ -82,7 +81,7 @@ fn load_library_from_file(library_json: &str) -> anyhow::Result<Library> {
 	};
 	let now = Instant::now();
 
-	let latest_library = migrate::upgrade(versioned_library);
+	let latest_library = migrate::upgrade(versioned_library, paths)?;
 	let library = Library::init_library(latest_library);
 	println!("Initialized library: {}ms", now.elapsed().as_millis());
 	Ok(library)
@@ -116,12 +115,81 @@ pub struct LibraryTauri {
 	song_count: usize,
 }
 
+pub fn app_log_dir() -> Result<PathBuf> {
+	#[cfg(target_os = "macos")]
+	{
+		use anyhow::Context;
+		let home_dir = dirs_next::home_dir().context("Home folder not found")?;
+		let log_dir = home_dir.join("Library/Logs").join("space.kasper.ferrum");
+		return Ok(log_dir);
+	}
+	#[cfg(not(target_os = "macos"))]
+	{
+		use anyhow::Context;
+		let local_data_dir = dirs_next::data_local_dir().context("Local data folder not found")?;
+		let log_dir = local_data_dir.join("space.kasper.ferrum").join("logs");
+		return Ok(log_dir);
+	}
+}
+
 #[tauri::command]
 #[specta::specta]
 fn load_library(library_json: String, app: AppHandle) -> Result<LibraryTauri, String> {
-	let library = match load_library_from_file(&library_json) {
+	load_library_inner(library_json, app).map_err(|e| e.to_string())
+}
+fn load_library_inner(library_json: String, app: AppHandle) -> Result<LibraryTauri> {
+	let is_dev = false;
+	let local_data_path: Option<String> = None;
+	let library_path: Option<String> = None;
+	let mut library_dir;
+	let cache_dir;
+	let local_data_dir;
+	if is_dev {
+		let appdata_dev = env::current_dir().unwrap().join("src-native/appdata");
+		library_dir = appdata_dev.join("Library");
+		cache_dir = appdata_dev.join("Caches");
+		local_data_dir = appdata_dev.join("LocalData/space.kasper.ferrum");
+	} else {
+		library_dir = dirs_next::audio_dir()
+			.context("Music folder not found")?
+			.join("Ferrum");
+		cache_dir = dirs_next::cache_dir()
+			.context("Cache folder not found")?
+			.join("space.kasper.ferrum");
+		local_data_dir = dirs_next::data_local_dir()
+			.context("Local data folder not found")?
+			.join("space.kasper.ferrum");
+	};
+	let local_data_dir = match local_data_path {
+		Some(path) => PathBuf::from(path),
+		None => local_data_dir,
+	};
+	if let Some(library_path) = library_path {
+		library_dir = PathBuf::from(library_path);
+	}
+	// Not really used, just here to make migration work for now
+	let paths = Paths {
+		path_separator: std::path::MAIN_SEPARATOR_STR.into(),
+		library_dir: path_to_string(&library_dir),
+		tracks_dir: path_to_string(library_dir.join("Tracks")),
+		library_json: path_to_string(library_dir.join("Library.json")),
+		cache_dir: path_to_string(&cache_dir),
+		cache_db: path_to_string(cache_dir.join("Cache.redb")),
+		local_data_dir: path_to_string(&local_data_dir),
+		view_options_file: path_to_string(local_data_dir.join("view.json")),
+		queue_file: path_to_string(local_data_dir.join("queue.cbor")),
+		// This makes sure we can get the logs dir, which is important for crash logs
+		logs_dir: path_to_string(app_log_dir()?),
+	};
+
+	paths
+		.ensure_dirs_exists()
+		.context("Error ensuring folder exists")?;
+	println!("Loading library at path: {}", paths.library_dir);
+
+	let library = match load_library_from_file(&library_json, &paths) {
 		Ok(library) => library,
-		Err(err) => return Err(err.to_string()),
+		Err(err) => return Err(err),
 	};
 
 	let library_tauri = LibraryTauri {

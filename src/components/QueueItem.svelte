@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { get_track, join_paths, paths, refreshers } from '$lib/data.svelte'
+	import type { TrackID } from 'ferrum-addon'
 
 	interface Props {
-		id: string
+		id: TrackID
 	}
 
 	let { id }: Props = $props()

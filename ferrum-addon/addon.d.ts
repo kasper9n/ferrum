@@ -6,13 +6,13 @@ export declare class ItunesImport {
   finish(): void
 }
 
-export declare function add_play(trackId: string): void
+export declare function add_play(trackId: TrackID): void
 
 export declare function add_play_time(id: TrackID, start: MsSinceUnixEpoch, durMs: number): void
 
-export declare function add_skip(trackId: string): void
+export declare function add_skip(trackId: TrackID): void
 
-export declare function add_tracks_to_playlist(playlistId: string, trackIds: Array<string>): void
+export declare function add_tracks_to_playlist(playlistId: string, trackIds: Array<TrackID>): void
 
 export declare function close_cache_db(): Promise<void>
 
@@ -74,7 +74,7 @@ export declare function get_logs_dir(): string
 
 export declare function get_paths(): Paths
 
-export declare function get_track(id: string): Track
+export declare function get_track(trackId: TrackID): Track
 
 export declare function get_track_by_item_id(itemId: ItemId): KeyedTrack
 
@@ -84,7 +84,7 @@ export declare function get_track_list(id: string): TrackList
 
 export declare function get_track_lists_details(): Record<string, TrackListDetails>
 
-export declare function get_track_playlist_ids(trackId: TrackID): Array<TrackID>
+export declare function get_track_playlist_ids(trackId: TrackID): Array<TrackListID>
 
 export declare function get_tracks_page(options: TracksPageOptions): TracksPage
 
@@ -112,7 +112,7 @@ export declare function load_data(isDev: boolean, localDataPath?: string | undef
 
 export declare function load_queue_state(filePath: string): QueueState | null
 
-export declare function load_tags(trackId: string): void
+export declare function load_tags(trackId: TrackID): void
 
 export declare function load_view_options(): ViewOptions
 
@@ -148,7 +148,7 @@ export interface Playlist {
   tracks: string[]
 }
 
-export declare function playlist_filter_duplicates(playlistId: TrackID, ids: Array<string>): Array<TrackID>
+export declare function playlist_filter_duplicates(playlistId: TrackListID, trackIds: Array<TrackID>): Array<TrackID>
 
 export interface QueueCurrentState {
   item: QueueItemState
@@ -157,7 +157,7 @@ export interface QueueCurrentState {
 
 export interface QueueItemState {
   qId: number
-  id: string
+  id: TrackID
   non_shuffle_pos?: number
 }
 
@@ -176,7 +176,7 @@ export declare function read_cover_async(filePath: string, index: number): Promi
 /** Returns `None` if the file does not have an image */
 export declare function read_small_cover_async(path: string, index: number, cacheDbPath: string): Promise<Buffer | null>
 
-export declare function remove_from_playlist(playlistId: TrackID, itemIds: Array<ItemId>): void
+export declare function remove_from_playlist(playlistId: TrackListID, itemIds: Array<ItemId>): void
 
 export declare function remove_image(index: number): void
 
@@ -247,7 +247,7 @@ export interface Track {
   volume?: number
 }
 
-export declare function track_exists(id: string): boolean
+export declare function track_exists(id: TrackID): boolean
 
 export interface TrackListDetails {
   id: string
@@ -292,7 +292,7 @@ export interface TracksPageOptions {
 
 export declare function update_playlist(id: string, name: string, description: string): void
 
-export declare function update_track_info(trackId: string, info: TrackMd): void
+export declare function update_track_info(trackId: TrackID, info: TrackMd): void
 
 export interface ViewOptions {
   shownPlaylistFolders: Array<string>

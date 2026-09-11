@@ -1,6 +1,6 @@
 use crate::data::Data;
 use crate::library_types::{
-	ItemId, Library, SpecialTrackListName, TRACK_ID_MAP, TrackID, TrackList,
+	ItemId, Library, SpecialTrackListName, TRACK_ID_MAP, TrackID, TrackList, TrackListID,
 	get_track_ids_from_item_ids, new_item_ids_from_track_ids,
 };
 use crate::str_to_option;
@@ -141,7 +141,7 @@ pub fn delete_track_list(id: String) -> Result<()> {
 
 #[napi(js_name = "add_tracks_to_playlist")]
 #[allow(dead_code)]
-pub fn add_tracks(playlist_id: String, track_ids: Vec<String>) -> Result<()> {
+pub fn add_tracks(playlist_id: String, track_ids: Vec<TrackID>) -> Result<()> {
 	let mut data = Data::get_blocking();
 	let playlist = match data.library.get_tracklist_mut(&playlist_id)? {
 		TrackList::Playlist(playlist) => playlist,
@@ -155,16 +155,19 @@ pub fn add_tracks(playlist_id: String, track_ids: Vec<String>) -> Result<()> {
 
 #[napi(js_name = "playlist_filter_duplicates")]
 #[allow(dead_code)]
-pub fn filter_duplicates(playlist_id: TrackID, ids: Vec<String>) -> Result<Vec<TrackID>> {
+pub fn filter_duplicates(
+	playlist_id: TrackListID,
+	track_ids: Vec<TrackID>,
+) -> Result<Vec<TrackID>> {
 	let mut data = Data::get_blocking();
-	let mut track_ids: HashSet<String> = HashSet::from_iter(ids);
+	let mut track_ids: HashSet<TrackID> = HashSet::from_iter(track_ids);
 	let playlist = match data.library.get_tracklist_mut(&playlist_id)? {
 		TrackList::Playlist(playlist) => playlist,
 		_ => bail!("Cannot check if folder/special contains track"),
 	};
-	for track in &playlist.get_track_ids() {
-		if track_ids.contains(track) {
-			track_ids.remove(track);
+	for track_id in &playlist.get_track_ids() {
+		if track_ids.contains(track_id) {
+			track_ids.remove(track_id);
 		}
 	}
 	let track_ids: Vec<TrackID> = track_ids.into_iter().collect();
@@ -173,12 +176,12 @@ pub fn filter_duplicates(playlist_id: TrackID, ids: Vec<String>) -> Result<Vec<T
 
 #[napi(js_name = "get_track_playlist_ids")]
 #[allow(dead_code)]
-pub fn get_track_playlist_ids(track_id: TrackID) -> Result<Vec<TrackID>> {
+pub fn get_track_playlist_ids(track_id: TrackID) -> Result<Vec<TrackListID>> {
 	let data = Data::get_blocking();
-	Ok(get_track_playlist_ids_in_library(&data.library, &track_id))
+	Ok(get_track_playlist_ids_in_library(&data.library, track_id))
 }
 
-pub fn get_track_playlist_ids_in_library(library: &Library, track_id: &str) -> Vec<TrackID> {
+pub fn get_track_playlist_ids_in_library(library: &Library, track_id: TrackID) -> Vec<TrackListID> {
 	let track_id_map = TRACK_ID_MAP.read().unwrap();
 	library
 		.trackLists
@@ -190,7 +193,8 @@ pub fn get_track_playlist_ids_in_library(library: &Library, track_id: &str) -> V
 				return None;
 			};
 			for item_id in &playlist.tracks {
-				if track_id_map[*item_id as usize].as_str() == track_id {
+				let item_id: usize = (*item_id).try_into().unwrap();
+				if track_id_map[item_id] == track_id {
 					return Some(playlist_id.to_string());
 				}
 			}
@@ -201,7 +205,7 @@ pub fn get_track_playlist_ids_in_library(library: &Library, track_id: &str) -> V
 
 #[napi(js_name = "remove_from_playlist")]
 #[allow(dead_code)]
-pub fn remove_from_playlist(playlist_id: TrackID, item_ids: Vec<ItemId>) -> Result<()> {
+pub fn remove_from_playlist(playlist_id: TrackListID, item_ids: Vec<ItemId>) -> Result<()> {
 	let mut data = Data::get_blocking();
 	let playlist = match data.library.get_tracklist_mut(&playlist_id)? {
 		TrackList::Playlist(playlist) => playlist,
@@ -323,7 +327,7 @@ pub fn update_playlist(id: String, name: String, description: String) -> Result<
 	return Ok(());
 }
 
-fn get_all_tracklist_children(data: &Data, playlist_id: &str) -> Result<Vec<TrackID>> {
+fn get_all_tracklist_children(data: &Data, playlist_id: &TrackListID) -> Result<Vec<TrackListID>> {
 	let direct_children = match data.library.get_tracklist(playlist_id)? {
 		TrackList::Folder(folder) => &folder.children,
 		TrackList::Special(special) => &special.children,
