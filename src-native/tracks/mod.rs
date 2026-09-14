@@ -147,8 +147,8 @@ pub fn generate_filename(paths: &Paths, artist: &str, title: &str, ext: &str) ->
 pub fn import_file(path: String, now: MsSinceUnixEpoch) -> Result<()> {
 	let mut data = Data::get_blocking();
 	let track = import::import(&data, Path::new(&path), now)?;
-	let track_id = data.library.generate_next_track_id();
-	data.library.insert_track(track_id, track);
+	let track_id = data.library.get_next_track_id();
+	data.library.try_insert_track(track_id, track);
 	Ok(())
 }
 

@@ -202,6 +202,7 @@ export declare const enum SpecialTrackListName {
 }
 
 export interface Track {
+  id: TrackID
   size: number
   duration: number
   bitrate: number

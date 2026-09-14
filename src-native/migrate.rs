@@ -79,7 +79,7 @@ mod v1 {
 	#[derive(Deserialize, Clone, Debug)]
 	#[serde(deny_unknown_fields)]
 	pub struct Library {
-		tracks: LinkedHashMap<TrackID, latest::Track>,
+		tracks: LinkedHashMap<TrackID, Track>,
 		trackLists: TrackLists,
 		playTime: Vec<PlayTime>,
 	}
@@ -106,6 +106,86 @@ mod v1 {
 
 	/// (track id, start time, duration)
 	pub type PlayTime = (TrackID, MsSinceUnixEpoch, i64);
+
+	#[derive(Deserialize, Clone, Debug)]
+	pub struct Track {
+		pub size: i64,
+		pub duration: f64,
+		pub bitrate: f64,
+		pub sampleRate: f64,
+		pub file: String,
+		pub dateModified: latest::MsSinceUnixEpoch,
+		pub dateAdded: latest::MsSinceUnixEpoch,
+		pub name: String,
+		#[serde(default)]
+		pub importedFrom: Option<String>,
+		/// Imported ID, like iTunes Persistent ID
+		#[serde(default)]
+		pub originalId: Option<String>,
+		#[serde(default)]
+		pub artist: String,
+		#[serde(default)]
+		pub composer: Option<String>,
+		#[serde(default)]
+		pub sortName: Option<String>,
+		#[serde(default)]
+		pub sortArtist: Option<String>,
+		#[serde(default)]
+		pub sortComposer: Option<String>,
+		#[serde(default)]
+		pub genre: Option<String>,
+		#[serde(default)]
+		pub rating: Option<latest::PercentInteger>,
+		#[serde(default)]
+		pub year: Option<i64>,
+		#[serde(default)]
+		pub bpm: Option<f64>,
+		#[serde(default)]
+		pub comments: Option<String>,
+		#[serde(default)]
+		pub grouping: Option<String>,
+		#[serde(default)]
+		pub liked: Option<bool>,
+		#[serde(default)]
+		pub disliked: Option<bool>,
+		#[serde(default)]
+		pub disabled: Option<bool>,
+		#[serde(default)]
+		pub compilation: Option<bool>,
+		#[serde(default)]
+		pub albumName: Option<String>,
+		#[serde(default)]
+		pub albumArtist: Option<String>,
+		#[serde(default)]
+		pub sortAlbumName: Option<String>,
+		#[serde(default)]
+		pub sortAlbumArtist: Option<String>,
+		#[serde(default)]
+		pub trackNum: Option<u32>,
+		#[serde(default)]
+		pub trackCount: Option<u32>,
+		#[serde(default)]
+		pub discNum: Option<u32>,
+		#[serde(default)]
+		pub discCount: Option<u32>,
+		#[serde(default)]
+		pub dateImported: Option<latest::MsSinceUnixEpoch>,
+		#[serde(default)]
+		pub playCount: Option<u32>,
+		#[serde(default)]
+		pub plays: Option<Vec<latest::MsSinceUnixEpoch>>,
+		#[serde(default)]
+		pub playsImported: Option<Vec<latest::CountObject>>,
+		#[serde(default)]
+		pub skipCount: Option<u32>,
+		#[serde(default)]
+		pub skips: Option<Vec<latest::MsSinceUnixEpoch>>,
+		#[serde(default)]
+		pub skipsImported: Option<Vec<latest::CountObject>>,
+		/// -100 to 100
+		#[serde(default)]
+		pub volume: Option<i8>,
+	}
 
 	#[derive(Deserialize, Clone, Debug)]
 	#[serde(tag = "type")]
@@ -141,6 +221,7 @@ mod v1 {
 }
 
 mod v2 {
+	use crate::idvecmap::IdMap;
 	use crate::library::Paths;
 	use crate::library_types::new_item_ids_from_track_ids;
 	use crate::migrate::{self, latest, queue_state_v0_and_v1, v1};
@@ -153,7 +234,7 @@ mod v2 {
 	#[derive(Deserialize, Clone, Debug)]
 	#[serde(deny_unknown_fields)]
 	pub struct Library {
-		pub tracks: LinkedHashMap<v1::TrackID, latest::Track>,
+		pub tracks: LinkedHashMap<v1::TrackID, v1::Track>,
 		pub trackLists: v1::TrackLists,
 		pub v1PlayTime: Vec<v1::PlayTime>,
 		pub playTime: Vec<v1::PlayTime>,
@@ -161,18 +242,60 @@ mod v2 {
 	impl Library {
 		pub fn upgrade<'a>(self, paths: &Paths) -> Result<latest::LatestLibrary<'a>> {
 			let mut new_ids: HashMap<v1::TrackID, latest::TrackID> = HashMap::new();
-			let mut temp_library = latest::Library::new();
+			let mut tracks = IdMap::with_capacity(self.tracks.len());
 			// Make sure IDs are generated first
-			let tracks = self
-				.tracks
-				.into_iter()
-				.map(|(id, track)| {
-					let new_id = temp_library.generate_next_track_id();
-					let removed = new_ids.insert(id, new_id);
-					assert!(removed.is_none());
-					(new_id, track)
-				})
-				.collect();
+			for (id, track) in self.tracks {
+				let new_id = tracks.get_next_id();
+				let removed = new_ids.insert(id, new_id);
+				assert!(removed.is_none());
+				tracks.try_insert(
+					new_id,
+					latest::Track {
+						id: new_id,
+						size: track.size,
+						duration: track.duration,
+						bitrate: track.bitrate,
+						sampleRate: track.sampleRate,
+						file: track.file,
+						dateModified: track.dateModified,
+						dateAdded: track.dateAdded,
+						name: track.name,
+						importedFrom: track.importedFrom,
+						originalId: track.originalId,
+						artist: track.artist,
+						composer: track.composer,
+						sortName: track.sortName,
+						sortArtist: track.sortArtist,
+						sortComposer: track.sortComposer,
+						genre: track.genre,
+						rating: track.rating,
+						year: track.year,
+						bpm: track.bpm,
+						comments: track.comments,
+						grouping: track.grouping,
+						liked: track.liked,
+						disliked: track.disliked,
+						disabled: track.disabled,
+						compilation: track.compilation,
+						albumName: track.albumName,
+						albumArtist: track.albumArtist,
+						sortAlbumName: track.sortAlbumName,
+						sortAlbumArtist: track.sortAlbumArtist,
+						trackNum: track.trackNum,
+						trackCount: track.trackCount,
+						discNum: track.discNum,
+						discCount: track.discCount,
+						dateImported: track.dateImported,
+						playCount: track.playCount,
+						plays: track.plays,
+						playsImported: track.playsImported,
+						skipCount: track.skipCount,
+						skips: track.skips,
+						skipsImported: track.skipsImported,
+						volume: track.volume,
+					},
+				);
+			}
 			let track_lists = self
 				.trackLists
 				.into_iter()

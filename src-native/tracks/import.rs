@@ -56,6 +56,7 @@ pub fn read_file_metadata(path: &Path) -> Result<fs::Metadata> {
 	}
 }
 
+/// Returns a track without a generated ID
 pub fn import(data: &Data, track_path: &Path, now: i64) -> Result<Track> {
 	let file_md = read_file_metadata(track_path)?;
 
@@ -121,6 +122,7 @@ pub fn import(data: &Data, track_path: &Path, now: i64) -> Result<Track> {
 	}
 
 	let track = Track {
+		id: 0,
 		size: file_md.len().try_into().unwrap(),
 		duration: properties.duration().as_secs_f64(),
 		bitrate: (properties.audio_bitrate().expect("Missing bitrate") * 1000).into(), // kbps to bps
