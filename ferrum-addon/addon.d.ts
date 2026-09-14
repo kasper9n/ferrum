@@ -145,7 +145,7 @@ export interface Playlist {
   originalId?: string
   dateImported?: MsSinceUnixEpoch
   dateCreated?: MsSinceUnixEpoch
-  tracks: string[]
+  tracks: TrackID[]
 }
 
 export declare function playlist_filter_duplicates(playlistId: TrackListID, trackIds: Array<TrackID>): Array<TrackID>

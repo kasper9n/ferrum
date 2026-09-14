@@ -433,8 +433,8 @@ pub struct Playlist {
 		deserialize_with = "deserialize_playlist_ids",
 		serialize_with = "serialize_playlist_ids"
 	)]
-	#[cfg_attr(feature = "napi", napi(ts_type = "string[]"))]
-	#[specta(type = Vec<String>)]
+	#[cfg_attr(feature = "napi", napi(ts_type = "TrackID[]"))]
+	#[specta(type = Vec<TrackID>)]
 	pub tracks: Vec<ItemId>,
 }
 impl Playlist {
