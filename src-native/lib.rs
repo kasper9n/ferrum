@@ -27,6 +27,7 @@ mod data;
 #[cfg(feature = "napi-rs")]
 mod data_js;
 pub mod filter;
+mod idvecmap;
 #[cfg(feature = "napi-rs")]
 mod itunes_import;
 pub mod library;

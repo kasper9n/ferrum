@@ -319,7 +319,8 @@ fn parse_file_url(value: &str) -> Result<PathBuf> {
 	}
 }
 
-/// Parses track but does not move it to `tracks_dir`
+/// Parses track but does not move it to `tracks_dir`.
+/// Returns a track without a generated ID
 fn parse_track(xml_track: XmlTrack, start_time: i64, paths: &Paths) -> Result<(PathBuf, Track)> {
 	let xml_location = xml_track.location.context("Missing track location")?;
 	if xml_track.track_type != Some("File".to_string()) {
@@ -358,6 +359,7 @@ fn parse_track(xml_track: XmlTrack, start_time: i64, paths: &Paths) -> Result<(P
 	let filename = generate_filename(&paths, &artist, &name, file_type.file_extension());
 
 	let track = Track {
+		id: 0,
 		size: file_md.len() as i64,
 		duration: audio_properties.duration().as_secs_f64(),
 		bitrate: audio_properties
@@ -660,14 +662,14 @@ async fn import_itunes(itunes_import: &ItunesImport, path: String) -> Result<Imp
 
 		match parse_track(xml_track, start_time, &itunes_import.paths) {
 			Ok((xml_track_path, track)) => {
-				let generated_track_id = library.generate_next_track_id();
-				// immediately insert into library so new generated ids are unique
-				itunes_track_paths.insert(xml_track_path, track.file.clone());
-				library.insert_track(generated_track_id.clone(), track);
 				if xml_track_id_map.contains_key(&xml_id) {
 					errors.push(format!("Duplicate track ids \"{}\": artist_title", xml_id));
 				}
-				xml_track_id_map.insert(xml_id, generated_track_id);
+				let track_id = library.get_next_track_id();
+				let track = library.try_insert_track(track_id, track);
+				// immediately insert into library so new generated ids are unique
+				itunes_track_paths.insert(xml_track_path, track.file.clone());
+				xml_track_id_map.insert(xml_id, track.id);
 			}
 			Err(e) => {
 				errors.push(format!("[{artist_title}] Skipped track: {e}"));

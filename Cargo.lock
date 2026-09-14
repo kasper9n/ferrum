@@ -1095,6 +1095,7 @@ dependencies = [
  "napi",
  "napi-build 2.2.3",
  "napi-derive",
+ "num-traits",
  "plist",
  "rayon",
  "redb",
