@@ -243,90 +243,130 @@ pub type PlayTime = (TrackID, MsSinceUnixEpoch, i64);
 #[derive(Serialize, Deserialize, Clone, Debug, Type)]
 #[cfg_attr(feature = "napi", napi(object))]
 pub struct Track {
+	/// id
 	#[serde(rename = "i")]
 	pub id: TrackID,
+	/// size
 	#[serde(rename = "z")]
 	pub size: i64,
+	/// duration
 	#[serde(rename = "d")]
 	pub duration: f64,
+	/// bitrate
 	#[serde(rename = "br")]
 	pub bitrate: f64,
+	/// sampleRate
 	#[serde(rename = "sr")]
 	pub sampleRate: f64,
+	/// file
 	#[serde(rename = "f")]
 	pub file: String,
+	/// dateModified
 	#[serde(rename = "dm")]
 	pub dateModified: MsSinceUnixEpoch,
+	/// dateAdded
 	#[serde(rename = "da")]
 	pub dateAdded: MsSinceUnixEpoch,
+	/// name
 	#[serde(rename = "t")]
 	pub name: String,
+	/// importedFrom
 	#[serde(rename = "if", default, skip_serializing_if = "Option::is_none")]
 	pub importedFrom: Option<String>,
-	/// Imported ID, like iTunes Persistent ID
+	/// originalId, Imported ID, like iTunes Persistent ID
 	#[serde(rename = "oi", default, skip_serializing_if = "Option::is_none")]
 	pub originalId: Option<String>,
+	/// artist
 	#[serde(rename = "a", default)]
 	pub artist: String,
+	/// composer
 	#[serde(rename = "c", default, skip_serializing_if = "Option::is_none")]
 	pub composer: Option<String>,
+	/// sortName
 	#[serde(rename = "st", default, skip_serializing_if = "Option::is_none")]
 	pub sortName: Option<String>,
+	/// sortArtist
 	#[serde(rename = "sa", default, skip_serializing_if = "Option::is_none")]
 	pub sortArtist: Option<String>,
+	/// sortComposer
 	#[serde(rename = "sc", default, skip_serializing_if = "Option::is_none")]
 	pub sortComposer: Option<String>,
+	/// genre
 	#[serde(rename = "g", default, skip_serializing_if = "Option::is_none")]
 	pub genre: Option<String>,
+	/// rating
 	#[serde(rename = "r", default, skip_serializing_if = "Option::is_none")]
 	pub rating: Option<PercentInteger>,
+	/// year
 	#[serde(rename = "y", default, skip_serializing_if = "Option::is_none")]
 	pub year: Option<i64>,
+	/// bpm
 	#[serde(rename = "b", default, skip_serializing_if = "Option::is_none")]
 	pub bpm: Option<f64>,
+	/// comments
 	#[serde(rename = "n", default, skip_serializing_if = "Option::is_none")]
 	pub comments: Option<String>,
+	/// grouping
 	#[serde(rename = "gr", default, skip_serializing_if = "Option::is_none")]
 	pub grouping: Option<String>,
+	/// liked
 	#[serde(rename = "l", default, skip_serializing_if = "Option::is_none")]
 	pub liked: Option<bool>,
+	/// disliked
 	#[serde(rename = "dl", default, skip_serializing_if = "Option::is_none")]
 	pub disliked: Option<bool>,
+	/// disabled
 	#[serde(rename = "db", default, skip_serializing_if = "Option::is_none")]
 	pub disabled: Option<bool>,
+	/// compilation
 	#[serde(rename = "cp", default, skip_serializing_if = "Option::is_none")]
 	pub compilation: Option<bool>,
+	/// albumName
 	#[serde(rename = "at", default, skip_serializing_if = "Option::is_none")]
 	pub albumName: Option<String>,
+	/// albumArtist
 	#[serde(rename = "aa", default, skip_serializing_if = "Option::is_none")]
 	pub albumArtist: Option<String>,
+	/// sortAlbumName
 	#[serde(rename = "sat", default, skip_serializing_if = "Option::is_none")]
 	pub sortAlbumName: Option<String>,
+	/// sortAlbumArtist
 	#[serde(rename = "saa", default, skip_serializing_if = "Option::is_none")]
 	pub sortAlbumArtist: Option<String>,
+	/// trackNum
 	#[serde(rename = "tn", default, skip_serializing_if = "Option::is_none")]
 	pub trackNum: Option<u32>,
+	/// trackCount
 	#[serde(rename = "tc", default, skip_serializing_if = "Option::is_none")]
 	pub trackCount: Option<u32>,
+	/// discNum
 	#[serde(rename = "dn", default, skip_serializing_if = "Option::is_none")]
 	pub discNum: Option<u32>,
+	/// discCount
 	#[serde(rename = "dc", default, skip_serializing_if = "Option::is_none")]
 	pub discCount: Option<u32>,
+	/// dateImported
 	#[serde(rename = "di", default, skip_serializing_if = "Option::is_none")]
 	pub dateImported: Option<MsSinceUnixEpoch>,
+	/// playCount
 	#[serde(rename = "pn", default, skip_serializing_if = "Option::is_none")]
 	pub playCount: Option<u32>,
+	/// plays
 	#[serde(rename = "p", default, skip_serializing_if = "Option::is_none")]
 	pub plays: Option<Vec<MsSinceUnixEpoch>>,
+	/// playsImported
 	#[serde(rename = "pi", default, skip_serializing_if = "Option::is_none")]
 	pub playsImported: Option<Vec<CountObject>>,
+	/// skipCount
 	#[serde(rename = "sn", default, skip_serializing_if = "Option::is_none")]
 	pub skipCount: Option<u32>,
+	/// skips
 	#[serde(rename = "s", default, skip_serializing_if = "Option::is_none")]
 	pub skips: Option<Vec<MsSinceUnixEpoch>>,
+	/// skipsImported
 	#[serde(rename = "si", default, skip_serializing_if = "Option::is_none")]
 	pub skipsImported: Option<Vec<CountObject>>,
-	/// -100 to 100
+	/// volume, -100 to 100
 	#[serde(rename = "v", default, skip_serializing_if = "Option::is_none")]
 	pub volume: Option<i8>,
 }

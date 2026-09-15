@@ -53,6 +53,8 @@ async getTracksPage(options: TracksPageOptions) : Promise<Result<TracksPage, str
 /** user-defined types **/
 
 export type CountObject = { count: string; fromDate: string; toDate: string }
+export type Field = "Title" | "Artist" | "Album" | "AlbumArtist" | "Comments" | "Genre" | "Composer" | "Group" | "Year" | "Plays" | "Skips" | "Bpm"
+export type FilterTerm = { field: Field | null; literal: string }
 export type Folder = { id: string; name: string; description?: string | null; liked: boolean; disliked: boolean; 
 /**
  * For example "itunes"
@@ -63,21 +65,181 @@ importedFrom?: string | null;
  */
 originalId?: string | null; dateImported?: string | null; dateCreated?: string | null; children: string[] }
 export type LibraryTauri = { track_lists: Partial<{ [key in string]: TrackList }>; song_count: string }
-export type Playlist = { id: string; name: string; description?: string | null; liked: boolean; disliked: boolean; importedFrom?: string | null; originalId?: string | null; dateImported?: string | null; dateCreated?: string | null; tracks: string[] }
+export type Playlist = { id: string; name: string; description?: string | null; liked: boolean; disliked: boolean; importedFrom?: string | null; originalId?: string | null; dateImported?: string | null; dateCreated?: string | null; tracks: number[] }
 export type Special = { id: string; name: SpecialTrackListName; dateCreated: string; children: string[] }
 export type SpecialTrackListName = "Root"
-export type Track = { size: string; duration: number; bitrate: number; sampleRate: number; file: string; dateModified: string; dateAdded: string; name: string; importedFrom?: string | null; 
+export type Track = { 
 /**
- * Imported ID, like iTunes Persistent ID
+ * id
  */
-originalId?: string | null; artist?: string; composer?: string | null; sortName?: string | null; sortArtist?: string | null; sortComposer?: string | null; genre?: string | null; rating?: number | null; year?: string | null; bpm?: number | null; comments?: string | null; grouping?: string | null; liked?: boolean | null; disliked?: boolean | null; disabled?: boolean | null; compilation?: boolean | null; albumName?: string | null; albumArtist?: string | null; sortAlbumName?: string | null; sortAlbumArtist?: string | null; trackNum?: number | null; trackCount?: number | null; discNum?: number | null; discCount?: number | null; dateImported?: string | null; playCount?: number | null; plays?: string[] | null; playsImported?: CountObject[] | null; skipCount?: number | null; skips?: string[] | null; skipsImported?: CountObject[] | null; 
+i: number; 
 /**
- * -100 to 100
+ * size
  */
-volume?: number | null }
+z: string; 
+/**
+ * duration
+ */
+d: number; 
+/**
+ * bitrate
+ */
+br: number; 
+/**
+ * sampleRate
+ */
+sr: number; 
+/**
+ * file
+ */
+f: string; 
+/**
+ * dateModified
+ */
+dm: string; 
+/**
+ * dateAdded
+ */
+da: string; 
+/**
+ * name
+ */
+t: string; 
+/**
+ * importedFrom
+ */
+if?: string | null; 
+/**
+ * originalId, Imported ID, like iTunes Persistent ID
+ */
+oi?: string | null; 
+/**
+ * artist
+ */
+a?: string; 
+/**
+ * composer
+ */
+c?: string | null; 
+/**
+ * sortName
+ */
+st?: string | null; 
+/**
+ * sortArtist
+ */
+sa?: string | null; 
+/**
+ * sortComposer
+ */
+sc?: string | null; 
+/**
+ * genre
+ */
+g?: string | null; 
+/**
+ * rating
+ */
+r?: number | null; 
+/**
+ * year
+ */
+y?: string | null; 
+/**
+ * bpm
+ */
+b?: number | null; 
+/**
+ * comments
+ */
+n?: string | null; 
+/**
+ * grouping
+ */
+gr?: string | null; 
+/**
+ * liked
+ */
+l?: boolean | null; 
+/**
+ * disliked
+ */
+dl?: boolean | null; 
+/**
+ * disabled
+ */
+db?: boolean | null; 
+/**
+ * compilation
+ */
+cp?: boolean | null; 
+/**
+ * albumName
+ */
+at?: string | null; 
+/**
+ * albumArtist
+ */
+aa?: string | null; 
+/**
+ * sortAlbumName
+ */
+sat?: string | null; 
+/**
+ * sortAlbumArtist
+ */
+saa?: string | null; 
+/**
+ * trackNum
+ */
+tn?: number | null; 
+/**
+ * trackCount
+ */
+tc?: number | null; 
+/**
+ * discNum
+ */
+dn?: number | null; 
+/**
+ * discCount
+ */
+dc?: number | null; 
+/**
+ * dateImported
+ */
+di?: string | null; 
+/**
+ * playCount
+ */
+pn?: number | null; 
+/**
+ * plays
+ */
+p?: string[] | null; 
+/**
+ * playsImported
+ */
+pi?: CountObject[] | null; 
+/**
+ * skipCount
+ */
+sn?: number | null; 
+/**
+ * skips
+ */
+s?: string[] | null; 
+/**
+ * skipsImported
+ */
+si?: CountObject[] | null; 
+/**
+ * volume, -100 to 100
+ */
+v?: number | null }
 export type TrackList = ({ type: "playlist" } & Playlist) | ({ type: "folder" } & Folder) | ({ type: "special" } & Special)
 export type TracksPage = { playlist_kind: string; playlist_name: string; playlist_description: string | null; playlist_length: number; item_ids: number[] }
-export type TracksPageOptions = { playlist_id: string; sort_key: string; sort_desc: boolean; filter_query: string; group_album_tracks: boolean }
+export type TracksPageOptions = { playlist_id: string; sort_key: string; sort_desc: boolean; filter_terms: FilterTerm[]; group_album_tracks: boolean }
 
 /** tauri-specta globals **/
 

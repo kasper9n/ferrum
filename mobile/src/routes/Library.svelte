@@ -15,6 +15,7 @@
 	import VirtualListBlock from '../../../src/components/VirtualListBlock.svelte'
 	import commands from '$lib/commands'
 	import { error as sk_error } from '@sveltejs/kit'
+	import Filter, { filter } from './Filter.svelte'
 
 	type view_type = { kind: 'browser'; folder_id: string } | { kind: 'tracks'; playlist_id: string }
 	type streaming_service_type = 'spotify' | 'youtube-music'
@@ -38,8 +39,11 @@
 		playlist_id: 'root',
 		sort_key: 'dateAdded',
 		sort_desc: false,
-		filter_query: '',
+		filter_terms: [],
 		group_album_tracks: false,
+	})
+	$effect(() => {
+		tracks_page_options.filter_terms = filter.terms
 	})
 
 	// ── View derived from URL search params ────────────────────────────────────
@@ -210,8 +214,8 @@
 	}
 
 	function open_track(track: Track) {
-		const artist = track.artist?.trim() || 'Unknown Artist'
-		const title = track.name.trim()
+		const artist = track.a?.trim() || 'Unknown Artist'
+		const title = track.t.trim()
 		const query = `${artist} - ${title}`
 		const encoded_query = encodeURIComponent(query)
 		if (streaming_service === 'youtube-music') {
@@ -421,12 +425,7 @@
 						class="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-xl text-neutral-500 select-none"
 						>⌕</span
 					>
-					<input
-						type="search"
-						placeholder="Search…"
-						bind:value={tracks_page_options.filter_query}
-						class="w-full rounded-lg border border-neutral-300 bg-neutral-100 py-1.5 pr-3 pl-7 text-xs text-neutral-800 placeholder-neutral-400 transition-colors outline-none focus:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:placeholder-neutral-600 dark:focus:border-neutral-500"
-					/>
+					<Filter />
 				</div>
 				<span class="shrink-0 pl-1 text-xs text-neutral-400 tabular-nums dark:text-neutral-600">
 					{tracks_page?.item_ids.length}/{tracks_page?.playlist_length}
@@ -480,26 +479,24 @@
 									>
 										<div class="grow text-left">
 											<p class="truncate font-medium text-neutral-900 dark:text-neutral-100">
-												{track.name}
+												{track.t}
 											</p>
 											<p class="mt-0.5 truncate text-xs text-neutral-500">
-												{track.artist ?? 'Unknown Artist'}
-												{#if track.albumName}
-													<span class="text-neutral-400 dark:text-neutral-700">
-														·
-													</span>{track.albumName}
+												{track.a ?? 'Unknown Artist'}
+												{#if track.at}
+													<span class="text-neutral-400 dark:text-neutral-700"> · </span>{track.at}
 												{/if}
 											</p>
 											<div class="mt-1 flex items-center gap-2">
-												{#if track.genre}
+												{#if track.g}
 													<span
 														class="rounded bg-neutral-100 px-1.5 py-px text-xs text-neutral-500 dark:bg-neutral-800"
-														>{track.genre}</span
+														>{track.g}</span
 													>
 												{/if}
-												{#if track.year}
+												{#if track.y}
 													<span class="text-xs text-neutral-400 dark:text-neutral-700"
-														>{track.year}</span
+														>{track.y}</span
 													>
 												{/if}
 											</div>
@@ -507,9 +504,9 @@
 										<div
 											class="flex shrink-0 flex-col items-end gap-1 text-xs text-neutral-400 tabular-nums dark:text-neutral-600"
 										>
-											<span>{format_duration(track.duration)}</span>
-											{#if track.playCount}
-												<span>{track.playCount} plays</span>
+											<span>{format_duration(track.d)}</span>
+											{#if track.pn}
+												<span>{track.pn} plays</span>
 											{/if}
 										</div>
 									</button>
