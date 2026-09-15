@@ -19,6 +19,7 @@ pub struct Paths {
 	pub library_dir: String,
 	pub tracks_dir: String,
 	pub library_json: String,
+	pub library_backup_json: String,
 	pub cache_dir: String,
 	pub cache_db: String,
 	pub local_data_dir: String,

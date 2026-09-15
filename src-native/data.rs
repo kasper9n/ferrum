@@ -88,6 +88,7 @@ impl Data {
 			library_dir: path_to_string(&library_dir),
 			tracks_dir: path_to_string(library_dir.join("Tracks")),
 			library_json: path_to_string(library_dir.join("Library.json")),
+			library_backup_json: path_to_string(library_dir.join("Library backup.json")),
 			cache_dir: path_to_string(&cache_dir),
 			cache_db: path_to_string(cache_dir.join("Cache.redb")),
 			local_data_dir: path_to_string(&local_data_dir),
