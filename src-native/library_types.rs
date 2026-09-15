@@ -1,12 +1,14 @@
 #![allow(non_snake_case)]
 
+#[cfg(feature = "napi-rs")]
+use crate::delete_file;
 use crate::get_now_timestamp;
 use crate::idvecmap::{HasId, IdMap};
 #[cfg(feature = "napi-rs")]
 use crate::library::Paths;
 use crate::migrate::LatestLibraryFile;
 #[cfg(feature = "napi-rs")]
-use crate::playlists::{delete_file, remove_from_all_playlists};
+use crate::playlists::remove_from_all_playlists;
 use anyhow::{Context, Result, bail};
 use linked_hash_map::LinkedHashMap;
 use nanoid::nanoid;

@@ -3,12 +3,13 @@
 use crate::library::Paths;
 pub(self) use crate::library_types as latest;
 use crate::library_types::LatestLibrary;
-use crate::{save_overwrite, serialize_json_pretty};
+use crate::{delete_file, save_overwrite, serialize_json_pretty};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Read;
+use std::path::PathBuf;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "version", deny_unknown_fields)]
@@ -37,6 +38,22 @@ impl LatestLibraryFile<'_> {
 }
 
 pub fn upgrade<'a>(versioned_library: LibraryFile<'a>, paths: &Paths) -> Result<LatestLibrary<'a>> {
+	let already_latest = match versioned_library {
+		LibraryFile::V3(LatestLibrary { .. }) => true,
+		_ => false,
+	};
+	if !already_latest {
+		let backup_path = PathBuf::from(&paths.library_backup_json);
+		if backup_path.exists() {
+			delete_file(&backup_path)?;
+		}
+		fs::copy(&paths.library_json, &paths.library_backup_json)
+			.context("Failed to back up library (copy)")?;
+		File::open(&paths.library_backup_json)
+			.context("Failed to back up library (open)")?
+			.sync_all()
+			.context("Failed to back up library (sync)")?;
+	}
 	let latest = match versioned_library {
 		LibraryFile::V1(v1) => v1.upgrade().upgrade(paths)?,
 		LibraryFile::V2(v2) => v2.upgrade(paths)?,

@@ -127,6 +127,7 @@ export interface Paths {
   libraryDir: string
   tracksDir: string
   libraryJson: string
+  libraryBackupJson: string
   cacheDir: string
   cacheDb: string
   localDataDir: string
@@ -202,49 +203,89 @@ export declare const enum SpecialTrackListName {
 }
 
 export interface Track {
+  /** id */
   id: TrackID
+  /** size */
   size: number
+  /** duration */
   duration: number
+  /** bitrate */
   bitrate: number
+  /** sampleRate */
   sampleRate: number
+  /** file */
   file: string
+  /** dateModified */
   dateModified: MsSinceUnixEpoch
+  /** dateAdded */
   dateAdded: MsSinceUnixEpoch
+  /** name */
   name: string
+  /** importedFrom */
   importedFrom?: string
-  /** Imported ID, like iTunes Persistent ID */
+  /** originalId, Imported ID, like iTunes Persistent ID */
   originalId?: string
+  /** artist */
   artist: string
+  /** composer */
   composer?: string
+  /** sortName */
   sortName?: string
+  /** sortArtist */
   sortArtist?: string
+  /** sortComposer */
   sortComposer?: string
+  /** genre */
   genre?: string
+  /** rating */
   rating?: PercentInteger
+  /** year */
   year?: number
+  /** bpm */
   bpm?: number
+  /** comments */
   comments?: string
+  /** grouping */
   grouping?: string
+  /** liked */
   liked?: boolean
+  /** disliked */
   disliked?: boolean
+  /** disabled */
   disabled?: boolean
+  /** compilation */
   compilation?: boolean
+  /** albumName */
   albumName?: string
+  /** albumArtist */
   albumArtist?: string
+  /** sortAlbumName */
   sortAlbumName?: string
+  /** sortAlbumArtist */
   sortAlbumArtist?: string
+  /** trackNum */
   trackNum?: number
+  /** trackCount */
   trackCount?: number
+  /** discNum */
   discNum?: number
+  /** discCount */
   discCount?: number
+  /** dateImported */
   dateImported?: MsSinceUnixEpoch
+  /** playCount */
   playCount?: number
+  /** plays */
   plays?: Array<MsSinceUnixEpoch>
+  /** playsImported */
   playsImported?: Array<CountObject>
+  /** skipCount */
   skipCount?: number
+  /** skips */
   skips?: Array<MsSinceUnixEpoch>
+  /** skipsImported */
   skipsImported?: Array<CountObject>
-  /** -100 to 100 */
+  /** volume, -100 to 100 */
   volume?: number
 }
 
