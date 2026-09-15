@@ -10,9 +10,11 @@ use std::fs::File;
 use std::io::BufReader;
 use std::{
 	io::Write,
-	path::Path,
+	path::{Path, PathBuf},
 	time::{Instant, SystemTime, UNIX_EPOCH},
 };
+#[cfg(target_os = "macos")]
+use trash::macos::TrashContextExtMacos;
 
 // Alloactor recommended by simd_json
 #[global_allocator]
@@ -102,4 +104,23 @@ pub fn save_overwrite(bytes: Vec<u8>, file_path: &String) -> Result<()> {
 	af.write(|f| f.write_all(&bytes)).context("Error saving")?;
 	println!("Write: {}ms", now.elapsed().as_millis());
 	Ok(())
+}
+
+#[cfg(target_os = "android")]
+pub fn delete_file(path: &PathBuf) -> Result<()> {
+	use anyhow::bail;
+	bail!("Unsupported");
+}
+
+#[cfg(not(target_os = "android"))]
+pub fn delete_file(path: &PathBuf) -> Result<()> {
+	#[allow(unused_mut)]
+	let mut trash_context = trash::TrashContext::new();
+
+	#[cfg(target_os = "macos")]
+	trash_context.set_delete_method(trash::macos::DeleteMethod::NsFileManager);
+
+	trash_context
+		.delete(&path)
+		.with_context(|| format!("Failed moving file to trash: {}", path.to_string_lossy()))
 }

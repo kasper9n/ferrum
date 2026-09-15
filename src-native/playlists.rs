@@ -8,10 +8,6 @@ use anyhow::{Context, Result, bail};
 use napi::{Env, Unknown};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
-
-#[cfg(target_os = "macos")]
-use trash::macos::TrashContextExtMacos;
 
 #[napi(object)]
 pub struct TrackListDetails {
@@ -230,22 +226,6 @@ pub fn remove_from_all_playlists(library: &mut Library, id: &TrackID) {
 		playlist
 			.tracks
 			.retain(|current_id| track_id_map[*current_id as usize] != *id);
-	}
-}
-
-pub fn delete_file(path: &PathBuf) -> Result<()> {
-	if cfg!(target_os = "android") {
-		bail!("Unsupported");
-	} else {
-		#[allow(unused_mut)]
-		let mut trash_context = trash::TrashContext::new();
-
-		#[cfg(target_os = "macos")]
-		trash_context.set_delete_method(trash::macos::DeleteMethod::NsFileManager);
-
-		trash_context
-			.delete(&path)
-			.with_context(|| format!("Failed moving file to trash: {}", path.to_string_lossy()))
 	}
 }
 
