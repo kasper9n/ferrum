@@ -1,91 +1,14 @@
-use crate::library::{TrackField, get_track_field_type, get_tracklist_item_ids};
+use crate::library::get_tracklist_item_ids;
 use crate::library_types::{ItemId, Library, TRACK_ID_MAP, Track};
 use crate::page::TracksPageOptions;
 use alphanumeric_sort::compare_str;
 use anyhow::{Context, Result};
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+use rayon::slice::ParallelSliceMut;
 use std::cmp::Ordering;
 use std::time::Instant;
 
 pub type TracksPageOptionsX = TracksPageOptions;
-
-fn get_field_str<'a>(track: &'a Track, sort_key: &str) -> Option<&'a String> {
-	match sort_key {
-		"file" => Some(&track.file),
-		"name" => Some(&track.name),
-		"importedFrom" => track.importedFrom.as_ref(),
-		"originalId" => track.originalId.as_ref(),
-		"artist" => Some(&track.artist),
-		"composer" => track.composer.as_ref(),
-		"sortName" => track.sortName.as_ref(),
-		"sortArtist" => track.sortArtist.as_ref(),
-		"sortComposer" => track.sortComposer.as_ref(),
-		"genre" => track.genre.as_ref(),
-		"comments" => track.comments.as_ref(),
-		"grouping" => track.grouping.as_ref(),
-		"albumName" => track.albumName.as_ref(),
-		"albumArtist" => track.albumArtist.as_ref(),
-		"sortAlbumName" => track.sortAlbumName.as_ref(),
-		"sortAlbumArtist" => track.sortAlbumArtist.as_ref(),
-		_ => panic!("Field type not found for {}", sort_key),
-	}
-}
-
-fn get_field_f64(track: &Track, sort_key: &str) -> Option<f64> {
-	match sort_key {
-		"duration" => Some(track.duration),
-		"bitrate" => Some(track.bitrate),
-		"sampleRate" => Some(track.sampleRate),
-		"bpm" => track.bpm,
-		_ => panic!("Field type not found for {}", sort_key),
-	}
-}
-
-fn get_field_i64(track: &Track, sort_key: &str) -> Option<i64> {
-	match sort_key {
-		"size" => Some(track.size),
-		"dateModified" => Some(track.dateModified),
-		"dateAdded" => Some(track.dateAdded),
-		"dateImported" => track.dateImported,
-		"year" => track.year,
-		_ => panic!("Field type not found for {}", sort_key),
-	}
-}
-
-fn get_field_u32(track: &Track, sort_key: &str) -> Option<u32> {
-	match sort_key {
-		"trackNum" => track.trackNum,
-		"trackCount" => track.trackCount,
-		"discNum" => track.discNum,
-		"discCount" => track.discCount,
-		"playCount" => track.playCount,
-		"skipCount" => track.skipCount,
-		_ => panic!("Field type not found for {}", sort_key),
-	}
-}
-
-fn get_field_i8(track: &Track, sort_key: &str) -> Option<i8> {
-	match sort_key {
-		"volume" => track.volume,
-		_ => panic!("Field type not found for {}", sort_key),
-	}
-}
-
-fn get_field_u8(track: &Track, sort_key: &str) -> Option<u8> {
-	match sort_key {
-		"rating" => track.rating,
-		_ => panic!("Field type not found for {}", sort_key),
-	}
-}
-
-fn get_field_bool(track: &Track, sort_key: &str) -> Option<bool> {
-	match sort_key {
-		"liked" => track.liked,
-		"disliked" => track.disliked,
-		"disabled" => track.disabled,
-		"compilation" => track.compilation,
-		_ => panic!("Field type not found for {}", sort_key),
-	}
-}
 
 struct SortItem<'a> {
 	item_id: ItemId,
@@ -99,7 +22,7 @@ pub fn sort(options: TracksPageOptions, library: &Library) -> Result<Vec<ItemId>
 	let tracks = library.get_tracks();
 
 	let items: Result<Vec<SortItem>> = get_tracklist_item_ids(library, &options.playlist_id)?
-		.into_iter()
+		.into_par_iter()
 		.enumerate()
 		.map(|(i, id)| {
 			Ok(SortItem {
@@ -125,15 +48,160 @@ pub fn sort(options: TracksPageOptions, library: &Library) -> Result<Vec<ItemId>
 		return Ok(item_ids);
 	}
 
-	let field = get_track_field_type(&options.sort_key)?;
 	let group_album_tracks = options.group_album_tracks
 		&& match options.sort_key.as_str() {
 			"dateAdded" | "albumName" | "comments" | "genre" | "year" | "artist" => true,
 			_ => false,
 		};
-	items.sort_by(|a, b| {
-		return compare_track_field(a.track, b.track, &options.sort_key, &field);
-	});
+
+	match options.sort_key.as_str() {
+		"file" => items.par_sort_by(|a, b| cmp_str(&a.track.file, &b.track.file)),
+		"name" => items.par_sort_by(|a, b| cmp_str(&a.track.name, &b.track.name)),
+		"artist" => items.par_sort_by(|a, b| cmp_str(&a.track.artist, &b.track.artist)),
+		"importedFrom" => items.par_sort_by(|a, b| {
+			cmp_opt_str(
+				a.track.importedFrom.as_deref(),
+				b.track.importedFrom.as_deref(),
+			)
+		}),
+		"originalId" => items.par_sort_by(|a, b| {
+			cmp_opt_str(a.track.originalId.as_deref(), b.track.originalId.as_deref())
+		}),
+		"composer" => items.par_sort_by(|a, b| {
+			cmp_opt_str(a.track.composer.as_deref(), b.track.composer.as_deref())
+		}),
+		"sortName" => items.par_sort_by(|a, b| {
+			cmp_opt_str(a.track.sortName.as_deref(), b.track.sortName.as_deref())
+		}),
+		"sortArtist" => items.par_sort_by(|a, b| {
+			cmp_opt_str(a.track.sortArtist.as_deref(), b.track.sortArtist.as_deref())
+		}),
+		"sortComposer" => items.par_sort_by(|a, b| {
+			cmp_opt_str(
+				a.track.sortComposer.as_deref(),
+				b.track.sortComposer.as_deref(),
+			)
+		}),
+		"genre" => items
+			.par_sort_by(|a, b| cmp_opt_str(a.track.genre.as_deref(), b.track.genre.as_deref())),
+		"comments" => items.par_sort_by(|a, b| {
+			cmp_opt_str(a.track.comments.as_deref(), b.track.comments.as_deref())
+		}),
+		"grouping" => items.par_sort_by(|a, b| {
+			cmp_opt_str(a.track.grouping.as_deref(), b.track.grouping.as_deref())
+		}),
+		"albumName" => items.par_sort_by(|a, b| {
+			cmp_opt_str(a.track.albumName.as_deref(), b.track.albumName.as_deref())
+		}),
+		"albumArtist" => items.par_sort_by(|a, b| {
+			cmp_opt_str(
+				a.track.albumArtist.as_deref(),
+				b.track.albumArtist.as_deref(),
+			)
+		}),
+		"sortAlbumName" => items.par_sort_by(|a, b| {
+			cmp_opt_str(
+				a.track.sortAlbumName.as_deref(),
+				b.track.sortAlbumName.as_deref(),
+			)
+		}),
+		"sortAlbumArtist" => items.par_sort_by(|a, b| {
+			cmp_opt_str(
+				a.track.sortAlbumArtist.as_deref(),
+				b.track.sortAlbumArtist.as_deref(),
+			)
+		}),
+		"duration" => items.par_sort_by(|a, b| cmp_f64(a.track.duration, b.track.duration)),
+		"bitrate" => items.par_sort_by(|a, b| cmp_f64(a.track.bitrate, b.track.bitrate)),
+		"sampleRate" => items.par_sort_by(|a, b| cmp_f64(a.track.sampleRate, b.track.sampleRate)),
+		"bpm" => items
+			.par_sort_by(|a, b| cmp_f64(a.track.bpm.unwrap_or(0.0), b.track.bpm.unwrap_or(0.0))),
+		"size" => items.par_sort_by(|a, b| a.track.size.cmp(&b.track.size)),
+		"dateModified" => items.par_sort_by(|a, b| a.track.dateModified.cmp(&b.track.dateModified)),
+		"dateAdded" => items.par_sort_by(|a, b| a.track.dateAdded.cmp(&b.track.dateAdded)),
+		"dateImported" => items.par_sort_by(|a, b| {
+			a.track
+				.dateImported
+				.unwrap_or(0)
+				.cmp(&b.track.dateImported.unwrap_or(0))
+		}),
+		"year" => {
+			items.par_sort_by(|a, b| a.track.year.unwrap_or(0).cmp(&b.track.year.unwrap_or(0)))
+		}
+		"trackNum" => items.par_sort_by(|a, b| {
+			a.track
+				.trackNum
+				.unwrap_or(0)
+				.cmp(&b.track.trackNum.unwrap_or(0))
+		}),
+		"trackCount" => items.par_sort_by(|a, b| {
+			a.track
+				.trackCount
+				.unwrap_or(0)
+				.cmp(&b.track.trackCount.unwrap_or(0))
+		}),
+		"discNum" => items.par_sort_by(|a, b| {
+			a.track
+				.discNum
+				.unwrap_or(0)
+				.cmp(&b.track.discNum.unwrap_or(0))
+		}),
+		"discCount" => items.par_sort_by(|a, b| {
+			a.track
+				.discCount
+				.unwrap_or(0)
+				.cmp(&b.track.discCount.unwrap_or(0))
+		}),
+		"playCount" => items.par_sort_by(|a, b| {
+			a.track
+				.playCount
+				.unwrap_or(0)
+				.cmp(&b.track.playCount.unwrap_or(0))
+		}),
+		"skipCount" => items.par_sort_by(|a, b| {
+			a.track
+				.skipCount
+				.unwrap_or(0)
+				.cmp(&b.track.skipCount.unwrap_or(0))
+		}),
+		"volume" => items.par_sort_by(|a, b| {
+			a.track
+				.volume
+				.unwrap_or(0)
+				.cmp(&b.track.volume.unwrap_or(0))
+		}),
+		"rating" => items.par_sort_by(|a, b| {
+			a.track
+				.rating
+				.unwrap_or(0)
+				.cmp(&b.track.rating.unwrap_or(0))
+		}),
+		"liked" => items.par_sort_by(|a, b| {
+			a.track
+				.liked
+				.unwrap_or(false)
+				.cmp(&b.track.liked.unwrap_or(false))
+		}),
+		"disliked" => items.par_sort_by(|a, b| {
+			a.track
+				.disliked
+				.unwrap_or(false)
+				.cmp(&b.track.disliked.unwrap_or(false))
+		}),
+		"disabled" => items.par_sort_by(|a, b| {
+			a.track
+				.disabled
+				.unwrap_or(false)
+				.cmp(&b.track.disabled.unwrap_or(false))
+		}),
+		"compilation" => items.par_sort_by(|a, b| {
+			a.track
+				.compilation
+				.unwrap_or(false)
+				.cmp(&b.track.compilation.unwrap_or(false))
+		}),
+		_ => panic!("Unknown sort key {}", options.sort_key),
+	}
 
 	if options.sort_desc {
 		items.reverse();
@@ -160,11 +228,19 @@ pub fn sort(options: TracksPageOptions, library: &Library) -> Result<Vec<ItemId>
 
 			// Sort album tracks by discNum, then trackNum
 			current_album_buffer.sort_by(|a, b| {
-				let mut order = compare_track_field(a.track, b.track, "discNum", &TrackField::U32);
+				let order = a
+					.track
+					.discNum
+					.unwrap_or(0)
+					.cmp(&b.track.discNum.unwrap_or(0));
 				if order == Ordering::Equal {
-					order = compare_track_field(a.track, b.track, "trackNum", &TrackField::U32);
+					a.track
+						.trackNum
+						.unwrap_or(0)
+						.cmp(&b.track.trackNum.unwrap_or(0))
+				} else {
+					order
 				}
-				order
 			});
 
 			post_grouped_items.append(&mut current_album_buffer);
@@ -179,55 +255,27 @@ pub fn sort(options: TracksPageOptions, library: &Library) -> Result<Vec<ItemId>
 	return Ok(item_ids);
 }
 
-pub fn compare_track_field(a: &Track, b: &Track, sort_key: &str, field: &TrackField) -> Ordering {
-	match field {
-		TrackField::String => {
-			let empty_str = &"".to_string();
-			let str_a = get_field_str(a, sort_key).unwrap_or(empty_str);
-			let str_b = get_field_str(b, sort_key).unwrap_or(empty_str);
-			if str_a == "" && str_b == "" {
-				return Ordering::Equal;
-			}
-			if str_a == "" {
-				return Ordering::Greater;
-			}
-			if str_b == "" {
-				return Ordering::Less;
-			}
-			return compare_str(str_a, str_b);
-		}
-		TrackField::F64 => {
-			let num_a = get_field_f64(a, sort_key).unwrap_or(0.0);
-			let num_b = get_field_f64(b, sort_key).unwrap_or(0.0);
-			match num_a.partial_cmp(&num_b) {
-				Some(v) => v,
-				None => panic!("Unable to compare f64 {} and {}", num_a, num_b),
-			}
-		}
-		TrackField::I64 => {
-			let num_a = get_field_i64(a, sort_key).unwrap_or(0);
-			let num_b = get_field_i64(b, sort_key).unwrap_or(0);
-			return num_a.cmp(&num_b);
-		}
-		TrackField::U32 => {
-			let num_a = get_field_u32(a, sort_key).unwrap_or(0);
-			let num_b = get_field_u32(b, sort_key).unwrap_or(0);
-			return num_a.cmp(&num_b);
-		}
-		TrackField::I8 => {
-			let num_a = get_field_i8(a, sort_key).unwrap_or(0);
-			let num_b = get_field_i8(b, sort_key).unwrap_or(0);
-			return num_a.cmp(&num_b);
-		}
-		TrackField::U8 => {
-			let num_a = get_field_u8(a, sort_key).unwrap_or(0);
-			let num_b = get_field_u8(b, sort_key).unwrap_or(0);
-			return num_a.cmp(&num_b);
-		}
-		TrackField::Bool => {
-			let bool_a = get_field_bool(a, sort_key).unwrap_or(false); //? look into this
-			let bool_b = get_field_bool(b, sort_key).unwrap_or(false); //? look into this
-			return bool_a.cmp(&bool_b);
-		}
+#[inline]
+fn cmp_str(a: &str, b: &str) -> Ordering {
+	if a == "" && b == "" {
+		return Ordering::Equal;
 	}
+	if a == "" {
+		return Ordering::Greater;
+	}
+	if b == "" {
+		return Ordering::Less;
+	}
+	return compare_str(a, b);
+}
+
+#[inline]
+fn cmp_opt_str(a: Option<&str>, b: Option<&str>) -> Ordering {
+	cmp_str(a.unwrap_or(""), b.unwrap_or(""))
+}
+
+#[inline]
+fn cmp_f64(a: f64, b: f64) -> Ordering {
+	a.partial_cmp(&b)
+		.unwrap_or_else(|| panic!("Unable to compare f64 {} and {}", a, b))
 }
