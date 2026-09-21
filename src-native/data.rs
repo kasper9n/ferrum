@@ -55,6 +55,8 @@ impl Data {
 	) -> Result<()> {
 		if is_dev {
 			println!("Starting in dev mode");
+			#[cfg(debug_assertions)]
+			crate::test_data::generate_test_data();
 		}
 
 		let mut library_dir;

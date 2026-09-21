@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/b73cdcf8-8abb-4d43-a5eb-582cad7e3075
 - Filtering
 - Queue
 - Metadata editing
-- Fast. Navigation, sorting & filtering should be instant even for libraries with 100 000 tracks
+- Fast. Navigation, sorting & filtering is nearly instant for libraries with 100 000 tracks
 - Quick playlist navigation with <kbd>Cmd</kbd><kbd>K</kbd> or <kbd>Ctrl</kbd><kbd>K</kbd>
 
 ## Android

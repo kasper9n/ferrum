@@ -40,6 +40,8 @@ pub mod page;
 pub mod playlists;
 mod queue_state;
 pub mod sort;
+#[cfg(debug_assertions)]
+mod test_data;
 #[cfg(feature = "napi-rs")]
 mod tracks;
 #[cfg(feature = "napi-rs")]

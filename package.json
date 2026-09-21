@@ -14,6 +14,7 @@
 		"dev-android": "cd mobile && cargo tauri android dev",
 		"dev-prod": "npm run napi && npm run build:web && APP_ENV=prod vite dev",
 		"dev-release": "npm run napi && vite dev",
+		"example-100k": "npm run napi && LIBRARY=./src-native/appdata/Library100k vite dev",
 		"napi": "napi build --output-dir ferrum-addon --dts addon.d.ts --release",
 		"napi:dev": "napi build --output-dir ferrum-addon --dts addon.d.ts",
 		"build": "npm run napi && npm run build:web && electron-builder && npm run generate-update-json",
