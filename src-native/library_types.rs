@@ -260,7 +260,7 @@ pub struct Track {
 	pub bitrate: f64,
 	/// sampleRate
 	#[serde(rename = "sr")]
-	pub sampleRate: f64,
+	pub sampleRate: u32,
 	/// file
 	#[serde(rename = "f")]
 	pub file: String,

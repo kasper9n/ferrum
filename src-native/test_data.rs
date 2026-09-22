@@ -34,7 +34,7 @@ fn generate_library_100k() {
 				size: (1_000_000..10_000_000).fake(),
 				duration: (60.0..600.0).fake(),
 				bitrate: (128.0..320.0).fake(),
-				sampleRate: [44_100.0, 48_000.0, 96_000.0][(0..3).fake::<usize>()],
+				sampleRate: [44_100, 48_000, 96_000][(0..3).fake::<usize>()],
 				file: format!("{artist} - {title}.mp3"),
 				dateModified: (1_500_000_000_000..1_700_000_000_000).fake(),
 				dateAdded: (1_500_000_000_000..1_700_000_000_000).fake(),

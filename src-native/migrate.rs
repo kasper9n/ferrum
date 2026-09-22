@@ -272,7 +272,12 @@ mod v2 {
 						size: track.size,
 						duration: track.duration,
 						bitrate: track.bitrate,
-						sampleRate: track.sampleRate,
+						sampleRate: {
+							let sample_rate = track.sampleRate.round();
+							assert!(sample_rate.is_finite());
+							assert!(sample_rate >= 0.0 && sample_rate <= u32::MAX as f64);
+							sample_rate as u32
+						},
 						file: track.file,
 						dateModified: track.dateModified,
 						dateAdded: track.dateAdded,

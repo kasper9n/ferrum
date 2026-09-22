@@ -115,7 +115,7 @@ pub fn sort(options: TracksPageOptions, library: &Library) -> Result<Vec<ItemId>
 		}),
 		"duration" => items.par_sort_by(|a, b| cmp_f64(a.track.duration, b.track.duration)),
 		"bitrate" => items.par_sort_by(|a, b| cmp_f64(a.track.bitrate, b.track.bitrate)),
-		"sampleRate" => items.par_sort_by(|a, b| cmp_f64(a.track.sampleRate, b.track.sampleRate)),
+		"sampleRate" => items.par_sort_by(|a, b| a.track.sampleRate.cmp(&b.track.sampleRate)),
 		"bpm" => items
 			.par_sort_by(|a, b| cmp_f64(a.track.bpm.unwrap_or(0.0), b.track.bpm.unwrap_or(0.0))),
 		"size" => items.par_sort_by(|a, b| a.track.size.cmp(&b.track.size)),

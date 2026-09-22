@@ -126,10 +126,7 @@ pub fn import(data: &Data, track_path: &Path, now: i64) -> Result<Track> {
 		size: file_md.len().try_into().unwrap(),
 		duration: properties.duration().as_secs_f64(),
 		bitrate: (properties.audio_bitrate().expect("Missing bitrate") * 1000).into(), // kbps to bps
-		sampleRate: properties
-			.sample_rate()
-			.expect("Missing sample rate")
-			.into(),
+		sampleRate: properties.sample_rate().expect("Missing sample rate"),
 		file: filename,
 		dateModified: date_modified,
 		dateAdded: now,
