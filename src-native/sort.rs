@@ -18,10 +18,12 @@ struct SortItem<'a> {
 pub fn sort(options: TracksPageOptions, library: &Library) -> Result<Vec<ItemId>> {
 	let now = Instant::now();
 
+	// get item_ids before locking TRACK_ID_MAP to avoid deadlock
+	let item_ids = get_tracklist_item_ids(library, &options.playlist_id)?;
 	let id_map = TRACK_ID_MAP.read().unwrap();
 	let tracks = library.get_tracks();
 
-	let items: Result<Vec<SortItem>> = get_tracklist_item_ids(library, &options.playlist_id)?
+	let items: Result<Vec<SortItem>> = item_ids
 		.into_par_iter()
 		.enumerate()
 		.map(|(i, id)| {

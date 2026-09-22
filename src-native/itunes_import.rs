@@ -3,7 +3,6 @@ use crate::get_now_timestamp;
 use crate::library::Paths;
 use crate::library_types::{
 	CountObject, Folder, Library, Playlist, Track, TrackID, TrackList, TrackListID,
-	new_item_ids_from_track_ids,
 };
 use crate::tracks::generate_filename;
 use crate::tracks::import::{FileType, read_file_metadata};
@@ -13,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use time::OffsetDateTime;
 use time::serde::iso8601;
 use time::serde::iso8601::option as iso8601_opt;
@@ -563,7 +562,8 @@ fn import_playlist(
 			originalId: Some(xml_playlist.playlist_persistent_id.clone()),
 			dateImported: Some(start_time),
 			dateCreated: None,
-			tracks: new_item_ids_from_track_ids(&track_ids),
+			tracks: track_ids,
+			item_ids: OnceLock::new(),
 		});
 		// immediately insert into library so new generated ids are unique
 		library.trackLists.insert(id.clone(), tracklist);

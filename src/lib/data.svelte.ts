@@ -154,8 +154,8 @@ export function get_track_by_item_id(item_id: ItemId) {
 export function get_track_ids(item_ids: ItemId[]) {
 	return strict_call((addon) => addon.get_track_ids(item_ids))
 }
-export function get_track_playlist_ids(track_id: TrackID) {
-	return strict_call((addon) => addon.get_track_playlist_ids(track_id))
+export function get_playlist_ids_with_track(track_id: TrackID) {
+	return strict_call((addon) => addon.get_playlist_ids_with_track(track_id))
 }
 export function get_tracks_page(options: TracksPageOptions) {
 	return strict_call((addon) => addon.get_tracks_page(options))

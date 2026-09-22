@@ -1,7 +1,7 @@
 use crate::data::Data;
 use crate::library_types::{
 	ItemId, Library, SpecialTrackListName, TRACK_ID_MAP, TrackID, TrackList, TrackListID,
-	get_track_ids_from_item_ids, new_item_ids_from_track_ids,
+	get_track_ids_from_item_ids,
 };
 use crate::str_to_option;
 use anyhow::{Context, Result, bail};
@@ -144,8 +144,7 @@ pub fn add_tracks(playlist_id: String, track_ids: Vec<TrackID>) -> Result<()> {
 		TrackList::Folder(_) => bail!("Cannot add track to folder"),
 		TrackList::Special(_) => bail!("Cannot add track to special playlist"),
 	};
-	let mut new_item_ids = new_item_ids_from_track_ids(&track_ids);
-	playlist.tracks.append(&mut new_item_ids);
+	playlist.append_track_ids(track_ids);
 	return Ok(());
 }
 
@@ -161,7 +160,7 @@ pub fn filter_duplicates(
 		TrackList::Playlist(playlist) => playlist,
 		_ => bail!("Cannot check if folder/special contains track"),
 	};
-	for track_id in &playlist.get_track_ids() {
+	for track_id in &playlist.tracks {
 		if track_ids.contains(track_id) {
 			track_ids.remove(track_id);
 		}
@@ -170,14 +169,14 @@ pub fn filter_duplicates(
 	Ok(track_ids)
 }
 
-#[napi(js_name = "get_track_playlist_ids")]
+#[napi(js_name = "get_playlist_ids_with_track")]
 #[allow(dead_code)]
-pub fn get_track_playlist_ids(track_id: TrackID) -> Result<Vec<TrackListID>> {
+pub fn get_playlist_ids_with_track_js(track_id: TrackID) -> Result<Vec<TrackListID>> {
 	let data = Data::get_blocking();
-	Ok(get_track_playlist_ids_in_library(&data.library, track_id))
+	Ok(get_playlist_ids_with_track(&data.library, track_id))
 }
 
-pub fn get_track_playlist_ids_in_library(library: &Library, track_id: TrackID) -> Vec<TrackListID> {
+pub fn get_playlist_ids_with_track(library: &Library, track_id: TrackID) -> Vec<TrackListID> {
 	let track_id_map = TRACK_ID_MAP.read().unwrap();
 	library
 		.trackLists
@@ -188,7 +187,7 @@ pub fn get_track_playlist_ids_in_library(library: &Library, track_id: TrackID) -
 			let TrackList::Playlist(playlist) = tracklist else {
 				return None;
 			};
-			for item_id in &playlist.tracks {
+			for item_id in playlist.item_ids() {
 				let item_id: usize = (*item_id).try_into().unwrap();
 				if track_id_map[item_id] == track_id {
 					return Some(playlist_id.to_string());
@@ -207,25 +206,17 @@ pub fn remove_from_playlist(playlist_id: TrackListID, item_ids: Vec<ItemId>) -> 
 		TrackList::Playlist(playlist) => playlist,
 		_ => bail!("Cannot remove track from non-playlist"),
 	};
-	let items_to_remove: HashSet<ItemId> = item_ids.into_iter().collect();
-
-	playlist
-		.tracks
-		.retain(|item_id| !items_to_remove.contains(item_id));
-
-	return Ok(());
+	playlist.remove_item_ids(item_ids);
+	Ok(())
 }
 
 pub fn remove_from_all_playlists(library: &mut Library, id: &TrackID) {
-	let track_id_map = TRACK_ID_MAP.read().unwrap();
 	for (_, tracklist) in &mut library.trackLists {
 		let playlist = match tracklist {
 			TrackList::Playlist(playlist) => playlist,
 			_ => continue,
 		};
-		playlist
-			.tracks
-			.retain(|current_id| track_id_map[*current_id as usize] != *id);
+		playlist.remove_track_id(id);
 	}
 }
 
@@ -388,31 +379,12 @@ pub fn move_playlist(id: String, from_id: String, to_id: String, to_index: u32) 
 
 #[napi(js_name = "move_tracks")]
 #[allow(dead_code)]
-pub fn move_tracks(playlist_id: String, mut item_ids: Vec<ItemId>, to_index: u32) -> Result<()> {
+pub fn move_tracks(playlist_id: String, item_ids: Vec<ItemId>, to_index: u32) -> Result<()> {
 	let mut data = Data::get_blocking();
 	let playlist = match data.library.get_tracklist_mut(&playlist_id)? {
 		TrackList::Playlist(playlist) => playlist,
 		_ => bail!("Cannot rearrange tracks in non-playlist"),
 	};
-
-	let item_ids_set: HashSet<ItemId> = item_ids.iter().cloned().collect();
-	assert_eq!(item_ids_set.len(), item_ids.len());
-
-	let playlist_item_ids_set: HashSet<ItemId> = playlist.tracks.iter().cloned().collect();
-	for item_id in &item_ids {
-		assert!(playlist_item_ids_set.contains(item_id));
-	}
-
-	let mut start_items = playlist.tracks.clone();
-	let mut end_items = start_items.split_off(to_index as usize);
-
-	start_items.retain(|item_id| !item_ids_set.contains(item_id));
-	end_items.retain(|item_id| !item_ids_set.contains(item_id));
-
-	start_items.append(&mut item_ids);
-
-	start_items.append(&mut end_items);
-
-	playlist.tracks = start_items;
+	playlist.move_item_ids(item_ids, to_index.try_into().unwrap());
 	Ok(())
 }

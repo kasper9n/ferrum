@@ -74,6 +74,8 @@ export declare function get_logs_dir(): string
 
 export declare function get_paths(): Paths
 
+export declare function get_playlist_ids_with_track(trackId: TrackID): Array<TrackListID>
+
 export declare function get_track(trackId: TrackID): Track
 
 export declare function get_track_by_item_id(itemId: ItemId): KeyedTrack
@@ -83,8 +85,6 @@ export declare function get_track_ids(itemIds: Array<ItemId>): Array<TrackID>
 export declare function get_track_list(id: string): TrackList
 
 export declare function get_track_lists_details(): Record<string, TrackListDetails>
-
-export declare function get_track_playlist_ids(trackId: TrackID): Array<TrackListID>
 
 export declare function get_tracks_page(options: TracksPageOptions): TracksPage
 
@@ -134,19 +134,6 @@ export interface Paths {
   viewOptionsFile: string
   queueFile: string
   logsDir: string
-}
-
-export interface Playlist {
-  id: TrackListID
-  name: string
-  description?: string
-  liked: boolean
-  disliked: boolean
-  importedFrom?: string
-  originalId?: string
-  dateImported?: MsSinceUnixEpoch
-  dateCreated?: MsSinceUnixEpoch
-  tracks: TrackID[]
 }
 
 export declare function playlist_filter_duplicates(playlistId: TrackListID, trackIds: Array<TrackID>): Array<TrackID>

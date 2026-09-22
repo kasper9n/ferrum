@@ -17,7 +17,7 @@ fn words(range: std::ops::RangeInclusive<usize>) -> String {
 	words.join(" ")
 }
 
-pub fn generate_library_100k() {
+fn generate_library_100k() {
 	let path = env::current_dir()
 		.unwrap()
 		.join("src-native/appdata/Library100k/Library.json");

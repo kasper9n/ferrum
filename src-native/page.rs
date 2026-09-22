@@ -31,12 +31,12 @@ pub struct TracksPage {
 #[cfg(feature = "napi-rs")]
 #[cfg_attr(feature = "napi", napi(js_name = "get_tracks_page"))]
 #[allow(dead_code)]
-pub fn get_tracks_page(options: TracksPageOptions) -> Result<TracksPage> {
+pub fn get_tracks_page_js(options: TracksPageOptions) -> Result<TracksPage> {
 	let data = Data::get_blocking();
-	Ok(get_tracks_page_from_library(options, &data.library)?)
+	Ok(get_tracks_page(options, &data.library)?)
 }
 
-pub fn get_tracks_page_from_library(
+pub fn get_tracks_page(
 	options: TracksPageOptions,
 	library: &Library,
 ) -> anyhow::Result<TracksPage> {

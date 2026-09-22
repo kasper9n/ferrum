@@ -2,7 +2,7 @@ use anyhow::{Context, Result, bail};
 use ferrum::library::Paths;
 use ferrum::library_types::{Library, TRACK_ID_MAP, Track, TrackList, TrackListID};
 use ferrum::migrate::{self, LibraryFile};
-use ferrum::page::{TracksPage, TracksPageOptions, get_tracks_page_from_library};
+use ferrum::page::{self, TracksPage, TracksPageOptions};
 use ferrum::path_to_string;
 use serde::Serialize;
 use specta::Type;
@@ -103,7 +103,7 @@ fn get_track_by_item_id(item_id: u32, app: AppHandle) -> Result<Track, String> {
 fn get_tracks_page(options: TracksPageOptions, app: AppHandle) -> Result<TracksPage, String> {
 	let library_state = app.state::<Mutex<Library>>();
 	let library = library_state.lock().unwrap();
-	match get_tracks_page_from_library(options, &library) {
+	match page::get_tracks_page(options, &library) {
 		Ok(page) => Ok(page),
 		Err(err) => Err(err.to_string()),
 	}

@@ -181,7 +181,7 @@ pub fn get_artists() -> Vec<String> {
 
 pub fn get_tracklist_item_ids(library: &Library, playlist_id: &TrackListID) -> Result<Vec<ItemId>> {
 	match library.get_tracklist(playlist_id)? {
-		TrackList::Playlist(playlist) => Ok(playlist.tracks.clone()),
+		TrackList::Playlist(playlist) => Ok(playlist.item_ids().clone()),
 		TrackList::Folder(folder) => {
 			let mut ids: LinkedHashMap<ItemId, ()> = LinkedHashMap::new();
 			for child in &folder.children {

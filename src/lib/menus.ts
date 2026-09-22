@@ -2,7 +2,7 @@ import {
 	add_tracks_to_playlist,
 	get_track,
 	get_track_list,
-	get_track_playlist_ids,
+	get_playlist_ids_with_track,
 	paths,
 	track_lists_details,
 } from '$lib/data.svelte'
@@ -30,7 +30,7 @@ export function get_show_in_playlists_tree(track_ids: TrackID[]) {
 	if (track_ids.length !== 1) {
 		return []
 	}
-	const matches = new Set(get_track_playlist_ids(track_ids[0]))
+	const matches = new Set(get_playlist_ids_with_track(track_ids[0]))
 	return get_flattened_tracklists().filter((item) => {
 		return item.enabled === false || matches.has(item.id)
 	})

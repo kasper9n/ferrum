@@ -240,13 +240,13 @@ mod v1 {
 mod v2 {
 	use crate::idvecmap::IdMap;
 	use crate::library::Paths;
-	use crate::library_types::new_item_ids_from_track_ids;
 	use crate::migrate::{self, latest, queue_state_v0_and_v1, v1};
 	use anyhow::Result;
 	use linked_hash_map::LinkedHashMap;
 	use serde::Deserialize;
 	use std::borrow::Cow;
 	use std::collections::HashMap;
+	use std::sync::OnceLock;
 
 	#[derive(Deserialize, Clone, Debug)]
 	#[serde(deny_unknown_fields)]
@@ -329,13 +329,12 @@ mod v2 {
 								originalId: playlist.originalId,
 								dateImported: playlist.dateImported,
 								dateCreated: playlist.dateCreated,
-								tracks: new_item_ids_from_track_ids(
-									&playlist
-										.tracks
-										.into_iter()
-										.map(|id| new_ids[&id])
-										.collect::<Vec<_>>(),
-								),
+								tracks: playlist
+									.tracks
+									.into_iter()
+									.map(|id| new_ids[&id])
+									.collect::<Vec<_>>(),
+								item_ids: OnceLock::new(),
 							})
 						}
 						v1::TrackList::Folder(folder) => latest::TrackList::Folder(folder),

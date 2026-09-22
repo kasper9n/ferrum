@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::borrow::Cow;
 use std::collections::HashSet;
-use std::sync::RwLock;
+use std::sync::{OnceLock, RwLock};
 use std::time::Instant;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -142,6 +142,7 @@ impl Library {
 			dateImported: None,
 			dateCreated: Some(get_now_timestamp()),
 			tracks: Vec::new(),
+			item_ids: OnceLock::new(),
 		}
 	}
 	pub fn new_folder(&self, name: String, description: Option<String>) -> Folder {
@@ -456,13 +457,29 @@ pub fn get_track_ids_from_item_ids(playlist_item_ids: &[ItemId]) -> Vec<TrackID>
 		.collect()
 }
 
-// pub fn get_track_id_from_item_id(playlist_item_id: ItemId) -> TrackID {
-// 	let playlist_track_id_map = TRACK_ID_MAP.read().unwrap();
-// 	playlist_track_id_map[playlist_item_id as usize].clone()
-// }
+fn retain_pair<T, F>(a: &mut Vec<T>, b: &mut Vec<T>, mut keep: F)
+where
+	F: FnMut(&T, &T) -> bool,
+{
+	assert_eq!(a.len(), b.len());
+
+	let mut write_i = 0;
+
+	for read_i in 0..a.len() {
+		if keep(&a[read_i], &b[read_i]) {
+			if write_i != read_i {
+				a.swap(write_i, read_i);
+				b.swap(write_i, read_i);
+			}
+			write_i += 1;
+		}
+	}
+
+	a.truncate(write_i);
+	b.truncate(write_i);
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Type)]
-#[cfg_attr(feature = "napi", napi(object))]
 pub struct Playlist {
 	pub id: TrackListID,
 	pub name: String,
@@ -480,39 +497,73 @@ pub struct Playlist {
 	pub dateImported: Option<MsSinceUnixEpoch>,
 	#[serde(default, skip_serializing_if = "Option::is_none")]
 	pub dateCreated: Option<MsSinceUnixEpoch>,
-	#[serde(
-		deserialize_with = "deserialize_playlist_ids",
-		serialize_with = "serialize_playlist_ids"
-	)]
-	#[cfg_attr(feature = "napi", napi(ts_type = "TrackID[]"))]
-	#[specta(type = Vec<TrackID>)]
-	pub tracks: Vec<ItemId>,
+	pub tracks: Vec<TrackID>,
+	#[serde(skip)]
+	pub item_ids: OnceLock<Vec<ItemId>>,
 }
 impl Playlist {
-	pub fn get_track_ids(&self) -> Vec<TrackID> {
-		get_track_ids_from_item_ids(&self.tracks)
+	pub fn item_ids(&self) -> &Vec<ItemId> {
+		self.item_ids
+			.get_or_init(|| new_item_ids_from_track_ids(&self.tracks))
 	}
-}
+	pub fn item_ids_mut(&mut self) -> &mut Vec<ItemId> {
+		self.item_ids();
+		self.item_ids.get_mut().unwrap()
+	}
+	pub fn append_track_ids(&mut self, mut track_ids: Vec<TrackID>) {
+		let mut new_item_ids = new_item_ids_from_track_ids(&track_ids);
+		self.tracks.append(&mut track_ids);
+		self.item_ids_mut().append(&mut new_item_ids);
+	}
+	pub fn move_item_ids(&mut self, item_ids: Vec<ItemId>, to_index: usize) {
+		let mut moving_item_ids = item_ids;
+		let mut moving_track_ids = get_track_ids_from_item_ids(&moving_item_ids);
 
-// Deserialize list of strings into list of numbers
-fn deserialize_playlist_ids<'de, D>(deserializer: D) -> Result<Vec<ItemId>, D::Error>
-where
-	D: serde::Deserializer<'de>,
-{
-	let track_ids: Vec<TrackID> = serde::Deserialize::deserialize(deserializer)?;
-	let item_ids = new_item_ids_from_track_ids(&track_ids);
-	Ok(item_ids)
-}
+		let moving_item_ids_set: HashSet<ItemId> = moving_item_ids.iter().cloned().collect();
+		assert_eq!(moving_item_ids_set.len(), moving_item_ids.len());
 
-fn serialize_playlist_ids<S>(
-	playlist_track_ids: &[ItemId],
-	serializer: S,
-) -> Result<S::Ok, S::Error>
-where
-	S: serde::Serializer,
-{
-	let track_ids = get_track_ids_from_item_ids(playlist_track_ids);
-	track_ids.serialize(serializer)
+		let playlist_item_ids_set: HashSet<ItemId> = self.item_ids().iter().cloned().collect();
+		for item_id in &moving_item_ids {
+			assert!(playlist_item_ids_set.contains(item_id));
+		}
+
+		self.item_ids();
+		let first_item_ids = self.item_ids.get_mut().unwrap();
+		let first_track_ids = &mut self.tracks;
+		let mut last_item_ids = first_item_ids.split_off(to_index);
+		let mut last_track_ids = first_track_ids.split_off(to_index);
+		retain_pair(
+			&mut *first_item_ids,
+			&mut *first_track_ids,
+			|item_id, _track_id| moving_item_ids_set.contains(item_id),
+		);
+		retain_pair(
+			&mut last_item_ids,
+			&mut last_track_ids,
+			|item_id, _track_id| moving_item_ids_set.contains(item_id),
+		);
+		first_item_ids.append(&mut moving_item_ids);
+		first_track_ids.append(&mut moving_track_ids);
+		first_item_ids.append(&mut last_item_ids);
+		first_track_ids.append(&mut last_track_ids);
+	}
+	pub fn remove_item_ids(&mut self, item_ids: Vec<ItemId>) {
+		let items_to_remove: HashSet<ItemId> = item_ids.into_iter().collect();
+		self.item_ids();
+		retain_pair(
+			self.item_ids.get_mut().unwrap(),
+			&mut self.tracks,
+			|item_id, _track_id| !items_to_remove.contains(item_id),
+		);
+	}
+	pub fn remove_track_id(&mut self, track_id_to_remove: &TrackID) {
+		self.item_ids();
+		retain_pair(
+			self.item_ids.get_mut().unwrap(),
+			&mut self.tracks,
+			|_item_id, track_id| track_id != track_id_to_remove,
+		);
+	}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Type)]
