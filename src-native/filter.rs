@@ -1,12 +1,12 @@
 use crate::library_types::{ItemId, Library, TRACK_ID_MAP};
 use rayon::prelude::*;
 use serde::Deserialize;
+use simd_normalizer::UnicodeNormalization;
 use specta::Type;
 use std::str::Chars;
 use std::time::Instant;
-use unicode_normalization::{Recompositions, UnicodeNormalization};
 
-fn match_at_start(mut text: Recompositions<Chars>, target: Chars) -> bool {
+fn match_at_start(mut text: Chars, target: Chars) -> bool {
 	for target_char in target {
 		let text_char = match text.next() {
 			Some(x) => x,
@@ -38,7 +38,8 @@ fn find_match(text: &str, target: &str) -> bool {
 		Some(x) => x,
 		None => return true, // match if target is empty string
 	};
-	let mut text_chars = text.nfc();
+	let text_nfc = text.nfc();
+	let mut text_chars = text_nfc.chars();
 	while let Some(text_char) = text_chars.next() {
 		match check(first_target_char, text_char) {
 			Eq::True => {
@@ -253,7 +254,7 @@ pub fn filter(mut item_ids: Vec<ItemId>, terms: Vec<FilterTerm>, library: &Libra
 		.filter(|term| !term.is_whitespace())
 		.map(|term| FilterTerm {
 			field: term.field,
-			literal: term.literal.to_lowercase().nfc().collect(),
+			literal: term.literal.to_lowercase().nfc().to_string(),
 		})
 		.collect();
 	if terms.len() == 0 {

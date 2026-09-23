@@ -3,7 +3,7 @@
 ## Next
 - Fix undo in the filter textbox not stopping at selection/cursor changes
 - Improve error messages
-- Make sorting faster
+- Make sorting and filtering much faster
 - Add `O`, `o` fuzzy matching for `Ơ`, `ơ`
 
 ## 1.2.0 - 2026 Aug 31

@@ -42,7 +42,6 @@ plist = "1.5"
 tokio = { version = "1.28", features = ["macros"] }
 time = { version = "0.3", features = ["serde", "serde-well-known"] }
 url = "2.4"
-unicode-normalization = "0.1"
 rayon = "1.8"
 lazy_static = "1.5.0"
 fast_image_resize = { version = "5.1", features = ["image"] }
@@ -59,6 +58,7 @@ mimalloc = "0.1.48"
 specta = { version = "=2.0.0-rc.22", features = ["derive"] }
 num-traits = "0.2.19"
 fake = "5.1.0"
+simd-normalizer = "0.1.1"
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 trash = "5.1"
