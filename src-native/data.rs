@@ -63,7 +63,7 @@ impl Data {
 		let cache_dir;
 		let local_data_dir;
 		if is_dev {
-			let appdata_dev = env::current_dir().unwrap().join("src-native/appdata");
+			let appdata_dev = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src-native/appdata");
 			library_dir = appdata_dev.join("Library");
 			cache_dir = appdata_dev.join("Caches");
 			local_data_dir = appdata_dev.join("LocalData/space.kasper.ferrum");

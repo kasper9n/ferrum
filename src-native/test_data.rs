@@ -6,6 +6,7 @@ use crate::library_types::Track;
 use fake::Fake;
 use fake::faker::{lorem::en::Words, name::en::Name};
 use std::env;
+use std::path::PathBuf;
 
 pub fn generate_test_data() {
 	generate_library_100k();
@@ -18,8 +19,7 @@ fn words(range: std::ops::RangeInclusive<usize>) -> String {
 }
 
 fn generate_library_100k() {
-	let path = env::current_dir()
-		.unwrap()
+	let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 		.join("src-native/appdata/Library100k/Library.json");
 	std::fs::create_dir_all(path.parent().unwrap()).unwrap();
 	let mut library = Library::new();
