@@ -281,3 +281,32 @@ fn cmp_f64(a: f64, b: f64) -> Ordering {
 	a.partial_cmp(&b)
 		.unwrap_or_else(|| panic!("Unable to compare f64 {} and {}", a, b))
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::test_data::load_100k_library;
+
+	#[test]
+	fn benchmark_sort_100k() {
+		let library = load_100k_library();
+
+		let options = TracksPageOptions {
+			playlist_id: "root".to_string(),
+			sort_key: "name".to_string(),
+			sort_desc: false,
+			filter_terms: vec![],
+			group_album_tracks: false,
+		};
+
+		// Warm up once. This also makes sure the library and data are actually used.
+		let _ = sort(options.clone(), &library);
+
+		let now = Instant::now();
+		for _ in 0..10 {
+			let _ = sort(options.clone(), &library);
+		}
+		let avg_duration = now.elapsed() / 10;
+		println!("Sort average: {:?}", avg_duration);
+	}
+}

@@ -1,18 +1,20 @@
 use crate::library_types::{ItemId, Library, TRACK_ID_MAP};
+use anyhow::Result;
 use rayon::prelude::*;
 use serde::Deserialize;
 use simd_normalizer::UnicodeNormalization;
 use specta::Type;
+use std::borrow::Cow;
 use std::str::Chars;
 use std::time::Instant;
 
-fn match_at_start(mut text: Chars, target: Chars) -> bool {
+fn match_at_start(mut text: Chars, target: &[char]) -> bool {
 	for target_char in target {
 		let text_char = match text.next() {
 			Some(x) => x,
 			None => return false,
 		};
-		match check(target_char, text_char) {
+		match check(*target_char, text_char) {
 			Eq::True => {}
 			Eq::False => return false,
 			Eq::Skip => {
@@ -21,7 +23,7 @@ fn match_at_start(mut text: Chars, target: Chars) -> bool {
 					Some(x) => x,
 					None => return false,
 				};
-				match check(target_char, new_text_char) {
+				match check(*target_char, new_text_char) {
 					Eq::True => {}
 					Eq::False => return false,
 					Eq::Skip => return false,
@@ -32,18 +34,22 @@ fn match_at_start(mut text: Chars, target: Chars) -> bool {
 	return true;
 }
 
-fn find_match(text: &str, target: &str) -> bool {
-	let mut target_chars = target.chars();
+fn find_match(text: &str, target: &[char]) -> bool {
+	let mut target_chars = target.iter();
 	let first_target_char = match target_chars.next() {
 		Some(x) => x,
 		None => return true, // match if target is empty string
 	};
-	let text_nfc = text.nfc();
+	let text_nfc = match text.is_nfc() {
+		true => Cow::Borrowed(text),
+		false => text.nfc(),
+	};
+	let rest_of_target = &target[1..];
 	let mut text_chars = text_nfc.chars();
 	while let Some(text_char) = text_chars.next() {
-		match check(first_target_char, text_char) {
+		match check(*first_target_char, text_char) {
 			Eq::True => {
-				if match_at_start(text_chars.clone(), target_chars.clone()) {
+				if match_at_start(text_chars.clone(), rest_of_target) {
 					return true;
 				}
 			}
@@ -53,7 +59,8 @@ fn find_match(text: &str, target: &str) -> bool {
 	return false;
 }
 
-fn find_match_opt(text: &Option<String>, target: &str) -> bool {
+#[inline]
+fn find_match_opt(text: &Option<String>, target: &[char]) -> bool {
 	match text {
 		Some(text) => find_match(text, target),
 		None => return false,
@@ -100,7 +107,7 @@ fn find_ignore_case(haystack: &str, needle: &str) -> Option<usize> {
 	None
 }
 
-fn feat_artists_match(track_name: &str, target: &str) -> bool {
+fn feat_artists_match(track_name: &str, target: &[char]) -> bool {
 	let prefixes = [
 		"feat.",
 		"feat ",
@@ -157,11 +164,11 @@ fn feat_artists_match(track_name: &str, target: &str) -> bool {
 	false
 }
 
-fn filter_term(ids: Vec<ItemId>, term: FilterTerm, library: &Library) -> Vec<ItemId> {
+fn filter_term(ids: Vec<ItemId>, term: &ParsedTerm, library: &Library) -> Vec<ItemId> {
 	let id_map = TRACK_ID_MAP.read().unwrap();
 	let filtered_tracks: Vec<_> = ids
 		.into_par_iter()
-		.with_min_len(2000)
+		.with_min_len(1024)
 		.filter(|item_id| {
 			let track_id = &id_map[*item_id as usize];
 			let track = match library.get_track(track_id) {
@@ -177,43 +184,24 @@ fn filter_term(ids: Vec<ItemId>, term: FilterTerm, library: &Library) -> Vec<Ite
 				return is_match;
 			};
 			let is_match = match term.field.as_ref().unwrap() {
-				Field::Title => find_match(&track.name, &term.literal),
-				Field::Artist => {
+				ParsedField::Title => find_match(&track.name, &term.literal),
+				ParsedField::Artist => {
 					find_match(&track.artist, &term.literal)
 						|| feat_artists_match(&track.name, &term.literal)
 				}
-				Field::Album => find_match_opt(&track.albumName, &term.literal),
-				Field::AlbumArtist => find_match_opt(&track.albumArtist, &term.literal),
-				Field::Comments => find_match_opt(&track.comments, &term.literal),
-				Field::Genre => find_match_opt(&track.genre, &term.literal),
-				Field::Composer => find_match_opt(&track.composer, &term.literal),
-				Field::Group => find_match_opt(&track.grouping, &term.literal),
-				Field::Year => {
-					track.year.map(|n| n.to_string()).unwrap_or("".to_string()) == term.literal
-				}
-				Field::Plays => {
-					track
-						.plays
-						.as_ref()
-						.map(|n| n.len().to_string())
-						.unwrap_or("".to_string())
-						== term.literal
-				}
-				Field::Skips => {
-					track
-						.skips
-						.as_ref()
-						.map(|n| n.len().to_string())
-						.unwrap_or("".to_string())
-						== term.literal
-				}
-				Field::Bpm => {
-					track.bpm.map(|n| n.to_string()).unwrap_or("".to_string()) == term.literal
-				}
+				ParsedField::Album => find_match_opt(&track.albumName, &term.literal),
+				ParsedField::AlbumArtist => find_match_opt(&track.albumArtist, &term.literal),
+				ParsedField::Comments => find_match_opt(&track.comments, &term.literal),
+				ParsedField::Genre => find_match_opt(&track.genre, &term.literal),
+				ParsedField::Composer => find_match_opt(&track.composer, &term.literal),
+				ParsedField::Group => find_match_opt(&track.grouping, &term.literal),
+				ParsedField::Year(target) => track.year == Some(*target),
+				ParsedField::Plays(target) => track.playCount == Some(*target),
+				ParsedField::Skips(target) => track.skipCount == Some(*target),
+				ParsedField::Bpm(target) => track.bpm == Some(*target),
 			};
 			is_match
 		})
-		.map(|id| id.clone())
 		.collect();
 	filtered_tracks
 }
@@ -247,22 +235,67 @@ impl FilterTerm {
 	}
 }
 
+enum ParsedField {
+	Title,
+	Artist,
+	Album,
+	AlbumArtist,
+	Comments,
+	Genre,
+	Composer,
+	Group,
+	Year(i64),
+	Plays(u32),
+	Skips(u32),
+	Bpm(f64),
+}
+impl ParsedField {
+	pub fn parse(term: &FilterTerm) -> Option<Self> {
+		let parse_field = match term.field.as_ref()? {
+			Field::Title => ParsedField::Title,
+			Field::Artist => ParsedField::Artist,
+			Field::Album => ParsedField::Album,
+			Field::AlbumArtist => ParsedField::AlbumArtist,
+			Field::Comments => ParsedField::Comments,
+			Field::Genre => ParsedField::Genre,
+			Field::Composer => ParsedField::Composer,
+			Field::Group => ParsedField::Group,
+			Field::Year => ParsedField::Year(term.literal.parse().ok()?),
+			Field::Plays => ParsedField::Plays(term.literal.parse().ok()?),
+			Field::Skips => ParsedField::Skips(term.literal.parse().ok()?),
+			Field::Bpm => ParsedField::Bpm(term.literal.parse().ok()?),
+		};
+		Some(parse_field)
+	}
+}
+
+struct ParsedTerm {
+	pub field: Option<ParsedField>,
+	pub literal: Vec<char>,
+}
+
 pub fn filter(mut item_ids: Vec<ItemId>, terms: Vec<FilterTerm>, library: &Library) -> Vec<ItemId> {
 	let now = Instant::now();
-	let terms: Vec<_> = terms
+	let terms: Result<Vec<_>> = terms
 		.into_iter()
 		.filter(|term| !term.is_whitespace())
-		.map(|term| FilterTerm {
-			field: term.field,
-			literal: term.literal.to_lowercase().nfc().to_string(),
+		.map(|term| {
+			Ok(ParsedTerm {
+				field: ParsedField::parse(&term),
+				literal: term.literal.to_lowercase().nfc().chars().collect(),
+			})
 		})
 		.collect();
+	let terms = match terms {
+		Ok(terms) => terms,
+		Err(_) => return Vec::new(),
+	};
 	if terms.len() == 0 {
 		return item_ids;
 	}
 
 	for term in terms {
-		item_ids = filter_term(item_ids, term, &library);
+		item_ids = filter_term(item_ids, &term, &library);
 	}
 	println!("Filter: {}ms", now.elapsed().as_millis());
 	item_ids
@@ -328,6 +361,7 @@ fn check(user_char: char, data_char: char) -> Eq {
 	if is_skip {
 		return Eq::Skip;
 	}
+	#[inline]
 	fn one_of(c: &char, a: char, b: char) -> bool {
 		return c == &a || c == &b;
 	}
@@ -893,4 +927,39 @@ fn check(user_char: char, data_char: char) -> Eq {
 		true => Eq::True,
 		false => Eq::False,
 	};
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::test_data::load_100k_library;
+
+	#[test]
+	fn benchmark_filter_100k() {
+		let library = load_100k_library();
+
+		// Use the actual item IDs belonging to this library.
+		let ids: Vec<ItemId> = library.get_track_item_ids().values().copied().collect();
+
+		let term = FilterTerm {
+			field: None,
+			literal: "he".to_string(),
+		};
+
+		// Warm up once. This also makes sure the library and data are actually used.
+		let _ = filter(ids.clone(), vec![term.clone()], &library);
+
+		let now = Instant::now();
+		for _ in 0..9 {
+			let _ = filter(ids.clone(), vec![term.clone()], &library);
+		}
+		let result = filter(ids.clone(), vec![term.clone()], &library);
+		let avg_duration = now.elapsed() / 10;
+		println!("Filter average: {:?}", avg_duration);
+		println!(
+			"Filter benchmark results {} / {}",
+			result.len(),
+			library.get_tracks().len()
+		);
+	}
 }

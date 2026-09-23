@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 // NOTE: This code only runs in debug mode. So you need to
 // run `npm run dev` at some point before you run `npm run example-100k`
 
@@ -77,4 +79,16 @@ fn generate_library_100k() {
 	}
 
 	std::fs::write(path, serde_json::to_vec(&library.to_file()).unwrap()).unwrap();
+}
+
+#[cfg(test)]
+pub fn load_100k_library() -> Library {
+	use crate::migrate::LibraryFile;
+	use std::fs;
+
+	let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+		.join("src-native/appdata/Library100k/Library.json");
+	let data = fs::read(&path).unwrap();
+	let file: LibraryFile = serde_json::from_slice(&data).unwrap();
+	Library::init_library(file.latest_unwrap())
 }

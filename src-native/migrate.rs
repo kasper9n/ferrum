@@ -21,6 +21,15 @@ pub enum LibraryFile<'a> {
 	#[serde(rename = "3")]
 	V3(LatestLibrary<'a>),
 }
+impl<'a> LibraryFile<'a> {
+	#[cfg(test)]
+	pub fn latest_unwrap(self) -> LatestLibrary<'a> {
+		match self {
+			LibraryFile::V3(latest) => latest,
+			_ => panic!("Expected latest library"),
+		}
+	}
+}
 
 /// For serialization, since we don't need to serialize old formats
 #[derive(Serialize, Clone, Debug)]
