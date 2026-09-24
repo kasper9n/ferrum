@@ -81,14 +81,13 @@ fn generate_library_100k() {
 	std::fs::write(path, serde_json::to_vec(&library.to_file()).unwrap()).unwrap();
 }
 
-#[cfg(test)]
 pub fn load_100k_library() -> Library {
 	use crate::migrate::LibraryFile;
 	use std::fs;
 
 	let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 		.join("src-native/appdata/Library100k/Library.json");
-	let data = fs::read(&path).unwrap();
-	let file: LibraryFile = serde_json::from_slice(&data).unwrap();
+	let mut data = fs::read(&path).unwrap();
+	let file: LibraryFile = simd_json::from_slice(&mut data).unwrap();
 	Library::init_library(file.latest_unwrap())
 }

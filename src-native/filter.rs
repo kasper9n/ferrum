@@ -928,38 +928,3 @@ fn check(user_char: char, data_char: char) -> Eq {
 		false => Eq::False,
 	};
 }
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use crate::test_data::load_100k_library;
-
-	#[test]
-	fn benchmark_filter_100k() {
-		let library = load_100k_library();
-
-		// Use the actual item IDs belonging to this library.
-		let ids: Vec<ItemId> = library.get_track_item_ids().values().copied().collect();
-
-		let term = FilterTerm {
-			field: None,
-			literal: "he".to_string(),
-		};
-
-		// Warm up once. This also makes sure the library and data are actually used.
-		let _ = filter(ids.clone(), vec![term.clone()], &library);
-
-		let now = Instant::now();
-		for _ in 0..9 {
-			let _ = filter(ids.clone(), vec![term.clone()], &library);
-		}
-		let result = filter(ids.clone(), vec![term.clone()], &library);
-		let avg_duration = now.elapsed() / 10;
-		println!("Filter average: {:?}", avg_duration);
-		println!(
-			"Filter benchmark results {} / {}",
-			result.len(),
-			library.get_tracks().len()
-		);
-	}
-}
