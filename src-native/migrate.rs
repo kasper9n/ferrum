@@ -22,7 +22,6 @@ pub enum LibraryFile<'a> {
 	V3(LatestLibrary<'a>),
 }
 impl<'a> LibraryFile<'a> {
-	#[cfg(test)]
 	pub fn latest_unwrap(self) -> LatestLibrary<'a> {
 		match self {
 			LibraryFile::V3(latest) => latest,

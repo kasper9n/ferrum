@@ -69,3 +69,7 @@ napi = { git = "https://github.com/kasper9n/napi-rs", rev = "d027f3ee53e65f99a32
 
 [profile.release]
 opt-level = 3
+
+[[bench]]
+name = "bench"
+harness = false
