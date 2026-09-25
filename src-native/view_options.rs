@@ -31,7 +31,7 @@ impl ViewOptions {
 		}
 	}
 	pub fn save(&self, file_path: &str) -> Result<()> {
-		let json_str = serde_json::to_string(self).context("Error saving view.json")?;
+		let json_str = simd_json::to_string(self).context("Error saving view.json")?;
 		let af = AtomicFile::new(&file_path, AllowOverwrite);
 		af.write(|f| f.write_all(json_str.as_bytes()))
 			.context("Error writing view.json")?;

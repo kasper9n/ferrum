@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use atomicwrites::{AtomicFile, OverwriteBehavior::AllowOverwrite};
 use mimalloc::MiMalloc;
-use serde::Serialize;
 #[cfg(feature = "napi-rs")]
 use serde::de::DeserializeOwned;
 #[cfg(feature = "napi-rs")]
@@ -78,7 +77,7 @@ where
 {
 	let file = File::open(path).context("Error opening file")?;
 	let reader = BufReader::new(file);
-	let json = serde_json::from_reader(reader).context("Error parsing file")?;
+	let json = simd_json::from_reader(reader).context("Error parsing file")?;
 	Ok(json)
 }
 
@@ -87,16 +86,6 @@ pub fn path_to_string<P: AsRef<Path>>(path: P) -> String {
 		.to_str()
 		.expect("Invalid path str")
 		.to_string()
-}
-
-pub fn serialize_json_pretty<S: Serialize>(value: &S) -> Result<Vec<u8>> {
-	let now = Instant::now();
-	let formatter = serde_json::ser::PrettyFormatter::with_indent(b"	"); // tab
-	let mut json = Vec::new();
-	let mut ser = serde_json::Serializer::with_formatter(&mut json, formatter);
-	value.serialize(&mut ser)?;
-	println!("Stringify: {}ms", now.elapsed().as_millis());
-	Ok(json)
 }
 
 pub fn save_overwrite(bytes: Vec<u8>, file_path: &String) -> Result<()> {
