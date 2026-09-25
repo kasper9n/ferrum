@@ -78,7 +78,7 @@ fn generate_library_100k() {
 		);
 	}
 
-	std::fs::write(path, serde_json::to_vec(&library.to_file()).unwrap()).unwrap();
+	std::fs::write(path, simd_json::to_vec(&library.to_file()).unwrap()).unwrap();
 }
 
 pub fn load_100k_library() -> Library {

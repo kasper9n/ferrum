@@ -1,7 +1,7 @@
 use crate::data::{Data, app_log_dir};
 use crate::library::Paths;
 use crate::path_to_string;
-use napi::Result;
+use anyhow::Result;
 use std::fs;
 
 #[napi(js_name = "load_data")]

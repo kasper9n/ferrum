@@ -1,13 +1,13 @@
 use crate::library::{Paths, load_library};
 use crate::library_types::Library;
 use crate::tracks::Tag;
-use crate::{path_to_string, save_overwrite, serialize_json_pretty};
-use anyhow::Context;
+use crate::{path_to_string, save_overwrite};
+use anyhow::{Context, Result};
 use dirs_next;
-use napi::Result;
 use std::env;
 use std::path::PathBuf;
 use std::sync::OnceLock;
+use std::time::Instant;
 use tokio::sync::{Mutex, MutexGuard};
 
 pub fn app_log_dir() -> Result<PathBuf> {
@@ -44,7 +44,9 @@ impl Data {
 		DATA.get().expect("No data initialised").blocking_lock()
 	}
 	pub fn save(&mut self) -> Result<()> {
-		let bytes = serialize_json_pretty(&self.library.to_file())?;
+		let now = Instant::now();
+		let bytes = simd_json::to_vec(&self.library.to_file())?;
+		println!("Stringify: {}ms", now.elapsed().as_millis());
 		save_overwrite(bytes, &self.paths.library_json)?;
 		Ok(())
 	}

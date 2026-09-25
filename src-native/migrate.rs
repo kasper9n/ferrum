@@ -3,13 +3,15 @@
 use crate::library::Paths;
 pub(self) use crate::library_types as latest;
 use crate::library_types::LatestLibrary;
-use crate::{delete_file, save_overwrite, serialize_json_pretty};
+use crate::{delete_file, save_overwrite};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use simd_json::base::{ValueAsMutObject, ValueAsScalar};
+use simd_json::{OwnedValue, json};
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::PathBuf;
+use std::time::Instant;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "version", deny_unknown_fields)]
@@ -39,7 +41,9 @@ pub enum LatestLibraryFile<'a> {
 }
 impl LatestLibraryFile<'_> {
 	pub fn save(&self, paths: &Paths) -> Result<()> {
-		let bytes = serialize_json_pretty(&self)?;
+		let now = Instant::now();
+		let bytes = simd_json::to_vec(&self)?;
+		println!("Stringify: {}ms", now.elapsed().as_millis());
 		save_overwrite(bytes, &paths.library_json)?;
 		Ok(())
 	}
@@ -75,16 +79,17 @@ pub fn parse_old_version_library_json(library_file: &mut File) -> Result<Library
 	library_file
 		.read_to_string(&mut json_str)
 		.context("Error reading library file")?;
+	let mut json_bytes = json_str.into_bytes();
 
-	let mut value: Value =
-		serde_json::from_str(&mut json_str).context("Error parsing library file")?;
+	let mut value: OwnedValue =
+		simd_json::deserialize(&mut json_bytes).context("Error parsing library file")?;
 	// Migrate version number to string
 	if let Some(obj) = value.as_object_mut() {
 		if let Some(version_field) = obj.get_mut("version") {
-			if let Some(version) = version_field.as_number() {
-				if version.as_u64() == Some(1) {
+			if let Some(version) = version_field.as_u64() {
+				if version == 1 {
 					*version_field = json!("1");
-				} else if version.as_u64() == Some(2) {
+				} else if version == 2 {
 					*version_field = json!("2");
 				}
 			}
@@ -92,7 +97,7 @@ pub fn parse_old_version_library_json(library_file: &mut File) -> Result<Library
 	}
 
 	let versioned_library: LibraryFile =
-		serde_json::from_value(value).context("Error parsing library file")?;
+		simd_json::serde::from_owned_value(value).context("Error parsing library file")?;
 	Ok(versioned_library)
 }
 
