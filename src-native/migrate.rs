@@ -42,9 +42,8 @@ pub enum LatestLibraryFile<'a> {
 impl LatestLibraryFile<'_> {
 	pub fn save(&self, paths: &Paths) -> Result<()> {
 		let now = Instant::now();
-		let bytes = simd_json::to_vec(&self)?;
-		println!("Stringify: {}ms", now.elapsed().as_millis());
-		save_overwrite(bytes, &paths.library_json)?;
+		save_overwrite(&self, &paths.library_json)?;
+		println!("Save: {}ms", now.elapsed().as_millis());
 		Ok(())
 	}
 }

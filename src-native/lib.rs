@@ -7,11 +7,9 @@ use serde::de::DeserializeOwned;
 use std::fs::File;
 #[cfg(feature = "napi-rs")]
 use std::io::BufReader;
-use std::{
-	io::Write,
-	path::{Path, PathBuf},
-	time::{Instant, SystemTime, UNIX_EPOCH},
-};
+use std::io::BufWriter;
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 #[cfg(target_os = "macos")]
 use trash::macos::TrashContextExtMacos;
 
@@ -88,11 +86,13 @@ pub fn path_to_string<P: AsRef<Path>>(path: P) -> String {
 		.to_string()
 }
 
-pub fn save_overwrite(bytes: Vec<u8>, file_path: &String) -> Result<()> {
-	let now = Instant::now();
+pub fn save_overwrite<T: serde::Serialize>(value: &T, file_path: &String) -> Result<()> {
 	let af = AtomicFile::new(file_path, AllowOverwrite);
-	af.write(|f| f.write_all(&bytes)).context("Error saving")?;
-	println!("Write: {}ms", now.elapsed().as_millis());
+	af.write(|f| {
+		let mut f = BufWriter::with_capacity(1024 * 512, f);
+		simd_json::serde::to_writer(&mut f, value).map_err(std::io::Error::other)
+	})
+	.context("Error saving")?;
 	Ok(())
 }
 

@@ -45,9 +45,8 @@ impl Data {
 	}
 	pub fn save(&mut self) -> Result<()> {
 		let now = Instant::now();
-		let bytes = simd_json::to_vec(&self.library.to_file())?;
-		println!("Stringify: {}ms", now.elapsed().as_millis());
-		save_overwrite(bytes, &self.paths.library_json)?;
+		save_overwrite(&self.library.to_file(), &self.paths.library_json)?;
+		println!("Save: {}ms", now.elapsed().as_millis());
 		Ok(())
 	}
 	pub fn load(
