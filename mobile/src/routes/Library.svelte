@@ -9,6 +9,7 @@
 		type Special,
 		type LibraryTauri,
 		type TracksPageOptions,
+		type FilterTerm,
 	} from '../../bindings'
 	import { resolve } from '$app/paths'
 	import { openUrl } from '@tauri-apps/plugin-opener'
@@ -39,11 +40,8 @@
 		playlist_id: 'root',
 		sort_key: 'dateAdded',
 		sort_desc: false,
-		filter_terms: [],
 		group_album_tracks: false,
-	})
-	$effect(() => {
-		tracks_page_options.filter_terms = filter.terms
+		library_cache_key: 0,
 	})
 
 	// ── View derived from URL search params ────────────────────────────────────
@@ -78,8 +76,8 @@
 		return tl?.type === 'folder' ? tl : null
 	}
 
-	async function get_tracks_page(options: TracksPageOptions) {
-		const result = await commands.getTracksPage(options)
+	async function get_tracks_page(options: TracksPageOptions, filter_terms: FilterTerm[]) {
+		const result = await commands.getTracksPage(options, filter_terms)
 		if (result.status === 'error') {
 			sk_error(500, result.error)
 		}
@@ -125,7 +123,7 @@
 	const current_children = $derived(view.kind === 'browser' ? get_children(view.folder_id) : [])
 
 	const tracks_page = $derived(
-		view.kind === 'tracks' ? await get_tracks_page(tracks_page_options) : null,
+		view.kind === 'tracks' ? await get_tracks_page(tracks_page_options, filter.terms) : null,
 	)
 
 	// const genres = $derived(

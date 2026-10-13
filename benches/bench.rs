@@ -28,8 +28,8 @@ fn sort_100k() {
 		playlist_id: "root".to_string(),
 		sort_key: "name".to_string(),
 		sort_desc: false,
-		filter_terms: vec![],
 		group_album_tracks: false,
+		library_cache_key: 0,
 	};
 
 	// Warmup.

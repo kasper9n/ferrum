@@ -86,7 +86,7 @@ export declare function get_track_list(id: string): TrackList
 
 export declare function get_track_lists_details(): Record<string, TrackListDetails>
 
-export declare function get_tracks_page(options: TracksPageOptions): TracksPage
+export declare function get_tracks_page(options: TracksPageOptions, filterTerms: Array<FilterTerm>): TracksPage
 
 export declare function import_file(path: string, now: MsSinceUnixEpoch): void
 
@@ -311,12 +311,13 @@ export interface TracksPage {
   itemIds: Array<ItemId>
 }
 
+/** We don't keep the filter_terms in here, so that we can cache the pre-filtered page */
 export interface TracksPageOptions {
   playlistId: string
   sortKey: string
   sortDesc: boolean
-  filterTerms: Array<FilterTerm>
   groupAlbumTracks: boolean
+  libraryCacheKey: number
 }
 
 export declare function update_playlist(id: string, name: string, description: string): void

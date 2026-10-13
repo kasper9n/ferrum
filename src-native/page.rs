@@ -3,19 +3,20 @@ use crate::data::Data;
 use crate::filter::{FilterTerm, filter};
 use crate::library_types::{ItemId, Library, TrackList};
 use crate::sort::sort;
-#[cfg(feature = "napi-rs")]
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use std::sync::Mutex;
 
+/// We don't keep the filter_terms in here, so that we can cache the pre-filtered page
 #[cfg_attr(feature = "napi", napi(object))]
-#[derive(Deserialize, Clone, Type)]
+#[derive(Deserialize, Clone, Type, Eq, PartialEq)]
 pub struct TracksPageOptions {
 	pub playlist_id: String,
 	pub sort_key: String,
 	pub sort_desc: bool,
-	pub filter_terms: Vec<FilterTerm>,
 	pub group_album_tracks: bool,
+	pub library_cache_key: u32,
 }
 
 #[cfg_attr(feature = "napi", napi(object))]
@@ -31,19 +32,40 @@ pub struct TracksPage {
 #[cfg(feature = "napi-rs")]
 #[cfg_attr(feature = "napi", napi(js_name = "get_tracks_page"))]
 #[allow(dead_code)]
-pub fn get_tracks_page_js(options: TracksPageOptions) -> Result<TracksPage> {
+pub fn get_tracks_page_js(
+	options: TracksPageOptions,
+	filter_terms: Vec<FilterTerm>,
+) -> Result<TracksPage> {
 	let data = Data::get_blocking();
-	Ok(get_tracks_page(options, &data.library)?)
+	Ok(get_tracks_page(options, filter_terms, &data.library)?)
+}
+
+static LAST_SORT: Mutex<Option<(TracksPageOptions, Vec<ItemId>)>> = Mutex::new(None);
+
+fn sort_cached(options: &TracksPageOptions, library: &Library) -> Result<Vec<ItemId>> {
+	if let Some((cached_options, ids)) = LAST_SORT.lock().unwrap().as_ref() {
+		if cached_options == options {
+			return Ok(ids.clone());
+		}
+	}
+
+	let ids = sort(options.clone(), library)?;
+
+	let mut last_sort = LAST_SORT.lock().unwrap();
+	*last_sort = Some((options.clone(), ids.clone()));
+
+	Ok(ids)
 }
 
 pub fn get_tracks_page(
 	options: TracksPageOptions,
+	filter_terms: Vec<FilterTerm>,
 	library: &Library,
 ) -> anyhow::Result<TracksPage> {
 	let tracklist = library.get_tracklist(&options.playlist_id)?;
-	let item_ids = sort(options.clone(), &library)?;
+	let item_ids = sort_cached(&options, &library)?;
 	let tracklist_length = item_ids.len();
-	let item_ids = filter(item_ids, options.filter_terms, &library);
+	let item_ids = filter(item_ids, filter_terms, &library);
 	let track_page = match tracklist {
 		TrackList::Playlist(playlist) => TracksPage {
 			playlist_kind: tracklist.kind().to_string(),

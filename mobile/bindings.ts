@@ -32,9 +32,9 @@ async getTrackByItemId(itemId: number) : Promise<Result<Track, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getTracksPage(options: TracksPageOptions) : Promise<Result<TracksPage, string>> {
+async getTracksPage(options: TracksPageOptions, filterTerms: FilterTerm[]) : Promise<Result<TracksPage, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_tracks_page", { options }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_tracks_page", { options, filterTerms }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -239,7 +239,10 @@ si?: CountObject[] | null;
 v?: number | null }
 export type TrackList = ({ type: "playlist" } & Playlist) | ({ type: "folder" } & Folder) | ({ type: "special" } & Special)
 export type TracksPage = { playlist_kind: string; playlist_name: string; playlist_description: string | null; playlist_length: number; item_ids: number[] }
-export type TracksPageOptions = { playlist_id: string; sort_key: string; sort_desc: boolean; filter_terms: FilterTerm[]; group_album_tracks: boolean }
+/**
+ * We don't keep the filter_terms in here, so that we can cache the pre-filtered page
+ */
+export type TracksPageOptions = { playlist_id: string; sort_key: string; sort_desc: boolean; group_album_tracks: boolean; library_cache_key: number }
 
 /** tauri-specta globals **/
 

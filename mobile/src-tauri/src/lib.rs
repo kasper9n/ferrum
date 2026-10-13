@@ -1,4 +1,5 @@
 use anyhow::{Context, Result, bail};
+use ferrum::filter::FilterTerm;
 use ferrum::library::Paths;
 use ferrum::library_types::{Library, TRACK_ID_MAP, Track, TrackList, TrackListID};
 use ferrum::migrate::{self, LibraryFile};
@@ -100,10 +101,14 @@ fn get_track_by_item_id(item_id: u32, app: AppHandle) -> Result<Track, String> {
 
 #[tauri::command]
 #[specta::specta]
-fn get_tracks_page(options: TracksPageOptions, app: AppHandle) -> Result<TracksPage, String> {
+fn get_tracks_page(
+	options: TracksPageOptions,
+	filter_terms: Vec<FilterTerm>,
+	app: AppHandle,
+) -> Result<TracksPage, String> {
 	let library_state = app.state::<Mutex<Library>>();
 	let library = library_state.lock().unwrap();
-	match page::get_tracks_page(options, &library) {
+	match page::get_tracks_page(options, filter_terms, &library) {
 		Ok(page) => Ok(page),
 		Err(err) => Err(err.to_string()),
 	}

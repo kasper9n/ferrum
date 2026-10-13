@@ -60,15 +60,16 @@
 	})
 
 	let tracks_page = $derived.by(() => {
-		refreshers.tracklist
-		refreshers.tracks
-		return get_tracks_page({
-			playlistId: params.id,
-			filterTerms: filter.terms,
-			sortKey: $sort_key,
-			sortDesc: $sort_desc,
-			groupAlbumTracks: $group_album_tracks,
-		})
+		return get_tracks_page(
+			{
+				playlistId: params.id,
+				sortKey: $sort_key,
+				sortDesc: $sort_desc,
+				groupAlbumTracks: $group_album_tracks,
+				libraryCacheKey: refreshers.tracklist + refreshers.tracks,
+			},
+			filter.terms,
+		)
 	})
 	$effect(() => {
 		$tracks_page_item_ids = tracks_page.itemIds

@@ -8,6 +8,7 @@ import type {
 	TrackMd,
 	TracksPageOptions,
 	ViewOptions,
+	FilterTerm,
 } from 'ferrum-addon'
 import { init_queue_persistence, queue } from './queue'
 import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
@@ -157,8 +158,8 @@ export function get_track_ids(item_ids: ItemId[]) {
 export function get_playlist_ids_with_track(track_id: TrackID) {
 	return strict_call((addon) => addon.get_playlist_ids_with_track(track_id))
 }
-export function get_tracks_page(options: TracksPageOptions) {
-	return strict_call((addon) => addon.get_tracks_page(options))
+export function get_tracks_page(options: TracksPageOptions, filter_terms: FilterTerm[]) {
+	return strict_call((addon) => addon.get_tracks_page(options, filter_terms))
 }
 export function track_exists(id: TrackID) {
 	return strict_call((addon) => addon.track_exists(id))
