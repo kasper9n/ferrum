@@ -5,9 +5,9 @@ import {
 	get_playlist_ids_with_track,
 	paths,
 	track_lists_details,
-} from '$lib/data.svelte'
-import { flatten_child_lists } from '$lib/helpers'
-import { ipc_renderer } from '$lib/window'
+} from '#lib/data.svelte.js'
+import { flatten_child_lists } from '#lib/helpers.js'
+import { ipc_renderer } from '#lib/window.js'
 import type { TrackID } from 'ferrum-addon'
 import { append_to_user_queue, prepend_to_user_queue } from './queue'
 import type { SelectedTracksAction } from '$electron/typed_ipc'

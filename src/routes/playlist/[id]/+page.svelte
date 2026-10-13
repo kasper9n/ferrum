@@ -31,25 +31,25 @@
 		paths,
 		join_paths,
 		refreshers,
-	} from '$lib/data.svelte'
-	import { new_playback_instance, playing_id } from '$lib/player'
-	import { get_duration, format_date, check_mouse_shortcut, check_shortcut } from '$lib/helpers'
-	import { tracklist_actions } from '$lib/page'
-	import { ipc_listen, ipc_renderer } from '$lib/window'
+	} from '#lib/data.svelte.js'
+	import { new_playback_instance, playing_id } from '#lib/player.js'
+	import { get_duration, format_date, check_mouse_shortcut, check_shortcut } from '#lib/helpers.js'
+	import { tracklist_actions } from '#lib/page.js'
+	import { ipc_listen, ipc_renderer } from '#lib/window.js'
 	import { onDestroy, onMount } from 'svelte'
-	import { dragged } from '$lib/drag-drop'
+	import { dragged } from '#lib/drag-drop.js'
 	import * as DragGhost from '$components/DragGhost.svelte'
 	import type { ItemId, Track, TracksPage } from 'ferrum-addon'
 	import Header from '$components/Header.svelte'
 	import { writable } from 'svelte/store'
-	import { SvelteSelection } from '$lib/selection'
+	import { SvelteSelection } from '#lib/selection.js'
 	import {
 		get_show_in_playlists_tree,
 		get_tracklists_tree,
 		handle_selected_tracks_action,
-	} from '$lib/menus'
+	} from '#lib/menus.js'
 	import type { SelectedTracksAction } from '$electron/typed_ipc'
-	import { RefreshLevel, VirtualGrid, type Column } from '$lib/virtual-grid.svelte'
+	import { RefreshLevel, VirtualGrid, type Column } from '#lib/virtual-grid.svelte.js'
 	import { filter } from '$components/Filter.svelte'
 
 	let tracklist_element: HTMLDivElement | undefined = $state()

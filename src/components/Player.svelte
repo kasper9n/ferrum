@@ -13,17 +13,17 @@
 	} from '../lib/player'
 	import { get_duration, prevent_default } from '../lib/helpers'
 	import { queue_visible, queue, shuffle, repeat } from '../lib/queue'
-	import { lyrics_state, toggle_lyrics_visibility } from '$lib/lyrics.svelte'
-	import { get_track, is_dev } from '$lib/data.svelte'
-	import { dragged } from '$lib/drag-drop'
+	import { lyrics_state, toggle_lyrics_visibility } from '#lib/lyrics.svelte.js'
+	import { get_track, is_dev } from '#lib/data.svelte.js'
+	import { dragged } from '#lib/drag-drop.js'
 	import * as dragGhost from './DragGhost.svelte'
 	import Slider from './Slider.svelte'
 	import {
 		get_show_in_playlists_tree,
 		get_tracklists_tree,
 		handle_selected_tracks_action,
-	} from '$lib/menus'
-	import { ipc_renderer } from '$lib/window'
+	} from '#lib/menus.js'
+	import { ipc_renderer } from '#lib/window.js'
 	import { tracks_page_item_ids } from '$routes/playlist/[id]/+page.svelte'
 	import { onDestroy } from 'svelte'
 

@@ -1,3 +1,5 @@
+import adapter from '@sveltejs/adapter-static'
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 import { defineConfig } from 'vite'
 import { sveltekit } from '@sveltejs/kit/vite'
 import electron from 'vite-plugin-electron'
@@ -12,18 +14,33 @@ export default defineConfig({
 	},
 	build: {
 		sourcemap: true,
-		minify: false, // For easier crash messages
+		minify: false /* For easier crash messages */,
 		target: 'chrome106',
 	},
 	plugins: [
-		sveltekit(),
+		sveltekit({
+			// Consult https://svelte.dev/docs#compile-time-svelte-preprocess
+			// for more information about preprocessors
+			preprocess: vitePreprocess(),
+
+			adapter: adapter({
+				pages: './build/web',
+				fallback: 'index.html',
+				assets: './build/web',
+			}),
+
+			alias: {
+				$routes: 'src/routes',
+				$components: 'src/components',
+				$electron: 'src/electron',
+			},
+		}),
 		tailwindcss(),
 		electron({
 			entry: ['./src/electron/main.ts', './src/electron/preload.ts'],
 			onstart({ startup }) {
-				// @ts-expect-error Global object from vite-plugin-electorn
 				const electron_app = process.electronApp
-				if (electron_app) {
+				if (electron_app?.pid) {
 					process.kill(electron_app.pid, 'SIGTERM')
 				} else {
 					startup()

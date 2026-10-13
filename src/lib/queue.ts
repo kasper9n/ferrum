@@ -2,7 +2,7 @@ import type { QueueItemState, TrackID } from 'ferrum-addon'
 import { get, writable } from 'svelte/store'
 import { getter_writable } from './helpers'
 import { ipc_renderer } from './window'
-import { track_exists } from '$lib/data.svelte'
+import { track_exists } from '#lib/data.svelte.js'
 import quit from './quit'
 
 export const queue_visible = writable(false)

@@ -9,26 +9,26 @@
 	import Lyrics from '$components/Lyrics.svelte'
 	import TrackInfo, { track_info_state } from '$components/TrackInfo.svelte'
 	import PlaylistInfoModal from '$components/PlaylistInfo.svelte'
-	import { queue_visible } from '$lib/queue'
-	import { lyrics_state } from '$lib/lyrics.svelte'
-	import { ipc_listen, ipc_renderer } from '$lib/window'
+	import { queue_visible } from '#lib/queue.js'
+	import { lyrics_state } from '#lib/lyrics.svelte.js'
+	import { ipc_listen, ipc_renderer } from '#lib/window.js'
 	import {
 		delete_track_list,
 		get_track_list,
 		import_tracks,
 		get_file_path,
 		type PlaylistInfo,
-	} from '$lib/data.svelte'
-	import { play_pause, playing_track, time_record } from '$lib/player'
+	} from '#lib/data.svelte.js'
+	import { play_pause, playing_track, time_record } from '#lib/player.js'
 	import DragGhost from '$components/DragGhost.svelte'
 	import ItunesImport from '$components/ItunesImport.svelte'
 	import QuickNav from '$components/QuickNav.svelte'
-	import { check_shortcut } from '$lib/helpers'
-	import { tracklist_actions } from '$lib/page'
+	import { check_shortcut } from '#lib/helpers.js'
+	import { tracklist_actions } from '#lib/page.js'
 	import CheckForUpdates from '$components/CheckForUpdates.svelte'
 	import Settings from '$components/Settings.svelte'
 	import Button from '$components/Button.svelte'
-	import Visualizer from '$lib/visualizer/Visualizer.svelte'
+	import Visualizer from '#lib/visualizer/Visualizer.svelte'
 	import { modals } from '$components/Modal.svelte'
 
 	let { children } = $props()

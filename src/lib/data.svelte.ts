@@ -1,5 +1,5 @@
 import { get } from 'svelte/store'
-import { ipc_renderer } from '$lib/window'
+import { ipc_renderer } from '#lib/window.js'
 import type {
 	MsSinceUnixEpoch,
 	TrackID,
@@ -10,6 +10,7 @@ import type {
 	ViewOptions,
 	FilterTerm,
 } from 'ferrum-addon'
+
 import { init_queue_persistence, queue } from './queue'
 import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
 import { call_sync, error_to_string, strict_call } from './error'
@@ -22,13 +23,17 @@ export const library_path = window.library_path
 export const is_mac = window.is_mac
 export const is_windws = window.is_windows
 export const get_file_path = window.get_file_path
+
 const inner_addon = window.addon
+
 export const ItunesImport = inner_addon.ItunesImport
 
 strict_call((addon) => addon.load_data(is_dev, local_data_path, library_path))
 
 export const paths = strict_call((addon) => addon.get_paths())
+
 init_queue_persistence(paths.queueFile)
+
 export function join_paths(...args: string[]) {
 	return args.join(paths.pathSeparator)
 }
@@ -170,7 +175,7 @@ export function get_track_list(id: TrackListID) {
 export function delete_track_list(id: TrackListID) {
 	strict_call((addon) => addon.delete_track_list(id))
 	if (id === get(current_playlist_id)) {
-		goto(resolve('/playlist/root'))
+		goto(resolve('playlist/root'))
 	}
 	track_lists_details.refresh()
 	save()

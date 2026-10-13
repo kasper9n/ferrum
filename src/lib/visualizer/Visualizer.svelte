@@ -2,11 +2,11 @@
 	import { start_visualizer } from './visualizer'
 	import { shader_toy_lite, type ShaderToyLite } from './ShaderToyLite.js'
 	import { onDestroy } from 'svelte'
-	import { audio_context, media_element_source } from '$lib/player'
+	import { audio_context, media_element_source } from '#lib/player.js'
 	import Player from '$components/Player.svelte'
 	import { fade, fly } from 'svelte/transition'
-	import { check_modifiers, check_shortcut } from '$lib/helpers'
-	import { error_popup } from '$lib/error'
+	import { check_modifiers, check_shortcut } from '#lib/helpers.js'
+	import { error_popup } from '#lib/error.js'
 	import Button from '$components/Button.svelte'
 
 	let { on_close }: { on_close: () => void } = $props()

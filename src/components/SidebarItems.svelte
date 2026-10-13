@@ -5,12 +5,11 @@
 		move_playlist,
 		view_options,
 		save_view_options,
-	} from '$lib/data.svelte'
+	} from '#lib/data.svelte.js'
+
 	import Self from './SidebarItems.svelte'
 
-	export type SidebarItemHandle = {
-		handleKey(e: KeyboardEvent): void
-	}
+	export type SidebarItemHandle = { handleKey(e: KeyboardEvent): void }
 
 	let shown_folders = $state(view_options.shownPlaylistFolders)
 
@@ -34,10 +33,10 @@
 	import { getContext } from 'svelte'
 	import { dragged } from '../lib/drag-drop'
 	import * as dragGhost from './DragGhost.svelte'
-	import { ipc_renderer } from '$lib/window'
-	import { check_shortcut, mousedown_link } from '$lib/helpers'
+	import { ipc_renderer } from '#lib/window.js'
+	import { check_shortcut, mousedown_link } from '#lib/helpers.js'
 	import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
-	import { tracklist_actions } from '$lib/page'
+	import { tracklist_actions } from '#lib/page.js'
 	import { resolve } from '$app/paths'
 	import { goto } from '$app/navigation'
 	import { page } from '$app/state'
@@ -118,7 +117,7 @@
 		if (check_shortcut(e, 'ArrowUp')) {
 			select_up(index)
 		} else if (check_shortcut(e, 'ArrowUp', { alt: true })) {
-			goto(resolve('/playlist/root'))
+			goto(resolve('playlist/root'))
 		} else if (check_shortcut(e, 'ArrowDown', { alt: true })) {
 			select_last('root')
 		} else if (check_shortcut(e, 'ArrowDown')) {
@@ -227,10 +226,9 @@
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
 					height="24"
-					viewBox="0 0 24 24"
+					viewBox="0 0 24 24"><path d="M21 12l-18 12v-24z"></path></svg
 				>
-					<path d="M21 12l-18 12v-24z" />
-				</svg>
+
 				<!-- svelte-ignore a11y_interactive_supports_focus -->
 				<div
 					class="text"

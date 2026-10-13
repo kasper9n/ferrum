@@ -70,11 +70,11 @@
 </script>
 
 <script lang="ts">
-	import { check_shortcut } from '$lib/helpers'
+	import { check_shortcut } from '#lib/helpers.js'
 	import Button from './Button.svelte'
 	import type { Track, TrackID } from 'ferrum-addon'
-	import { ipc_listen, ipc_renderer } from '$lib/window'
-	import { playing_id, reload } from '$lib/player'
+	import { ipc_listen, ipc_renderer } from '#lib/window.js'
+	import { playing_id, reload } from '#lib/player.js'
 	import Modal, { modals } from './Modal.svelte'
 	import {
 		get_file_path,
@@ -86,7 +86,7 @@
 		set_image,
 		set_image_data,
 		update_track_info,
-	} from '$lib/data.svelte'
+	} from '#lib/data.svelte.js'
 	import { tick } from 'svelte'
 
 	const genres = get_genres()

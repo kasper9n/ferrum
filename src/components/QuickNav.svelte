@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte'
 	import { check_shortcut } from '../lib/helpers'
-	import { ipc_listen } from '$lib/window'
+	import { ipc_listen } from '#lib/window.ts'
 	import fuzzysort from 'fuzzysort'
-	import { track_lists_details } from '$lib/data.svelte'
+	import { track_lists_details } from '#lib/data.svelte.js'
 	import type { TrackListDetails } from 'ferrum-addon'
 	import Modal from './Modal.svelte'
 	import { special_playlists_nav } from './Sidebar.svelte'
