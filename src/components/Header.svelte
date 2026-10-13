@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { is_mac } from '#lib/data.svelte.js'
-	import { queue_visible } from '#lib/queue.js'
+	import { is_mac } from '#lib/data.svelte.ts'
+	import { queue_visible } from '#lib/queue.ts'
 	import { modals } from './Modal.svelte'
 
 	interface Props {

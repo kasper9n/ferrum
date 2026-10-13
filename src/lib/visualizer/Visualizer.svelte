@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { start_visualizer } from './visualizer'
-	import { shader_toy_lite, type ShaderToyLite } from './ShaderToyLite.js'
+	import { shader_toy_lite, type ShaderToyLite } from './ShaderToyLite.ts'
 	import { onDestroy } from 'svelte'
-	import { audio_context, media_element_source } from '#lib/player.js'
-	import Player from '$components/Player.svelte'
+	import { audio_context, media_element_source } from '#lib/player.ts'
+	import Player from '#components/Player.svelte'
 	import { fade, fly } from 'svelte/transition'
-	import { check_modifiers, check_shortcut } from '#lib/helpers.js'
-	import { error_popup } from '#lib/error.js'
-	import Button from '$components/Button.svelte'
+	import { check_modifiers, check_shortcut } from '#lib/helpers.ts'
+	import { error_popup } from '#lib/error.ts'
+	import Button from '#components/Button.svelte'
 
 	let { on_close }: { on_close: () => void } = $props()
 
@@ -91,7 +91,7 @@
 					vec2 uv = k_uv();
 					uv *= zoom;
 					fragColor = vec4(0.);
-					
+
 					for (float i = 0.; i < orbs; i++) {
 						uv.y -= cos((i+1.)*uv.y/div - iStream);
 						uv.x += cos((i+1.)*uv.y/div2 - iStream/1.5);
@@ -131,23 +131,23 @@
 					uv.x *= iResolution.x / iResolution.y;
 					uv *= zoom;
 					fragColor = vec4(0.);
-					
+
 					uv = normalize(abs(uv) + sin(abs(uv) - iStream)) * length(uv);
 					uv *= rotate2d(rotation);
-					
+
 					for (float i = 0.; i < BALLS; i++) {
 						float dist = length(uv);
 						uv.y += yOuter * sin(uv.y/yDivider + iStream/5.) / 1. * sin(uv.x/1. - iStream/3.);
 						uv.x -= xOuter * sin(uv.x/xDivider - iStream/5.) / 1. * sin(uv.x/1.1 + iStream/1.);
-						
+
 						float t = i * PI / BALLS * (5. + 1.) + iStream/5000.;
 						float _multiplier = dist * multiplier * sin(uv.x);
 						vec2 p = vec2(radius * -2. * tan(t * multiplier), 2. * radius * sin(t * multiplier));
-						
+
 						vec3 col = cos(vec3(0, 1, -1) * PI * 2. / 3. + PI * (iStream / 20. + i / 5.)) * 0.5 + 0.5;
 						fragColor += vec4(pow(iVolume, 1.3) * ballSize / length(uv - p * 0.9) * col, contrast);
 					}
-					
+
 					fragColor.xyz = pow(fragColor.xyz, vec3(contrast));
 					fragColor.w = 1.0;
 				}
@@ -194,7 +194,7 @@
 	]
 
 	const image_shader = `
-		void mainImage( out vec4 fragColor, in vec2 fragCoord ) {  
+		void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 			vec2 uv = fragCoord.xy / iResolution.xy;
 			vec4 col = texture(iChannel0, uv);
 			fragColor = vec4(col.rgb, 1.);

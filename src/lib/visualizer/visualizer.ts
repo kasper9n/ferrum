@@ -1,6 +1,6 @@
 // Based on kaleidosync code
 
-import { create_singular_request_animation_frame } from '#lib/helpers.js'
+import { create_singular_request_animation_frame } from '#lib/helpers.ts'
 import { scaleLinear } from 'd3-scale'
 import Meyda from 'meyda'
 export type AudioStream = [number, number]

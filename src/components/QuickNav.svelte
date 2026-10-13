@@ -3,7 +3,7 @@
 	import { check_shortcut } from '../lib/helpers'
 	import { ipc_listen } from '#lib/window.ts'
 	import fuzzysort from 'fuzzysort'
-	import { track_lists_details } from '#lib/data.svelte.js'
+	import { track_lists_details } from '#lib/data.svelte.ts'
 	import type { TrackListDetails } from 'ferrum-addon'
 	import Modal from './Modal.svelte'
 	import { special_playlists_nav } from './Sidebar.svelte'

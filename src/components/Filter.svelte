@@ -132,7 +132,7 @@
 	import { useHistory } from '@reddojs/svelte'
 	import { ipc_listen } from '../lib/window'
 	import type { HTMLInputAttributes } from 'svelte/elements'
-	import { check_shortcut } from '#lib/helpers.js'
+	import { check_shortcut } from '#lib/helpers.ts'
 
 	interface Props {
 		onfocus: HTMLInputAttributes['onfocus']

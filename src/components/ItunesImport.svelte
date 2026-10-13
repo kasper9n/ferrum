@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { ItunesImport, track_lists_details, save, refreshers } from '#lib/data.svelte.js'
-	import { ipc_renderer } from '#lib/window.js'
+	import { ItunesImport, track_lists_details, save, refreshers } from '#lib/data.svelte.ts'
+	import { ipc_renderer } from '#lib/window.ts'
 	import type { ImportStatus } from 'ferrum-addon'
 	import Button from './Button.svelte'
 	import Modal from './Modal.svelte'
-	import { strict_call } from '#lib/error.js'
+	import { strict_call } from '#lib/error.ts'
 
 	interface Props {
 		cancel: () => void

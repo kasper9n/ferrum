@@ -8,15 +8,15 @@
 <script lang="ts">
 	import SidebarItems, { type SidebarItemHandle } from './SidebarItems.svelte'
 	import Filter from './Filter.svelte'
-	import { is_mac, track_lists_details, move_playlist } from '#lib/data.svelte.js'
+	import { is_mac, track_lists_details, move_playlist } from '#lib/data.svelte.ts'
 	import { ipc_listen, ipc_renderer } from '../lib/window'
 	import { writable } from 'svelte/store'
 	import { onDestroy, setContext, tick } from 'svelte'
 	import { dragged } from '../lib/drag-drop'
-	import { tracklist_actions } from '#lib/page.js'
+	import { tracklist_actions } from '#lib/page.ts'
 	import { goto } from '$app/navigation'
-	import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
-	import { prevent_default_self } from '#lib/helpers.js'
+	import { current_playlist_id } from '#routes/playlist/[id]/+page.svelte'
+	import { prevent_default_self } from '#lib/helpers.ts'
 	import { resolve } from '$app/paths'
 
 	let viewport: HTMLElement | undefined = $state()

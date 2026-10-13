@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition'
-	import { ScrollAnimation } from '#lib/scroll.js'
-	import { seek } from '#lib/player.js'
+	import { ScrollAnimation } from '#lib/scroll.ts'
+	import { seek } from '#lib/player.ts'
 	import Button from './Button.svelte'
 
 	type LrcLine = {

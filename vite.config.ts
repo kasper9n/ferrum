@@ -28,12 +28,6 @@ export default defineConfig({
 				fallback: 'index.html',
 				assets: './build/web',
 			}),
-
-			alias: {
-				$routes: 'src/routes',
-				$components: 'src/components',
-				$electron: 'src/electron',
-			},
 		}),
 		tailwindcss(),
 		electron({

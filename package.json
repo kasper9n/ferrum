@@ -111,7 +111,10 @@
 	},
 	"imports": {
 		"#lib": "./src/lib/index.js",
-		"#lib/*": "./src/lib/*"
+		"#lib/*": "./src/lib/*",
+		"#routes/*": "./src/routes/*",
+		"#components/*": "./src/components/*",
+		"#electron/*": "./src/electron/*"
 	},
 	"prettier": {
 		"useTabs": true,

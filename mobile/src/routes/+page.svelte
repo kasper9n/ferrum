@@ -1,5 +1,5 @@
 <script lang="ts">
-	import commands from '#lib/commands.js'
+	import commands from '#lib/commands.ts'
 	import { open } from '@tauri-apps/plugin-dialog'
 	import type { LibraryTauri } from '../../bindings'
 	import { readTextFile } from '@tauri-apps/plugin-fs'

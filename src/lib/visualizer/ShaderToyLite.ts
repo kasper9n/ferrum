@@ -1,6 +1,6 @@
 // github.com/chipweinberger/ShaderToyLite.js/blob/main/ShaderToyLite.js
 
-import { create_singular_request_animation_frame } from '#lib/helpers.js'
+import { create_singular_request_animation_frame } from '#lib/helpers.ts'
 
 type Key = 'A' | 'B' | 'C' | 'D' | 'Image'
 

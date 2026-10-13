@@ -5,13 +5,13 @@ import {
 	get_playlist_ids_with_track,
 	paths,
 	track_lists_details,
-} from '#lib/data.svelte.js'
-import { flatten_child_lists } from '#lib/helpers.js'
-import { ipc_renderer } from '#lib/window.js'
+} from '#lib/data.svelte.ts'
+import { flatten_child_lists } from '#lib/helpers.ts'
+import { ipc_renderer } from '#lib/window.ts'
 import type { TrackID } from 'ferrum-addon'
 import { append_to_user_queue, prepend_to_user_queue } from './queue'
-import type { SelectedTracksAction } from '$electron/typed_ipc'
-import { open_track_info } from '$components/TrackInfo.svelte'
+import type { SelectedTracksAction } from '#electron/typed_ipc.ts'
+import { open_track_info } from '#components/TrackInfo.svelte'
 import { tracklist_actions } from './page'
 import { tick } from 'svelte'
 import { goto } from '$app/navigation'

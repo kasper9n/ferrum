@@ -9,21 +9,21 @@
 	} from '../lib/queue'
 	import { onDestroy } from 'svelte'
 	import QueueItemComponent from './QueueItem.svelte'
-	import { dragged } from '#lib/drag-drop.js'
-	import { get_track } from '#lib/data.svelte.js'
+	import { dragged } from '#lib/drag-drop.ts'
+	import { get_track } from '#lib/data.svelte.ts'
 	import * as dragGhost from './DragGhost.svelte'
-	import { ipc_listen, ipc_renderer } from '#lib/window.js'
-	import { check_shortcut, prevent_default } from '#lib/helpers.js'
+	import { ipc_listen, ipc_renderer } from '#lib/window.ts'
+	import { check_shortcut, prevent_default } from '#lib/helpers.ts'
 	import { fly } from 'svelte/transition'
-	import { ScrollAnimation } from '#lib/scroll.js'
+	import { ScrollAnimation } from '#lib/scroll.ts'
 	import VirtualListBlock, { scroll_container_keydown } from './VirtualListBlock.svelte'
-	import type { SelectedTracksAction } from '$electron/typed_ipc'
+	import type { SelectedTracksAction } from '#electron/typed_ipc.ts'
 	import {
 		get_show_in_playlists_tree,
 		get_tracklists_tree,
 		handle_selected_tracks_action,
-	} from '#lib/menus.js'
-	import { SvelteSelection } from '#lib/selection.js'
+	} from '#lib/menus.ts'
+	import { SvelteSelection } from '#lib/selection.ts'
 
 	let object_urls: string[] = []
 	const entry_height = 54

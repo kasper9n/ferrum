@@ -3,33 +3,33 @@
 	import '../assets/fonts.css'
 	import { onDestroy, onMount } from 'svelte'
 	import { fade, fly } from 'svelte/transition'
-	import Player from '$components/Player.svelte'
-	import Sidebar from '$components/Sidebar.svelte'
-	import Queue from '$components/Queue.svelte'
-	import Lyrics from '$components/Lyrics.svelte'
-	import TrackInfo, { track_info_state } from '$components/TrackInfo.svelte'
-	import PlaylistInfoModal from '$components/PlaylistInfo.svelte'
-	import { queue_visible } from '#lib/queue.js'
-	import { lyrics_state } from '#lib/lyrics.svelte.js'
-	import { ipc_listen, ipc_renderer } from '#lib/window.js'
+	import Player from '#components/Player.svelte'
+	import Sidebar from '#components/Sidebar.svelte'
+	import Queue from '#components/Queue.svelte'
+	import Lyrics from '#components/Lyrics.svelte'
+	import TrackInfo, { track_info_state } from '#components/TrackInfo.svelte'
+	import PlaylistInfoModal from '#components/PlaylistInfo.svelte'
+	import { queue_visible } from '#lib/queue.ts'
+	import { lyrics_state } from '#lib/lyrics.svelte.ts'
+	import { ipc_listen, ipc_renderer } from '#lib/window.ts'
 	import {
 		delete_track_list,
 		get_track_list,
 		import_tracks,
 		get_file_path,
 		type PlaylistInfo,
-	} from '#lib/data.svelte.js'
-	import { play_pause, playing_track, time_record } from '#lib/player.js'
-	import DragGhost from '$components/DragGhost.svelte'
-	import ItunesImport from '$components/ItunesImport.svelte'
-	import QuickNav from '$components/QuickNav.svelte'
-	import { check_shortcut } from '#lib/helpers.js'
-	import { tracklist_actions } from '#lib/page.js'
-	import CheckForUpdates from '$components/CheckForUpdates.svelte'
-	import Settings from '$components/Settings.svelte'
-	import Button from '$components/Button.svelte'
+	} from '#lib/data.svelte.ts'
+	import { play_pause, playing_track, time_record } from '#lib/player.ts'
+	import DragGhost from '#components/DragGhost.svelte'
+	import ItunesImport from '#components/ItunesImport.svelte'
+	import QuickNav from '#components/QuickNav.svelte'
+	import { check_shortcut } from '#lib/helpers.ts'
+	import { tracklist_actions } from '#lib/page.ts'
+	import CheckForUpdates from '#components/CheckForUpdates.svelte'
+	import Settings from '#components/Settings.svelte'
+	import Button from '#components/Button.svelte'
 	import Visualizer from '#lib/visualizer/Visualizer.svelte'
-	import { modals } from '$components/Modal.svelte'
+	import { modals } from '#components/Modal.svelte'
 
 	let { children } = $props()
 

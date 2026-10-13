@@ -14,7 +14,7 @@
 	import { resolve } from '$app/paths'
 	import { openUrl } from '@tauri-apps/plugin-opener'
 	import VirtualListBlock from '../../../src/components/VirtualListBlock.svelte'
-	import commands from '#lib/commands.js'
+	import commands from '#lib/commands.ts'
 	import { error as sk_error } from '@sveltejs/kit'
 	import Filter, { filter } from './Filter.svelte'
 

@@ -11,11 +11,11 @@ import {
 	join_paths,
 	paths,
 	read_cover_async,
-} from '#lib/data.svelte.js'
+} from '#lib/data.svelte.ts'
 import type { Track, TrackID } from 'ferrum-addon'
 import { ipc_renderer } from './window'
 import { queue, set_new_queue, next as queueNext, prev as queuePrev } from './queue'
-import { tracks_page_item_ids } from '$routes/playlist/[id]/+page.svelte'
+import { tracks_page_item_ids } from '#routes/playlist/[id]/+page.svelte'
 
 const audio = new Audio()
 export const audio_context = new AudioContext()

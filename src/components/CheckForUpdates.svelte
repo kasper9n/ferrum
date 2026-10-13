@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { ipc_renderer } from '#lib/window.js'
+	import { ipc_renderer } from '#lib/window.ts'
 	import Modal from './Modal.svelte'
 	import Button from './Button.svelte'
-	import { is_dev, save_view_options, view_options } from '#lib/data.svelte.js'
-	import { check_shortcut } from '#lib/helpers.js'
+	import { is_dev, save_view_options, view_options } from '#lib/data.svelte.ts'
+	import { check_shortcut } from '#lib/helpers.ts'
 
 	let latest_update: Awaited<ReturnType<typeof check>> | null = $state(null)
 

@@ -5,7 +5,7 @@
 		move_playlist,
 		view_options,
 		save_view_options,
-	} from '#lib/data.svelte.js'
+	} from '#lib/data.svelte.ts'
 
 	import Self from './SidebarItems.svelte'
 
@@ -33,10 +33,10 @@
 	import { getContext } from 'svelte'
 	import { dragged } from '../lib/drag-drop'
 	import * as dragGhost from './DragGhost.svelte'
-	import { ipc_renderer } from '#lib/window.js'
-	import { check_shortcut, mousedown_link } from '#lib/helpers.js'
-	import { current_playlist_id } from '$routes/playlist/[id]/+page.svelte'
-	import { tracklist_actions } from '#lib/page.js'
+	import { ipc_renderer } from '#lib/window.ts'
+	import { check_shortcut, mousedown_link } from '#lib/helpers.ts'
+	import { current_playlist_id } from '#routes/playlist/[id]/+page.svelte'
+	import { tracklist_actions } from '#lib/page.ts'
 	import { resolve } from '$app/paths'
 	import { goto } from '$app/navigation'
 	import { page } from '$app/state'

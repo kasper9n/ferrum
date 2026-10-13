@@ -1,4 +1,4 @@
-import type { IpcRenderer, IpcFunctions } from '$electron/typed_ipc'
+import type { IpcRenderer, IpcFunctions } from '#electron/typed_ipc.ts'
 import type Addon from 'ferrum-addon'
 const electron = window.require('electron')
 
