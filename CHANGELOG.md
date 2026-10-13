@@ -6,6 +6,7 @@
 - Make sorting and filtering much faster
 - Avoid resorting when filtering
 - Fix sort happening twice
+- Fix filter text offset when it starts with whitespace
 - Add `O`, `o` fuzzy matching for `Ơ`, `ơ`
 
 ## 1.2.0 - 2026 Aug 31

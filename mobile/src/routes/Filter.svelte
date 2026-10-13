@@ -273,7 +273,8 @@
 			aria-hidden="true"
 		>
 			{#each filter.terms as term}
-				{#if term.field !== undefined}
+				<!-- Option gets turned into undefined by Napi, while Specta turns it to null -->
+				{#if term.field !== undefined && term.field !== null}
 					{term.field_text}:<span class="highlight">{term.literal_text ?? term.literal}</span>
 				{:else}
 					{term.literal_text ?? term.literal}
@@ -310,6 +311,7 @@
 	}
 
 	.text-overlay {
+		white-space: pre;
 		border: 1px solid transparent;
 		left: var(--filter-padding-x);
 		right: var(--filter-padding-x);
