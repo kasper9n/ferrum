@@ -55,7 +55,7 @@
 	let tracklist_element: HTMLDivElement | undefined = $state()
 
 	let { params } = $props()
-	$effect(() => {
+	$effect.pre(() => {
 		$current_playlist_id = params.id
 	})
 
