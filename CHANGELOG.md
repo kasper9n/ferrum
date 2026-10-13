@@ -1,9 +1,9 @@
 # Changelog
 
 ## Next
+- Make sorting and filtering much faster
 - Fix undo in the filter textbox not stopping at selection/cursor changes
 - Improve error messages
-- Make sorting and filtering much faster
 - Avoid resorting when filtering
 - Fix sort happening twice
 - Fix filter text offset when it starts with whitespace
