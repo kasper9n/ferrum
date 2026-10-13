@@ -115,7 +115,7 @@ jobs:
           projectPath: mobile
           mobile: android
           tagName: v${{ env.APP_VERSION }}
-          releaseName: ${{ env.APP_VERSION }}
+          releaseName: v${{ env.APP_VERSION }}
           releaseDraft: true
           releaseAssetNamePattern: '[name]-v[version]-[platform]-[arch][ext]'
           args: --apk --split-per-abi --target ${{ matrix.tauri_target }} --config '{"version":"${{ env.APP_VERSION }}"}'
