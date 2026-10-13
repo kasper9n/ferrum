@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 1.3.0 - 2026 Oct 13
 - Make sorting and filtering much faster
 - Fix undo in the filter textbox not stopping at selection/cursor changes
 - Improve error messages
