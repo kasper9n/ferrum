@@ -14,7 +14,7 @@
 	import { resolve } from '$app/paths'
 	import { openUrl } from '@tauri-apps/plugin-opener'
 	import VirtualListBlock from '../../../src/components/VirtualListBlock.svelte'
-	import commands from '$lib/commands'
+	import commands from '#lib/commands.js'
 	import { error as sk_error } from '@sveltejs/kit'
 	import Filter, { filter } from './Filter.svelte'
 
@@ -109,13 +109,11 @@
 	// ── Navigation ─────────────────────────────────────────────────────────────
 
 	function open_folder(id: string) {
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(resolve('/') + `?view=browser&id=${id}`)
+		goto(resolve(`/?view=browser&id=${id}`))
 	}
 
 	function open_playlist(id: string) {
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(resolve('/') + `?view=tracks&id=${id}`)
+		goto(resolve(`/?view=tracks&id=${id}`))
 	}
 
 	// ── Derived / async data ──────────────────────────────────────────────────
