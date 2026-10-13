@@ -1,28 +1,26 @@
 <script lang="ts">
 	import Revealed from './Revealed.svelte'
-	import { page } from '$app/stores'
+	import { page } from '$app/state'
 </script>
 
-<svelte:head>
-	<title>{$page.status} • Ferrum</title>
-</svelte:head>
+<svelte:head><title>{page.status} • Ferrum</title></svelte:head>
 
 <main class="relative mx-auto mb-24 max-w-3xl p-6">
 	<Revealed
 		class="mt-20 mb-4 text-center transition-all ease-out"
 		options={{ opacity: 0, scale: 0.9, duration: 1000 }}
+		><h1 class="text-7xl font-extrabold">{page.status}</h1></Revealed
 	>
-		<h1 class="text-7xl font-extrabold">{$page.status}</h1>
-	</Revealed>
+
 	<Revealed
 		class="mb-12 text-center transition-all ease-out"
 		options={{ opacity: 0, y: -10, duration: 750, delay: 500 }}
 	>
 		<p class="text-xl text-green-100 opacity-60 transition-all duration-500 ease-out">
-			{#if $page.status === 404}
+			{#if page.status === 404}
 				This page did not survive the nuclear fallout
 			{:else}
-				{$page.error?.message || 'Something went wrong'}
+				{page.error?.message || 'Something went wrong'}
 			{/if}
 		</p>
 	</Revealed>

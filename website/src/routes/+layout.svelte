@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores'
+	import { page } from '$app/state'
 	import '../app.css'
 	import Revealed from './Revealed.svelte'
 </script>
@@ -23,7 +23,7 @@
 </svelte:head>
 
 <nav
-	class="mx-auto flex max-w-5xl items-center py-4 px-3 text-base text-white/60 sm:justify-between sm:px-6"
+	class="mx-auto flex max-w-5xl items-center px-3 py-4 text-base text-white/60 sm:justify-between sm:px-6"
 >
 	<Revealed
 		class="ease-out-cubic sm:w-32"
@@ -44,14 +44,14 @@
 	>
 		<a
 			class="mx-1.5 py-2 text-sm transition-colors duration-150 hover:text-white sm:text-base"
-			class:font-medium={$page.url.pathname === '/'}
-			class:text-white={$page.url.pathname === '/'}
+			class:font-medium={page.url.pathname === '/'}
+			class:text-white={page.url.pathname === '/'}
 			href="/">Overview</a
 		>
 		<a
 			class="mx-1.5 py-2 text-sm transition-colors duration-150 hover:text-white sm:text-base"
-			class:font-medium={$page.url.pathname === '/changelog'}
-			class:text-white={$page.url.pathname === '/changelog'}
+			class:font-medium={page.url.pathname === '/changelog'}
+			class:text-white={page.url.pathname === '/changelog'}
 			href="/changelog">Changelog</a
 		>
 	</Revealed>
@@ -72,13 +72,13 @@
 					stroke-linecap="round"
 					stroke-linejoin="round"
 					stroke-width="2"
-				/></svg
-			></a
-		>
+				></path>
+			</svg>
+		</a>
 	</Revealed>
 </nav>
 
-<slot />
+<slot></slot>
 
 <style lang="sass">
 	:global(html)
