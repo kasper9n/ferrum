@@ -26,15 +26,12 @@
 		"lint": "svelte-check --config vite.config.ts --tsconfig ./tsconfig.json && eslint src && prettier --check src",
 		"format": "eslint --fix src && prettier --write src",
 		"check": "npm run lint && cargo check",
-		"release": "npm run check && echo && bash -c 'read -ep \"Enter new version: \" version && read -ep \"Before continuing, update CHANGELOG.md (Enter)\" && git add . && npm version --force \"$version\"' && read -ep \"Before continuing, add release notes to the generated GitHub release and publish it (Enter)\" && read -ep \"Nice! Press enter to exit\""
+		"release": "npm run check && echo && bash -c 'read -ep \"Enter new version: \" version && read -ep \"Before continuing, update CHANGELOG.md (Enter)\" && read -ep \"Commit and push? (Enter)\" && git add . && npm version --force \"$version\"' && git push --follow-tags && read -ep \"Before continuing, add release notes to the generated GitHub release and publish it (Enter)\" && echo Done!"
 	},
 	"build": {
 		"appId": "space.kasper.ferrum",
 		"productName": "Ferrum",
 		"artifactName": "${productName}-v${version}-${os}-${arch}.${ext}",
-		"releaseInfo": {
-			"releaseName": "v${version}"
-		},
 		"mac": {
 			"category": "public.app-category.music",
 			"icon": "assets/icon.icns",

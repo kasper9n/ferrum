@@ -81,6 +81,9 @@ jobs:
       - run: npm install
         working-directory: mobile
 
+      # Needs root tsconfig.json
+      - run: npm install && npx svelte-kit sync
+
       - name: Android signing setup
         working-directory: mobile/src-tauri/gen/android
         run: |
@@ -91,7 +94,7 @@ jobs:
 
       - name: Build
         # uploadWorkflowArtifacts and mobile are not released
-        uses: tauri-apps/tauri-action@a1b01e690374452a209dd44f6de089dda9003d3d
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

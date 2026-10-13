@@ -40,7 +40,7 @@ jobs:
       - run: npm install
       - run: npm run napi -- --target ${{ matrix.target }}
       - run: npm run build:web
-      - run: npm run electron-builder -- ${{ matrix.arg }} --publish always --config.publish.provider github --config.publish.publishAutoUpdate false
+      - run: npm run electron-builder -- ${{ matrix.arg }} --publish always --config.publish.provider github --config.publish.publishAutoUpdate false --config.releaseInfo.releaseName="${{ github.ref_name }}"
         env:
           GH_TOKEN: ${{ secrets.github_token }}
       - run: npm run generate-update-json
@@ -95,6 +95,9 @@ jobs:
       - run: npm install
         working-directory: mobile
 
+      # Needs root tsconfig.json
+      - run: npm install && npx svelte-kit sync
+
       - name: Android signing setup
         working-directory: mobile/src-tauri/gen/android
         run: |
@@ -108,7 +111,7 @@ jobs:
 
       - name: Build
         # Unreleased v1 is used to be able to use uploadWorkflowArtifacts and mobile:
-        uses: tauri-apps/tauri-action@850c373b94f35e16e4de61cbb9f6e4876af8c0b4
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
