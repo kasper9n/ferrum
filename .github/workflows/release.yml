@@ -40,9 +40,24 @@ jobs:
       - run: npm install
       - run: npm run napi -- --target ${{ matrix.target }}
       - run: npm run build:web
+
+      # Code sign with self-signed certificate on macOS to prevent accessibility permission from having to be manually removed and re-granted
+      # electron-builder code signing doesn't work when passing the self-signed certificate base64 as CSC_LINK, so we have to do this manual stuff instead
+      - name: Trust self-signed certificate
+        if: runner.os == 'macOS'
+        run: sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain apple-certificate.pem
+
+      - name: Import self-signed certificate
+        if: runner.os == 'macOS'
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_KEY_BASE64 }}
+          p12-password: ${{ secrets.APPLE_KEY_PASSWORD }}
+
       - run: npm run electron-builder -- ${{ matrix.arg }} --publish always --config.publish.provider github --config.publish.publishAutoUpdate false --config.releaseInfo.releaseName="${{ github.ref_name }}"
         env:
           GH_TOKEN: ${{ secrets.github_token }}
+          CSC_KEY_PASSWORD: ${{ secrets.APPLE_KEY_PASSWORD }}
       - run: npm run generate-update-json
 
       # Do not run in parallel - It can cause errors even with --clobber
