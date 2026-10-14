@@ -43,6 +43,8 @@ jobs:
       - run: npm run electron-builder -- ${{ matrix.arg }} --publish always --config.publish.provider github --config.publish.publishAutoUpdate false --config.releaseInfo.releaseName="${{ github.ref_name }}"
         env:
           GH_TOKEN: ${{ secrets.github_token }}
+          CSC_LINK: ${{ secrets.APPLE_KEY_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.APPLE_KEY_PASSWORD }}
       - run: npm run generate-update-json
 
       # Do not run in parallel - It can cause errors even with --clobber
