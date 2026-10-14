@@ -214,7 +214,7 @@
 	}}
 />
 <svelte:head>
-	<title>Ferrum</title>
+	<title>FerrumSignTest</title>
 </svelte:head>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -262,8 +262,8 @@
 								}}>Ignore</Button
 							>
 						{:else if media_keys_result.needs_accessibility_permission}
-							Do you want to Ferrum to control the media keys? You may need to delete and re-add the
-							app from the accessibility list
+							Do you want to FerrumSignTest to control the media keys? You may need to delete and
+							re-add the app from the accessibility list
 							<Button
 								class="text-nowrap"
 								type="button"

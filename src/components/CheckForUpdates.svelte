@@ -40,7 +40,7 @@
 			ipc_renderer.invoke('open_url', channel.url)
 			latest_update = null
 		}}
-		title="A new version of Ferrum is available!"
+		title="A new version of FerrumSignTest is available!"
 		onkeydown={(e) => {
 			if (check_shortcut(e, 'Enter')) {
 				ipc_renderer.invoke('open_url', channel.url)
@@ -51,7 +51,7 @@
 		<!-- svelte-ignore a11y_autofocus -->
 		<div class="w-md max-w-xl text-sm outline-none" autofocus tabindex="-1">
 			<p class="pb-3">
-				Ferrum {latest_update.channel.version} is available. You are currently on {latest_update.app_version}
+				FerrumSignTest {latest_update.channel.version} is available. You are currently on {latest_update.app_version}
 			</p>
 			<p class="pb-1 font-semibold">Release notes:</p>
 			<p class="max-h-72 overflow-y-auto rounded bg-black/30 px-3 py-2 whitespace-pre-wrap">

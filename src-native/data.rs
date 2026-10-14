@@ -15,14 +15,18 @@ pub fn app_log_dir() -> Result<PathBuf> {
 	{
 		use anyhow::Context;
 		let home_dir = dirs_next::home_dir().context("Home folder not found")?;
-		let log_dir = home_dir.join("Library/Logs").join("space.kasper.ferrum");
+		let log_dir = home_dir
+			.join("Library/Logs")
+			.join("space.kasper.ferrumsigntest");
 		return Ok(log_dir);
 	}
 	#[cfg(not(target_os = "macos"))]
 	{
 		use anyhow::Context;
 		let local_data_dir = dirs_next::data_local_dir().context("Local data folder not found")?;
-		let log_dir = local_data_dir.join("space.kasper.ferrum").join("logs");
+		let log_dir = local_data_dir
+			.join("space.kasper.ferrumsigntest")
+			.join("logs");
 		return Ok(log_dir);
 	}
 }
@@ -67,17 +71,17 @@ impl Data {
 			let appdata_dev = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src-native/appdata");
 			library_dir = appdata_dev.join("Library");
 			cache_dir = appdata_dev.join("Caches");
-			local_data_dir = appdata_dev.join("LocalData/space.kasper.ferrum");
+			local_data_dir = appdata_dev.join("LocalData/space.kasper.ferrumsigntest");
 		} else {
 			library_dir = dirs_next::audio_dir()
 				.context("Music folder not found")?
-				.join("Ferrum");
+				.join("FerrumSignTest");
 			cache_dir = dirs_next::cache_dir()
 				.context("Cache folder not found")?
-				.join("space.kasper.ferrum");
+				.join("space.kasper.ferrumsigntest");
 			local_data_dir = dirs_next::data_local_dir()
 				.context("Local data folder not found")?
-				.join("space.kasper.ferrum");
+				.join("space.kasper.ferrumsigntest");
 		};
 		let local_data_dir = match local_data_path {
 			Some(path) => PathBuf::from(path),

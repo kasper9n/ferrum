@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const addon: typeof import('ferrum-addon') = require('ferrum-addon')
 
-if (is.dev) app.setName('Ferrum Dev')
+if (is.dev) app.setName('FerrumSignTest Dev')
 
 import { init_menu_bar } from './menubar'
 import('./ipc')
@@ -62,11 +62,11 @@ const local_data_path = process.env.LOCAL_DATA ? path.resolve(process.env.LOCAL_
 if (is.dev) {
 	const data_path =
 		local_data_path ??
-		path.join(import.meta.dirname, '../../src-native/appdata/LocalData/space.kasper.ferrum')
+		path.join(import.meta.dirname, '../../src-native/appdata/LocalData/space.kasper.ferrumsigntest')
 	const electron_data_path = path.join(data_path, 'Electron Data')
 	app.setPath('userData', electron_data_path)
 } else {
-	const data_path = local_data_path ?? path.join(app_data, 'space.kasper.ferrum')
+	const data_path = local_data_path ?? path.join(app_data, 'space.kasper.ferrumsigntest')
 	const electron_data_path = path.join(data_path, 'Electron Data')
 	app.setPath('userData', electron_data_path)
 }
