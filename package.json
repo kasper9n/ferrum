@@ -70,6 +70,9 @@
 	"napi": {
 		"binaryName": "addon"
 	},
+	"//": [
+		"electron-builder is pinned until this PR lands: https://github.com/electron-userland/electron-builder/pull/10028"
+	],
 	"devDependencies": {
 		"@eslint/compat": "^2.1.0",
 		"@eslint/js": "^10.0.1",
@@ -83,7 +86,7 @@
 		"@types/d3-scale": "^4.0.9",
 		"d3-scale": "^4.0.2",
 		"electron": "^37.10.3",
-		"electron-builder": "^26.15.3",
+		"electron-builder": "~26.0.20",
 		"eslint": "^10.8.1",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.22.0",
