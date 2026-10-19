@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 1.3.2 - 2026 Oct 19
 - Fix track context menu causing app to freeze
 - Make track context menu opening faster
 
