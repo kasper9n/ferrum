@@ -1,5 +1,9 @@
 # Changelog
 
+## Next
+- Fix track context menu causing app to freeze
+- Make track context menu opening faster
+
 ## 1.3.1 - 2026 Oct 19
 - **Critical**: Fix new tracks being saved with already-existing IDs, causing the `Library.json` to be invalid. If you're getting crashes, please reach out for help.
 

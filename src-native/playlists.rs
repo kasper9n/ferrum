@@ -177,8 +177,7 @@ pub fn get_playlist_ids_with_track_js(track_id: TrackID) -> Result<Vec<TrackList
 }
 
 pub fn get_playlist_ids_with_track(library: &Library, track_id: TrackID) -> Vec<TrackListID> {
-	let track_id_map = TRACK_ID_MAP.read().unwrap();
-	library
+	let result = library
 		.trackLists
 		.iter()
 		.collect::<Vec<_>>()
@@ -187,15 +186,13 @@ pub fn get_playlist_ids_with_track(library: &Library, track_id: TrackID) -> Vec<
 			let TrackList::Playlist(playlist) = tracklist else {
 				return None;
 			};
-			for item_id in playlist.item_ids() {
-				let item_id: usize = (*item_id).try_into().unwrap();
-				if track_id_map[item_id] == track_id {
-					return Some(playlist_id.to_string());
-				}
+			if playlist.tracks.contains(&track_id) {
+				return Some(playlist_id.to_string());
 			}
 			None
 		})
-		.collect()
+		.collect();
+	return result;
 }
 
 #[napi(js_name = "remove_from_playlist")]
