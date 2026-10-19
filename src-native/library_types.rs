@@ -89,12 +89,12 @@ impl Library {
 	pub fn get_next_track_id(&self) -> TrackID {
 		self.tracks.get_next_id()
 	}
-	pub fn try_insert_track(&mut self, id: TrackID, track: Track) -> &Track {
-		let track_id = self.tracks.get_next_id();
+	pub fn try_insert_track(&mut self, track_id: TrackID, mut track: Track) -> &Track {
+		track.id = track_id;
 		let mut track_id_map = TRACK_ID_MAP.write().unwrap();
 		let item_id: ItemId = track_id_map.len().try_into().unwrap();
-		track_id_map.push(id.clone());
-		self.track_item_ids.insert(id, item_id);
+		track_id_map.push(track_id.clone());
+		self.track_item_ids.insert(track_id, item_id);
 		self.tracks.try_insert(track_id, track)
 	}
 	#[cfg(feature = "napi-rs")]
@@ -455,6 +455,47 @@ pub fn get_track_ids_from_item_ids(playlist_item_ids: &[ItemId]) -> Vec<TrackID>
 		.iter()
 		.map(|playlist_item_id| playlist_track_id_map[*playlist_item_id as usize].clone())
 		.collect()
+}
+
+#[cfg(test)]
+mod tests {
+	use super::{Library, Track};
+
+	fn track(id: u32) -> Track {
+		serde_json::from_value(serde_json::json!({
+			"i": id,
+			"z": 1,
+			"d": 1.0,
+			"br": 1.0,
+			"sr": 44100,
+			"f": "track.mp3",
+			"dm": 0,
+			"da": 0,
+			"t": "track"
+		}))
+		.unwrap()
+	}
+
+	#[test]
+	fn importing_track_with_default_id_persists_the_allocated_id() {
+		let mut library = Library::new();
+		for id in 0..6 {
+			library.try_insert_track(id, track(id));
+		}
+
+		// A newly imported track has no assigned ID yet and starts with ID 0.
+		let new_id = library.get_next_track_id();
+		library.try_insert_track(new_id, track(0));
+
+		let serialized = serde_json::to_value(library.to_file()).unwrap();
+		let ids: Vec<u32> = serialized["tracks"]
+			.as_array()
+			.unwrap()
+			.iter()
+			.map(|track| track["i"].as_u64().unwrap() as u32)
+			.collect();
+		assert_eq!(ids, vec![0, 1, 2, 3, 4, 5, 6]);
+	}
 }
 
 fn retain_pair<T, F>(a: &mut Vec<T>, b: &mut Vec<T>, mut keep: F)

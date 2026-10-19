@@ -59,6 +59,11 @@ where
 		}
 	}
 	pub fn try_insert(&mut self, id: K, value: V) -> &mut V {
+		assert!(
+			id == value.id(),
+			"ID {id} does not match value ID {}",
+			value.id()
+		);
 		let new_last_id = match self.last_id {
 			Some(last_id) => last_id.max(id),
 			None => {
@@ -83,6 +88,25 @@ where
 
 	pub fn remove(&mut self, id: &K) -> Option<V> {
 		self.map.remove(id)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::{HasId, IdMap};
+
+	struct Value(u32);
+	impl HasId<u32> for Value {
+		fn id(&self) -> u32 {
+			self.0
+		}
+	}
+
+	#[test]
+	#[should_panic(expected = "ID 6 does not match value ID 0")]
+	fn rejects_key_that_does_not_match_value_id() {
+		let mut map = IdMap::new();
+		map.try_insert(6, Value(0));
 	}
 }
 
