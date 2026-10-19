@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 1.3.1 - 2026 Oct 19
 - **Critical**: Fix new tracks being saved with already-existing IDs, causing the `Library.json` to be invalid. If you're getting crashes, please reach out for help.
 
 	Playlists and playtimes were saved with the intended IDs, while new tracks got IDs counting from zero. In `Library.json` you'll see the track IDs are listed like `0,1,2,...89,90,0`. In this case, the last 0 would need to be updated to 91.
